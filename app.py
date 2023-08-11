@@ -96,25 +96,15 @@ async def inf():
                     endpoint_api_key: str = os.getenv("ENDPOINT_API_KEY")
                     headers = {'Content-Type': 'application/json',
                                'Authorization': ('Bearer ' + endpoint_api_key)}
-                    req = urllib.request.Request(endpoint_url, body, headers)
-                    try:
-                        response = urllib.request.urlopen(req)
-                        result = response.read()
-                        result_json = json.loads(result.decode('utf-8'))
-                        result_json_string = await azure_storage_session.process_inference_results(result_json, imageDims)
-                        response = await azure_storage_session.upload_inference_results(folder_name, result_json_string, hash_value)
-                        if response:
-                            return jsonify(result_json)
-                        else:
-                            return jsonify([{"error": "Could not upload inference results to Azure Storage"}])
+                    endpoint_request = urllib.request.Request(endpoint_url, body, headers)
+                    response = urllib.request.urlopen(endpoint_request)
+                    result = response.read()
+                    result_json = json.loads(result.decode('utf-8'))
+                    result_json_string = await azure_storage_session.process_inference_results(result_json, imageDims)
+                    response = await azure_storage_session.upload_inference_results(folder_name, result_json_string, hash_value)
+                    if response:
+                        return jsonify(result_json)
 
-                    except urllib.error.HTTPError as error:
-                        return jsonify([{"error": "The request failed with status code: " + str(error)}])
-            else:
-                return jsonify([{"error": "Could not upload image to Azure Storage"}])
-
-    else:
-        return jsonify([{"error": "Missing parameters"}])
 
     return jsonify([{"error": "Something went wrong"}])
 
