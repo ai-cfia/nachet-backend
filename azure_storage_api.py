@@ -6,6 +6,7 @@ import json
 import uuid
 import datetime
 import uuid
+import numpy as np
 
 '''
 ---- user-container based structure -----
@@ -67,10 +68,13 @@ class AzureStorageAPI(object):
                 return image_name
             else:
                 folder_uuid = await self.get_folder_uuid(folder_name)
-                image_name = "{}/{}.png".format(folder_uuid, hash_value)
-                self.container_client.upload_blob(
-                    image_name, image, overwrite=True)
-                return image_name
+                if folder_uuid:
+                    image_name = "{}/{}.png".format(folder_uuid, hash_value)
+                    self.container_client.upload_blob(
+                        image_name, image, overwrite=True)
+                    return image_name
+                else:
+                    return False
         except Exception as error:
             return False
 
@@ -80,14 +84,17 @@ class AzureStorageAPI(object):
         '''
         try:
             folder_uuid = await self.get_folder_uuid(folder_name)
-            json_name = "{}/{}.json".format(folder_uuid, hash_value)
-            self.container_client.upload_blob(
-                json_name, result, overwrite=True)
-            return True
+            if folder_uuid:
+                json_name = "{}/{}.json".format(folder_uuid, hash_value)
+                self.container_client.upload_blob(
+                    json_name, result, overwrite=True)
+                return True
+            else:
+                return False
         except Exception as error:
             return False
 
-    async def get_blob(blob_name):
+    async def get_blob(self, blob_name):
         '''
         gets the contents of a specified blob in the user's container
         '''
@@ -146,7 +153,7 @@ class AzureStorageAPI(object):
             return list(set(folder_list))
         return []
 
-    async def generate_hash(image):
+    async def generate_hash(self, image):
         '''
         generates a hash value for the image to be used as the image name in the container
         '''
@@ -156,7 +163,7 @@ class AzureStorageAPI(object):
         except Exception as error:
             return False
 
-    async def process_inference_results(data, imageDims):
+    async def process_inference_results(self, data, imageDims):
         '''
         processes the inference results to add additional attributes to the inference results that are used in the frontend
         '''

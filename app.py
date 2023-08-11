@@ -4,7 +4,6 @@ import os
 import base64
 import ssl
 import datetime
-import numpy as np
 from dotenv import load_dotenv
 from quart import Quart, render_template, request, jsonify
 from quart_cors import cors
@@ -22,7 +21,8 @@ async def delete_dir():
     '''
     data = await request.get_json()
     if 'container_name' in data and 'folder_name' in data:
-        connection_string = os.getenv("CONNECTION_STRING")
+        load_dotenv(".env")
+        connection_string: str = os.getenv("CONNECTION_STRING")
         container_name = data['container_name']
         folder_name = data['folder_name']
         azure_storage_session = AzureStorageAPI(
@@ -30,16 +30,17 @@ async def delete_dir():
         container_client = await azure_storage_session.mount_container(create_container=False)
         if container_client:
             response = await azure_storage_session.delete_directory(folder_name)
-            new_folder_list = await azure_storage_session.folder_list()
-            return jsonify(new_folder_list)
-    return False
+            if response:
+                return jsonify([response])
+    return jsonify([])
 
 
 @app.post("/dir")
 async def list_dir():
     data = await request.get_json()
     if 'container_name' in data:
-        connection_string = os.getenv("CONNECTION_STRING")
+        load_dotenv(".env")
+        connection_string: str = os.getenv("CONNECTION_STRING")
         container_name = data['container_name']
         azure_storage_session = AzureStorageAPI(
             connection_string, container_name)
@@ -47,17 +48,18 @@ async def list_dir():
         if container_client:
             response = await azure_storage_session.folder_list()
             return jsonify(response)
-    return False
+    return jsonify([])
 
 
 @app.post("/inf")
-async def inference_request():
+async def inf():
     data = await request.get_json()
     if 'image' in data and 'imageDims' in data and 'folder_name' in data and 'container_name' in data:
+        load_dotenv(".env")
         if not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None):
             ssl._create_default_https_context = ssl._create_unverified_context
 
-        connection_string = os.getenv("CONNECTION_STRING")
+        connection_string: str = os.getenv("CONNECTION_STRING")
         folder_name = data['folder_name']
         container_name = data['container_name']
         imageDims = data['imageDims']
@@ -90,8 +92,8 @@ async def inference_request():
                     }
 
                     body = str.encode(json.dumps(data))
-                    endpoint_url = os.getenv("ENDPOINT_URL")
-                    endpoint_api_key = os.getenv("ENDPOINT_API_KEY")
+                    endpoint_url: str = os.getenv("ENDPOINT_URL")
+                    endpoint_api_key: str = os.getenv("ENDPOINT_API_KEY")
                     headers = {'Content-Type': 'application/json',
                                'Authorization': ('Bearer ' + endpoint_api_key)}
                     req = urllib.request.Request(endpoint_url, body, headers)
@@ -109,7 +111,12 @@ async def inference_request():
                     except urllib.error.HTTPError as error:
                         return jsonify([{"error": "The request failed with status code: " + str(error)}])
             else:
-                return jsonify([{}])
+                return jsonify([{"error": "Could not upload image to Azure Storage"}])
+
+    else:
+        return jsonify([{"error": "Missing parameters"}])
+
+    return jsonify([{"error": "Something went wrong"}])
 
 
 @app.get("/ping")
