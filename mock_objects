@@ -1,0 +1,58 @@
+
+
+class BlobServiceClientMock:
+    '''
+    mock class for BlobServiceClient
+    '''
+    def __init__(self, connection_string):
+        self.connection_string = connection_string
+
+    def get_container_client(self, container_name):
+        return ContainerClientMock(container_name)
+
+    def create_container(self, container_name):
+        return ContainerClientMock(container_name)
+
+class ContainerClientMock:
+    '''
+    mock class for ContainerClient
+    '''
+    def __init__(self, container_name):
+        self.container_name = container_name
+
+    def exists(self):
+        return True
+
+    def get_blob_client(self, blob_name):
+        return BlobClientMock(blob_name)
+
+    def upload_blob(self, blob_name, image, overwrite=True):
+        return True
+
+    def list_blobs(self):
+        return [BlobClientMock("blob1"), BlobClientMock("blob2")]
+
+
+class BlobClientMock:
+    '''
+    mock class for BlobClient
+    '''
+    def __init__(self, blob_name):
+        self.blob_name = blob_name
+
+    def download_blob(self):
+        return BlobMock()
+
+    def readall(self):
+        return np.random.randint(0, 255, size=(224, 224, 3), dtype=np.uint8)
+
+class BlobMock:
+    '''
+    mock class for Blob
+    '''
+    def __init__(self):
+        self.blob = np.random.randint(0, 255, size=(224, 224, 3), dtype=np.uint8)
+
+    def readall(self):
+        return self.blob
+

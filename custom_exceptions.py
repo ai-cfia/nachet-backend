@@ -1,35 +1,38 @@
-class MountContainerError(ValueError):
+class DeleteDirectoryRequestError(Exception):
     pass
 
-class UploadImageError(ValueError):
+class ListDirectoriesRequestError(Exception):
     pass
 
-class UploadInferenceResultsError(ValueError):
+class InferenceRequestError(Exception):
     pass
 
-class GetBlobError(ValueError):
+class GenerateHashError(Exception):
     pass
 
-class GetFolderUUIDError(ValueError):
+class MountContainerError(Exception):
     pass
 
-class DeleteFolderError(ValueError):
+class ContainerNameError(Exception):
     pass
 
-class FolderListError(ValueError):
+class ConnectionStringError(Exception):
     pass
 
-class GenerateHashError(ValueError):
+class GetBlobError(Exception):
     pass
 
-class ProcessInferenceResults(ValueError):
+class UploadImageError(Exception):
     pass
 
-class InferenceRequestError(ValueError):
+class UploadInferenceResultError(Exception):
     pass
 
-class FolderListRequestError(ValueError):
+class GetFolderUUIDError(Exception):
     pass
 
-class DeleteFolderRequestError(ValueError):
+class FolderListError(Exception):
+    pass
+
+class ProcessInferenceResult(Exception):
     pass
