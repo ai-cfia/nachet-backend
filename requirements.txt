@@ -4,3 +4,4 @@ azure-identity==1.13.0
 quart==0.18.4
 quart-cors==0.6.0
 python-dotenv==1.0.0
+hypercorn==0.14.4

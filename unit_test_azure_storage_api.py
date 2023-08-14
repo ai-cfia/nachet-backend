@@ -6,9 +6,7 @@ from mock_objects import *
 
 
 class TestMountContainer(unittest.TestCase):
-
     def test_container_exists(self):
-        
         # arrange mock objects
         mock_blob_service_client = BlobServiceClientMock("connection_string_1")
         mock_client_container = ContainerClientMock("container_client_1")
@@ -21,11 +19,5 @@ class TestMountContainer(unittest.TestCase):
         pass
 
 
-
-
-
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
