@@ -1,4 +1,4 @@
 # nachet-backend
 
 ## High level sequence diagram
-![SD_1 drawio](https://github.com/ai-cfia/nachet-backend/assets/19809069/a3352b5e-9b6c-437a-ad86-0aafbd3fd253)
+![SD_1 drawio (1)](https://github.com/ai-cfia/nachet-backend/assets/19809069/4b84d01f-ce43-4d47-993e-3ac84e3c3f00)
