@@ -4,7 +4,18 @@ import hashlib
 import datetime
 import numpy as np
 from azure.storage.blob import BlobServiceClient
-from custom_exceptions import *
+from custom_exceptions import (
+    ConnectionStringError,
+    MountContainerError,
+    GetBlobError,
+    UploadImageError,
+    UploadInferenceResultError,
+    GetFolderUUIDError,
+    FolderListError,
+    GenerateHashError,
+    ProcessInferenceResultError,
+)
+
 
 """
 ---- user-container based structure -----
@@ -166,8 +177,6 @@ async def process_inference_results(data, imageDims):
     processes the inference results to add additional attributes to the inference results that are used in the frontend
     """
     try:
-        data = data
-
         for i, box in enumerate(data[0]["boxes"]):
             # set default overlapping attribute to false for each box
             data[0]["boxes"][i]["overlapping"] = False
@@ -185,7 +194,6 @@ async def process_inference_results(data, imageDims):
             box["box"]["topY"] = int(
                 np.clip(box["box"]["topY"] * imageDims[1], 5, imageDims[1] - 5)
             )
-
         # check if there any overlapping boxes, if so, put the lower scoer box in the overlapping key
         for i, box in enumerate(data[0]["boxes"]):
             for j, box2 in enumerate(data[0]["boxes"]):
@@ -220,6 +228,6 @@ async def process_inference_results(data, imageDims):
         # add totalBoxes attribute to the inference results
         data[0]["totalBoxes"] = sum(1 for box in data[0]["boxes"])
         return data
-    except ProcessInferenceResult as error:
+    except ProcessInferenceResultError as error:
         print(error)
         return False
