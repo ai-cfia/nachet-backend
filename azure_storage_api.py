@@ -22,8 +22,10 @@ from custom_exceptions import (
 - container name is user id
 - whenever a new user is created, a new container is created with the user uuid
 - inside the container, there are project folders (project name = project uuid)
-- for each project folder, there is a json file with the project info and creation date, in the container
-- inside the project folder, there is an image file and a json file with the image inference results
+- for each project folder, there is a json file with the project info and creation
+date, in the container
+- inside the project folder, there is an image file and a json file with
+the image inference results
 """
 
 
@@ -41,8 +43,10 @@ async def generate_hash(image):
 
 async def mount_container(connection_string, container_name, create_container=True):
     """
-    given a connection string and a container name, mounts the container and returns the container client as an object that can be used in other functions.
-    if a specified container doesnt exist, it creates one with the provided uuid, if create_container is True
+    given a connection string and a container name, mounts the container and
+    returns the container client as an object that can be used in other functions.
+    if a specified container doesnt exist, it creates one with the provided uuid,
+    if create_container is True
     """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
@@ -80,7 +84,8 @@ async def get_blob(container_client, blob_name):
 
 async def upload_image(container_client, folder_name, image, hash_value):
     """
-    uploads the image to the specified folder within the user's container, if the specified folder doesnt exist, it creates it with a uuid
+    uploads the image to the specified folder within the user's container,
+    if the specified folder doesnt exist, it creates it with a uuid
     """
     try:
         folders_list = await folder_list(container_client)
@@ -129,7 +134,8 @@ async def upload_inference_result(container_client, folder_name, result, hash_va
 async def get_folder_uuid(container_client, folder_name):
     """
     gets the uuid of a folder in the user's container given the folder name by
-    iterating through the folder json files and extracting the name to match given folder name
+    iterating through the folder json files and extracting the name
+    to match given folder name
     """
     try:
         blob_list = container_client.list_blobs()
@@ -140,9 +146,10 @@ async def get_folder_uuid(container_client, folder_name):
                 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]
             ):
                 folder_json = await get_blob(container_client, blob.name)
-                folder_json = json.loads(folder_json)
-                if folder_json["folder_name"] == folder_name:
-                    return blob.name.split(".")[0].split("/")[-1]
+                if folder_json:
+                    folder_json = json.loads(folder_json)
+                    if folder_json["folder_name"] == folder_name:
+                        return blob.name.split(".")[0].split("/")[-1]
         return False
     except GetFolderUUIDError as error:
         print(error)
@@ -163,8 +170,9 @@ async def folder_list(container_client):
                 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]
             ):
                 folder_blob = await get_blob(container_client, blob.name)
-                folder_json = json.loads(folder_blob)
-                folder_list.append(folder_json["folder_name"])
+                if folder_blob:
+                    folder_json = json.loads(folder_blob)
+                    folder_list.append(folder_json["folder_name"])
         folder_list.sort()
         return list(set(folder_list))
     except FolderListError as error:
@@ -174,7 +182,8 @@ async def folder_list(container_client):
 
 async def process_inference_results(data, imageDims):
     """
-    processes the inference results to add additional attributes to the inference results that are used in the frontend
+    processes the inference results to add additional attributes
+    to the inference results that are used in the frontend
     """
     try:
         for i, box in enumerate(data[0]["boxes"]):
@@ -194,7 +203,7 @@ async def process_inference_results(data, imageDims):
             box["box"]["topY"] = int(
                 np.clip(box["box"]["topY"] * imageDims[1], 5, imageDims[1] - 5)
             )
-        # check if there any overlapping boxes, if so, put the lower scoer box in the overlapping key
+        # check if there any overlapping boxes, if so, put the lower score box in the overlapping key
         for i, box in enumerate(data[0]["boxes"]):
             for j, box2 in enumerate(data[0]["boxes"]):
                 if i != j:

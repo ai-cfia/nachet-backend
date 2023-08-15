@@ -32,17 +32,20 @@ async def delete_directory():
             container_client = await azure_storage_api.mount_container(
                 connection_string, container_name, create_container=False
             )
-            folder_uuid = await azure_storage_api.get_folder_uuid(
-                folder_name, container_client
-            )
-            if folder_uuid:
-                blob_list = container_client.list_blobs()
-                for blob in blob_list:
-                    if blob.name.split("/")[0] == folder_uuid:
-                        container_client.delete_blob(blob.name)
-                return jsonify([True]), 200
+            if container_client:
+                folder_uuid = await azure_storage_api.get_folder_uuid(
+                    folder_name, container_client
+                )
+                if folder_uuid:
+                    blob_list = container_client.list_blobs()
+                    for blob in blob_list:
+                        if blob.name.split("/")[0] == folder_uuid:
+                            container_client.delete_blob(blob.name)
+                    return jsonify([True]), 200
+                else:
+                    return jsonify(["directory does not exist"]), 400
             else:
-                return jsonify(["directory does not exist"]), 400
+                return jsonify(["failed to mount container"]), 400
         else:
             return jsonify(["missing container or directory name"]), 400
 
