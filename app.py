@@ -103,9 +103,9 @@ async def inference_request():
             )
             hash_value = await azure_storage_api.generate_hash(image_bytes)
             blob_name = await azure_storage_api.upload_image(
-                folder_name, image_bytes, container_client, hash_value
+                container_client, folder_name, image_bytes, hash_value
             )
-            blob = await azure_storage_api.get_blob(blob_name, container_client)
+            blob = await azure_storage_api.get_blob(container_client, blob_name)
             image_bytes = base64.b64encode(blob).decode("utf8")
             data = {
                 "input_data": {
@@ -135,9 +135,9 @@ async def inference_request():
                 result_json_string = json.dumps(processed_result_json)
                 app.add_background_task(
                     azure_storage_api.upload_inference_result,
+                    container_client,
                     folder_name,
                     result_json_string,
-                    container_client,
                     hash_value,
                 )
                 return jsonify(processed_result_json), 200

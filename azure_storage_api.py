@@ -52,7 +52,7 @@ async def mount_container(connection_string, container_name, create_container=Tr
         return False
 
 
-async def get_blob(blob_name, container_client):
+async def get_blob(container_client, blob_name):
     """
     gets the contents of a specified blob in the user's container
     """
@@ -67,7 +67,7 @@ async def get_blob(blob_name, container_client):
         return False
 
 
-async def upload_image(folder_name, image, container_client, hash_value):
+async def upload_image(container_client, folder_name, image, hash_value):
     """
     uploads the image to the specified folder within the user's container, if the specified folder doesnt exist, it creates it with a uuid
     """
@@ -99,7 +99,7 @@ async def upload_image(folder_name, image, container_client, hash_value):
         return False
 
 
-async def upload_inference_result(folder_name, result, container_client, hash_value):
+async def upload_inference_result(container_client, folder_name, result, hash_value):
     """
     uploads the inference results json file to the specified folder in the users container
     """
@@ -115,7 +115,7 @@ async def upload_inference_result(folder_name, result, container_client, hash_va
         return False
 
 
-async def get_folder_uuid(folder_name, container_client):
+async def get_folder_uuid(container_client, folder_name):
     """
     gets the uuid of a folder in the user's container given the folder name by
     iterating through the folder json files and extracting the name to match given folder name
@@ -128,7 +128,7 @@ async def get_folder_uuid(folder_name, container_client):
                 and blob.name.count("/") == 1
                 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]
             ):
-                folder_json = await get_blob(blob.name, container_client)
+                folder_json = await get_blob(container_client, blob.name)
                 folder_json = json.loads(folder_json)
                 if folder_json["folder_name"] == folder_name:
                     return blob.name.split(".")[0].split("/")[-1]
@@ -151,7 +151,7 @@ async def folder_list(container_client):
                 and blob.name.count("/") == 1
                 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]
             ):
-                folder_blob = await get_blob(blob.name, container_client)
+                folder_blob = await get_blob(container_client, blob.name)
                 folder_json = json.loads(folder_blob)
                 folder_list.append(folder_json["folder_name"])
         folder_list.sort()
