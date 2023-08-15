@@ -204,7 +204,8 @@ async def process_inference_results(data, imageDims):
             box["box"]["topY"] = int(
                 np.clip(box["box"]["topY"] * imageDims[1], 5, imageDims[1] - 5)
             )
-        # check if there any overlapping boxes, if so, put the lower score box in the overlapping key
+        # check if there any overlapping boxes, if so, put the lower score box 
+        # in the overlapping key
         for i, box in enumerate(data[0]["boxes"]):
             for j, box2 in enumerate(data[0]["boxes"]):
                 if i != j:
