@@ -6,8 +6,8 @@ import ssl
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
-import azure_storage_api
-from custom_exceptions import (
+import azure_storage_api.azure_storage_api as azure_storage_api
+from custom_exceptions.custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
     InferenceRequestError,
