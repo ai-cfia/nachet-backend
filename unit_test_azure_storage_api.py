@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, Mock
 import azure_storage_api
-from custom_exceptions import *
 import asyncio
 
 
@@ -34,7 +33,8 @@ class TestMountContainerFunction(unittest.TestCase):
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_mount_nonexisting_container_create(self, MockFromConnectionString):
         """
-        tests when a container does not exists and create_container flag is set to True, should create a new container and return the container client
+        tests when a container does not exists and create_container flag is set to True,
+        should create a new container and return the container client
         """
         # mock the client container and blob service client
         mock_container_client = Mock()

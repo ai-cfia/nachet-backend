@@ -117,7 +117,8 @@ async def upload_image(container_client, folder_name, image, hash_value):
 
 async def upload_inference_result(container_client, folder_name, result, hash_value):
     """
-    uploads the inference results json file to the specified folder in the users container
+    uploads the inference results json file to the specified folder 
+    in the users container
     """
     try:
         folder_uuid = await get_folder_uuid(folder_name, container_client)
