@@ -4,7 +4,7 @@ import hashlib
 import datetime
 import numpy as np
 from azure.storage.blob import BlobServiceClient
-from custom_exceptions.custom_exceptions import (
+from custom_exceptions import (
     ConnectionStringError,
     MountContainerError,
     GetBlobError,
@@ -41,7 +41,7 @@ async def generate_hash(image):
         print(error)
 
 
-async def mount_container(connection_string, container_name, create_container=True):
+async def mount_container(connection_string, container_uuid, create_container=True):
     """
     given a connection string and a container name, mounts the container and
     returns the container client as an object that can be used in other functions.
@@ -53,6 +53,7 @@ async def mount_container(connection_string, container_name, create_container=Tr
             connection_string
         )
         if blob_service_client:
+            container_name = "user-{}".format(container_uuid)
             container_client = blob_service_client.get_container_client(container_name)
             if container_client.exists():
                 return container_client
@@ -105,7 +106,7 @@ async def upload_image(container_client, folder_name, image, hash_value):
             )
             return image_name
         else:
-            folder_uuid = await get_folder_uuid(folder_name, container_client)
+            folder_uuid = await get_folder_uuid(container_client, folder_name)
             blob_name = "{}/{}.png".format(folder_uuid, hash_value)
             container_client.upload_blob(blob_name, image, overwrite=True)
             return blob_name
@@ -121,7 +122,7 @@ async def upload_inference_result(container_client, folder_name, result, hash_va
     in the users container
     """
     try:
-        folder_uuid = await get_folder_uuid(folder_name, container_client)
+        folder_uuid = await get_folder_uuid(container_client, folder_name)
         if folder_uuid:
             json_name = "{}/{}.json".format(folder_uuid, hash_value)
             container_client.upload_blob(json_name, result, overwrite=True)
@@ -187,6 +188,7 @@ async def process_inference_results(data, imageDims):
     to the inference results that are used in the frontend
     """
     try:
+        data = data
         for i, box in enumerate(data[0]["boxes"]):
             # set default overlapping attribute to false for each box
             data[0]["boxes"][i]["overlapping"] = False

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
 import azure_storage_api.azure_storage_api as azure_storage_api
-from custom_exceptions.custom_exceptions import (
+from azure_storage_api.custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
     InferenceRequestError,
@@ -34,7 +34,7 @@ async def delete_directory():
             )
             if container_client:
                 folder_uuid = await azure_storage_api.get_folder_uuid(
-                    folder_name, container_client
+                    container_client, folder_name
                 )
                 if folder_uuid:
                     blob_list = container_client.list_blobs()

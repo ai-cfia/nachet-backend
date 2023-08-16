@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, Mock
-from ..azure_storage_api import azure_storage_api
+import azure_storage_api
 import asyncio
 
 
