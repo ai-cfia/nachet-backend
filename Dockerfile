@@ -11,6 +11,7 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["hypercorn", "app:app", "--reload", "-b", ":8080", "-w", "1"]
+# CMD ["hypercorn", "app:app", "--reload", "-b", ":8080", "-w", "1"]
 
-ENTRYPOINT hypercorn -b :$PORT -w 1 app:app
+ENTRYPOINT ["hypercorn", "app:app", "--reload", "-b", "0.0.0.0:$PORT", "-w", "1"]
+
