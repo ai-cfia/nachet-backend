@@ -6,12 +6,7 @@ import ssl
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
-import azure_storage_api.azure_storage_api as azure_storage_api
-from azure_storage_api.custom_exceptions import (
-    DeleteDirectoryRequestError,
-    ListDirectoriesRequestError,
-    InferenceRequestError,
-)
+import api.azure_storage_api as azure_storage_api
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
@@ -49,7 +44,7 @@ async def delete_directory():
         else:
             return jsonify(["missing container or directory name"]), 400
 
-    except DeleteDirectoryRequestError as error:
+    except Exception as error:
         print(error)
         return jsonify(["DeleteDirectoryRequestError: " + str(error)]), 400
 
@@ -73,7 +68,7 @@ async def list_directories():
         else:
             return jsonify(["missing container name"]), 400
 
-    except ListDirectoriesRequestError as error:
+    except Exception as error:
         print(error)
         return jsonify(["ListDirectoriesRequestError: " + str(error)]), 400
 
@@ -155,7 +150,7 @@ async def inference_request():
         else:
             return jsonify(["missing request arguments"]), 400
 
-    except InferenceRequestError as error:
+    except Exception as error:
         print(error)
         return jsonify(["InferenceRequestError: " + str(error)]), 400
 
@@ -166,4 +161,4 @@ async def ping():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    app.run(debug=True, host="0.0.0.0", port=8080)

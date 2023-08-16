@@ -4,19 +4,18 @@ import hashlib
 import datetime
 import numpy as np
 from azure.storage.blob import BlobServiceClient
-from custom_exceptions import (
-    ConnectionStringError,
-    MountContainerError,
-    GetBlobError,
-    UploadImageError,
-    UploadInferenceResultError,
-    GetFolderUUIDError,
-    FolderListError,
-    GenerateHashError,
-    ProcessInferenceResultError,
-)
-
-
+# from custom_exceptions import (
+#     ConnectionStringError,
+#     MountContainerError,
+#     GetBlobError,
+#     UploadImageError,
+#     UploadInferenceResultError,
+#     GetFolderUUIDError,
+#     FolderListError,
+#     GenerateHashError,
+#     ProcessInferenceResultError,
+# )
+from . import custom_exceptions as ce
 """
 ---- user-container based structure -----
 - container name is user id
@@ -37,7 +36,7 @@ async def generate_hash(image):
         hash = hashlib.sha256(image).hexdigest()
         return hash
 
-    except GenerateHashError as error:
+    except ce.GenerateHashError as error:
         print(error)
 
 
@@ -61,9 +60,9 @@ async def mount_container(connection_string, container_uuid, create_container=Tr
                 container_client = blob_service_client.create_container(container_name)
                 return container_client
         else:
-            raise ConnectionStringError("Invalid connection string")
+            raise ce.ConnectionStringError("Invalid connection string")
 
-    except MountContainerError as error:
+    except ce.MountContainerError as error:
         print(error)
         return False
 
@@ -78,7 +77,7 @@ async def get_blob(container_client, blob_name):
         blob_content = blob.readall()
         return blob_content
 
-    except GetBlobError as error:
+    except ce.GetBlobError as error:
         print(error)
         return False
 
@@ -111,7 +110,7 @@ async def upload_image(container_client, folder_name, image, hash_value):
             container_client.upload_blob(blob_name, image, overwrite=True)
             return blob_name
 
-    except UploadImageError as error:
+    except ce.UploadImageError as error:
         print(error)
         return False
 
@@ -128,7 +127,7 @@ async def upload_inference_result(container_client, folder_name, result, hash_va
             container_client.upload_blob(json_name, result, overwrite=True)
             return True
 
-    except UploadInferenceResultError as error:
+    except ce.UploadInferenceResultError as error:
         print(error)
         return False
 
@@ -153,7 +152,7 @@ async def get_folder_uuid(container_client, folder_name):
                     if folder_json["folder_name"] == folder_name:
                         return blob.name.split(".")[0].split("/")[-1]
         return False
-    except GetFolderUUIDError as error:
+    except ce.GetFolderUUIDError as error:
         print(error)
         return False
 
@@ -177,7 +176,7 @@ async def folder_list(container_client):
                     folder_list.append(folder_json["folder_name"])
         folder_list.sort()
         return list(set(folder_list))
-    except FolderListError as error:
+    except ce.FolderListError as error:
         print(error)
         return []
 
@@ -241,6 +240,6 @@ async def process_inference_results(data, imageDims):
         # add totalBoxes attribute to the inference results
         data[0]["totalBoxes"] = sum(1 for box in data[0]["boxes"])
         return data
-    except ProcessInferenceResultError as error:
+    except ce.ProcessInferenceResultError as error:
         print(error)
         return False

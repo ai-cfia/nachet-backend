@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, Mock
-import azure_storage_api
+import api
 import asyncio
 
 
@@ -22,7 +22,7 @@ class TestMountContainerFunction(unittest.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
-            azure_storage_api.mount_container(connection_string, container_name)
+            api.mount_container(connection_string, container_name)
         )
 
         self.assertEqual(result, mock_container_client)
@@ -55,7 +55,7 @@ class TestMountContainerFunction(unittest.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
-            azure_storage_api.mount_container(
+            api.mount_container(
                 connection_string, container_name, create_container=True
             )
         )
@@ -81,7 +81,7 @@ class TestMountContainerFunction(unittest.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
-            azure_storage_api.mount_container(
+            api.mount_container(
                 connection_string, container_name, create_container=False
             )
         )
@@ -109,7 +109,7 @@ class TestGetBlob(unittest.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
-            azure_storage_api.get_blob(mock_container_client, mock_blob_name)
+            api.get_blob(mock_container_client, mock_blob_name)
         )
 
         print("Result:", result)
