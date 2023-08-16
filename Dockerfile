@@ -13,4 +13,4 @@ COPY . .
 
 CMD ["hypercorn", "app:app", "--reload", "-b", ":8080", "-w", "1"]
 
-# ENTRYPOINT hypercorn -b 2323:8080 -w 1 app:app --reload
+ENTRYPOINT hypercorn -b :$PORT -w 1 app:app
