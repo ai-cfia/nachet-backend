@@ -7,6 +7,13 @@ from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
 import api.azure_storage_api as azure_storage_api
+from custom_exceptions import (
+    DeleteDirectoryRequestError,
+    ListDirectoriesRequestError,
+    InferenceRequestError,
+)
+
+load_dotenv()
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
@@ -18,7 +25,6 @@ async def delete_directory():
     deletes a directory in the user's container
     """
     try:
-        load_dotenv()
         data = await request.get_json()
         connection_string: str = os.environ["CONNECTION_STRING"]
         container_name = data["container_name"]
@@ -44,7 +50,7 @@ async def delete_directory():
         else:
             return jsonify(["missing container or directory name"]), 400
 
-    except Exception as error:
+    except DeleteDirectoryRequestError as error:
         print(error)
         return jsonify(["DeleteDirectoryRequestError: " + str(error)]), 400
 
@@ -55,7 +61,6 @@ async def list_directories():
     lists all directories in the user's container
     """
     try:
-        load_dotenv()
         data = await request.get_json()
         connection_string: str = os.environ["CONNECTION_STRING"]
         container_name = data["container_name"]
@@ -68,7 +73,7 @@ async def list_directories():
         else:
             return jsonify(["missing container name"]), 400
 
-    except Exception as error:
+    except ListDirectoriesRequestError as error:
         print(error)
         return jsonify(["ListDirectoriesRequestError: " + str(error)]), 400
 
@@ -80,7 +85,6 @@ async def inference_request():
     The image and inference results uploaded to a folder in the user's container.
     """
     try:
-        load_dotenv()
         data = await request.get_json()
         connection_string: str = os.environ["CONNECTION_STRING"]
         folder_name = data["folder_name"]
@@ -150,7 +154,7 @@ async def inference_request():
         else:
             return jsonify(["missing request arguments"]), 400
 
-    except Exception as error:
+    except InferenceRequestError as error:
         print(error)
         return jsonify(["InferenceRequestError: " + str(error)]), 400
 

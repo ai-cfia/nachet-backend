@@ -5,6 +5,7 @@ WORKDIR /app
 ENV QUART_APP=app.py
 ENV QUART_ENV=development
 ENV PYTHONUNBUFFERED True
+ENV PYTHONPATH=/app
 
 COPY ./requirements.txt .
 
