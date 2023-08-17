@@ -87,8 +87,8 @@ async def upload_image(container_client, folder_name, image, hash_value):
     if the specified folder doesnt exist, it creates it with a uuid
     """
     try:
-        folders_list = await folder_list(container_client)
-        if folder_name not in folders_list:
+        directories = await get_directories(container_client)
+        if folder_name not in directories:
             folder_uuid = uuid.uuid4()
             folder_data = {
                 "folder_name": folder_name,
@@ -119,8 +119,8 @@ async def create_folder(container_client, folder_name):
     creates a folder in the user's container
     """
     try:
-        folders_list = await folder_list(container_client)
-        if folder_name not in folders_list:
+        directories = await get_directories(container_client)
+        if folder_name not in directories:
             folder_uuid = uuid.uuid4()
             folder_data = {
                 "folder_name": folder_name,
@@ -183,12 +183,34 @@ async def get_folder_uuid(container_client, folder_name):
         return False
 
 
-async def folder_list(container_client):
+async def get_image_count(container_client, folder_name):
+    """
+    gets the number of images in a folder in the user's container
+    """
+    try:
+        folder_uuid = await get_folder_uuid(container_client, folder_name)
+        if folder_uuid:
+            blob_list = container_client.list_blobs()
+            count = 0
+            for blob in blob_list:
+                if (blob.name.split("/")[0] == folder_uuid) and (
+                    blob.name.split(".")[-1] == "png"
+                ):
+                    count += 1
+            return count
+        else:
+            return False
+    except GetFolderUUIDError as error:
+        print(error)
+        return False
+
+
+async def get_directories(container_client):
     """
     returns a list of folder names in the user's container
     """
     try:
-        folder_list = []
+        directories = {}
         blob_list = container_client.list_blobs()
         for blob in blob_list:
             if (
@@ -196,12 +218,14 @@ async def folder_list(container_client):
                 and blob.name.count("/") == 1
                 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]
             ):
-                folder_blob = await get_blob(container_client, blob.name)
-                if folder_blob:
-                    folder_json = json.loads(folder_blob)
-                    folder_list.append(folder_json["folder_name"])
-        folder_list.sort()
-        return list(set(folder_list))
+                json_blob = await get_blob(container_client, blob.name)
+                if json_blob:
+                    folder_json = json.loads(json_blob)
+                    image_count = await get_image_count(
+                        container_client, folder_json["folder_name"]
+                    )
+                    directories[folder_json["folder_name"]] = image_count
+        return directories
     except FolderListError as error:
         print(error)
         return []

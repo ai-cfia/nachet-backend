@@ -75,7 +75,7 @@ async def list_directories():
             container_client = await azure_storage_api.mount_container(
                 connection_string, container_name, create_container=True
             )
-            response = await azure_storage_api.folder_list(container_client)
+            response = await azure_storage_api.get_directories(container_client)
             return jsonify(response), 200
         else:
             return jsonify(["missing container name"]), 400
