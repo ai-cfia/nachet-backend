@@ -2,7 +2,6 @@ import urllib.request
 import json
 import os
 import base64
-import ssl
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
@@ -16,6 +15,12 @@ from custom_exceptions import (
 )
 
 load_dotenv()
+if (
+    not os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+    or not os.getenv("MODEL_ENDPOINT_REST_URL")
+    or not os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
+):
+    raise Exception("Missing environment variables")
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
@@ -28,7 +33,7 @@ async def delete_directory():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["CONNECTION_STRING"]
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
@@ -64,7 +69,7 @@ async def list_directories():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["CONNECTION_STRING"]
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         if container_name:
             container_client = await azure_storage_api.mount_container(
@@ -86,16 +91,17 @@ async def create_directory():
     creates a directory in the user's container
     """
     try:
-
         data = await request.get_json()
-        connection_string: str = os.environ["CONNECTION_STRING"]
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
             container_client = await azure_storage_api.mount_container(
                 connection_string, container_name, create_container=False
             )
-            response = await azure_storage_api.create_folder(container_client, folder_name)
+            response = await azure_storage_api.create_folder(
+                container_client, folder_name
+            )
             if response:
                 return jsonify([True]), 200
             else:
@@ -116,22 +122,12 @@ async def inference_request():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["CONNECTION_STRING"]
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
-        if (
-            connection_string
-            and folder_name
-            and container_name
-            and imageDims
-            and image_base64
-        ):
-            if not os.environ.get("PYTHONHTTPSVERIFY", "") and getattr(
-                ssl, "_create_unverified_context", None
-            ):
-                ssl._create_default_https_context = ssl._create_unverified_context
+        if folder_name and container_name and imageDims and image_base64:
             header, encoded_data = image_base64.split(",", 1)
             image_bytes = base64.b64decode(encoded_data)
             container_client = await azure_storage_api.mount_container(
@@ -152,8 +148,8 @@ async def inference_request():
             }
 
             body = str.encode(json.dumps(data))
-            endpoint_url = os.getenv("ENDPOINT_URL")
-            endpoint_api_key = os.getenv("ENDPOINT_API_KEY")
+            endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
+            endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": ("Bearer " + endpoint_api_key),
@@ -163,10 +159,8 @@ async def inference_request():
                 response = urllib.request.urlopen(req)
                 result = response.read()
                 result_json = json.loads(result.decode("utf-8"))
-                processed_result_json = (
-                    await inference.process_inference_results(
-                        result_json, imageDims
-                    )
+                processed_result_json = await inference.process_inference_results(
+                    result_json, imageDims
                 )
                 result_json_string = json.dumps(processed_result_json)
                 app.add_background_task(

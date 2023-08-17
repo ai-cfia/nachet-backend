@@ -9,6 +9,7 @@ class ListDirectoriesRequestError(Exception):
 class InferenceRequestError(Exception):
     pass
 
+
 class CreateDirectoryRequestError(Exception):
     pass
 
@@ -24,8 +25,10 @@ class MountContainerError(Exception):
 class ContainerNameError(Exception):
     pass
 
+
 class CreateDirectoryError(Exception):
     pass
+
 
 class ConnectionStringError(Exception):
     pass
@@ -52,4 +55,8 @@ class FolderListError(Exception):
 
 
 class ProcessInferenceResultError(Exception):
+    pass
+
+
+class ValidateEnvVariablesError(Exception):
     pass

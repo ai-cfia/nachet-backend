@@ -26,6 +26,7 @@ date, in the container
 the image inference results
 """
 
+
 async def generate_hash(image):
     """
     generates a hash value for the image to be used as the image name in the container
@@ -118,7 +119,6 @@ async def create_folder(container_client, folder_name):
     creates a folder in the user's container
     """
     try:
-
         folders_list = await folder_list(container_client)
         if folder_name not in folders_list:
             folder_uuid = uuid.uuid4()
@@ -143,7 +143,7 @@ async def create_folder(container_client, folder_name):
 
 async def upload_inference_result(container_client, folder_name, result, hash_value):
     """
-    uploads the inference results json file to the specified folder 
+    uploads the inference results json file to the specified folder
     in the users container
     """
     try:
