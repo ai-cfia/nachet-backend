@@ -12,6 +12,7 @@ from custom_exceptions import (
     ListDirectoriesRequestError,
     InferenceRequestError,
     CreateDirectoryRequestError,
+    ServerError,
 )
 
 load_dotenv()
@@ -20,7 +21,7 @@ if (
     or not os.getenv("MODEL_ENDPOINT_REST_URL")
     or not os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
 ):
-    raise Exception("Missing environment variables")
+    raise ServerError("Missing environment variables")
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")

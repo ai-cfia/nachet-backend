@@ -60,3 +60,7 @@ class ProcessInferenceResultError(Exception):
 
 class ValidateEnvVariablesError(Exception):
     pass
+
+
+class ServerError(Exception):
+    pass
