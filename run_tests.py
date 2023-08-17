@@ -1,4 +1,4 @@
-from tests.test_azure_storage_api import *
+from tests.test_azure_storage_api import TestMountContainerFunction, TestGetBlob
 
 a = TestMountContainerFunction()
 a.test_mount_existing_container()

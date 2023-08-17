@@ -1,22 +1,11 @@
 import unittest
 from unittest.mock import patch, Mock
-import uuid
-import json
-import datetime
 from azure_storage.azure_storage_api import (
     mount_container,
     get_blob,
-    upload_image,
 )
 from custom_exceptions import (
-    ConnectionStringError,
-    MountContainerError,
     GetBlobError,
-    UploadImageError,
-    UploadInferenceResultError,
-    GetFolderUUIDError,
-    FolderListError,
-    GenerateHashError,
 )
 
 import asyncio
@@ -75,9 +64,7 @@ class TestMountContainerFunction(unittest.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
-            mount_container(
-                connection_string, container_name, create_container=True
-            )
+            mount_container(connection_string, container_name, create_container=True)
         )
 
         mock_blob_service_client.create_container.assert_called_once_with(
@@ -102,9 +89,7 @@ class TestMountContainerFunction(unittest.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
-            mount_container(
-                connection_string, container_name, create_container=False
-            )
+            mount_container(connection_string, container_name, create_container=False)
         )
 
         mock_blob_service_client.create_container.assert_not_called()
@@ -113,18 +98,17 @@ class TestMountContainerFunction(unittest.TestCase):
 
 
 class TestGetBlob(unittest.TestCase):
-    
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_blob_successful(self, MockFromConnectionString):
         mock_blob_name = "test_blob"
         mock_blob_content = b"blob content"
-        
+
         mock_blob = Mock()
         mock_blob.readall.return_value = mock_blob_content
-        
+
         mock_blob_client = Mock()
         mock_blob_client.download_blob.return_value = mock_blob
-        
+
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
@@ -135,20 +119,20 @@ class TestGetBlob(unittest.TestCase):
         )
 
         print(result == mock_blob_content)
-        
+
         self.assertEqual(result, mock_blob_content)
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_blob_unsuccessful(self, MockFromConnectionString):
         mock_blob_name = "test_blob"
         mock_blob_content = b"blob content"
-        
+
         mock_blob = Mock()
         mock_blob.readall.return_value = mock_blob_content
-        
+
         mock_blob_client = Mock()
         mock_blob_client.download_blob.side_effect = GetBlobError("Blob not found")
-        
+
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
@@ -161,6 +145,7 @@ class TestGetBlob(unittest.TestCase):
         print(result == False)
 
         self.assertEqual(result, False)
+
 
 if __name__ == "__main__":
     unittest.main()
