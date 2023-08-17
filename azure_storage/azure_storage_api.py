@@ -12,6 +12,7 @@ from custom_exceptions import (
     GetFolderUUIDError,
     FolderListError,
     GenerateHashError,
+    CreateDirectoryError,
 )
 
 """
@@ -108,6 +109,34 @@ async def upload_image(container_client, folder_name, image, hash_value):
             return blob_name
 
     except UploadImageError as error:
+        print(error)
+        return False
+
+
+async def create_folder(container_client, folder_name):
+    """
+    creates a folder in the user's container
+    """
+    try:
+
+        folders_list = await folder_list(container_client)
+        if folder_name not in folders_list:
+            folder_uuid = uuid.uuid4()
+            folder_data = {
+                "folder_name": folder_name,
+                "date_created": str(
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                ),
+            }
+            folder_name = "{}/{}.json".format(folder_uuid, folder_uuid)
+            container_client.upload_blob(
+                folder_name, json.dumps(folder_data), overwrite=True
+            )
+            return True
+        else:
+            return False
+
+    except CreateDirectoryError as error:
         print(error)
         return False
 

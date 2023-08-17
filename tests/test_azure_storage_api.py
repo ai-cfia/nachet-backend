@@ -1,9 +1,24 @@
 import unittest
 from unittest.mock import patch, Mock
+import uuid
+import json
+import datetime
 from azure_storage.azure_storage_api import (
     mount_container,
-    get_blob
+    get_blob,
+    upload_image,
 )
+from custom_exceptions import (
+    ConnectionStringError,
+    MountContainerError,
+    GetBlobError,
+    UploadImageError,
+    UploadInferenceResultError,
+    GetFolderUUIDError,
+    FolderListError,
+    GenerateHashError,
+)
+
 import asyncio
 
 
@@ -27,6 +42,8 @@ class TestMountContainerFunction(unittest.TestCase):
         result = loop.run_until_complete(
             mount_container(connection_string, container_name)
         )
+
+        print(result == mock_container_client)
 
         self.assertEqual(result, mock_container_client)
 
@@ -66,6 +83,7 @@ class TestMountContainerFunction(unittest.TestCase):
         mock_blob_service_client.create_container.assert_called_once_with(
             expected_container_name
         )
+        print(result == mock_new_container_client)
         self.assertEqual(result, mock_new_container_client)
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
@@ -90,6 +108,7 @@ class TestMountContainerFunction(unittest.TestCase):
         )
 
         mock_blob_service_client.create_container.assert_not_called()
+        print(result == None)
         self.assertEqual(result, None)
 
 
@@ -115,11 +134,33 @@ class TestGetBlob(unittest.TestCase):
             get_blob(mock_container_client, mock_blob_name)
         )
 
-        print("Result:", result)
+        print(result == mock_blob_content)
         
         self.assertEqual(result, mock_blob_content)
 
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    def test_get_blob_unsuccessful(self, MockFromConnectionString):
+        mock_blob_name = "test_blob"
+        mock_blob_content = b"blob content"
+        
+        mock_blob = Mock()
+        mock_blob.readall.return_value = mock_blob_content
+        
+        mock_blob_client = Mock()
+        mock_blob_client.download_blob.side_effect = GetBlobError("Blob not found")
+        
+        mock_container_client = Mock()
+        mock_container_client.get_blob_client.return_value = mock_blob_client
 
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(
+            get_blob(mock_container_client, "nonexisting_blob")
+        )
+
+        print(result == False)
+
+        self.assertEqual(result, False)
 
 if __name__ == "__main__":
     unittest.main()

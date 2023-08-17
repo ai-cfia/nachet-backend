@@ -9,6 +9,9 @@ class ListDirectoriesRequestError(Exception):
 class InferenceRequestError(Exception):
     pass
 
+class CreateDirectoryRequestError(Exception):
+    pass
+
 
 class GenerateHashError(Exception):
     pass
@@ -21,6 +24,8 @@ class MountContainerError(Exception):
 class ContainerNameError(Exception):
     pass
 
+class CreateDirectoryError(Exception):
+    pass
 
 class ConnectionStringError(Exception):
     pass

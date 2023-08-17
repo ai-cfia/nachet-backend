@@ -12,6 +12,7 @@ from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
     InferenceRequestError,
+    CreateDirectoryRequestError,
 )
 
 load_dotenv()
@@ -77,6 +78,34 @@ async def list_directories():
     except ListDirectoriesRequestError as error:
         print(error)
         return jsonify(["ListDirectoriesRequestError: " + str(error)]), 400
+
+
+@app.post("/create-dir")
+async def create_directory():
+    """
+    creates a directory in the user's container
+    """
+    try:
+
+        data = await request.get_json()
+        connection_string: str = os.environ["CONNECTION_STRING"]
+        container_name = data["container_name"]
+        folder_name = data["folder_name"]
+        if container_name and folder_name:
+            container_client = await azure_storage_api.mount_container(
+                connection_string, container_name, create_container=False
+            )
+            response = await azure_storage_api.create_folder(container_client, folder_name)
+            if response:
+                return jsonify([True]), 200
+            else:
+                return jsonify(["directory already exists"]), 400
+        else:
+            return jsonify(["missing container or directory name"]), 400
+
+    except CreateDirectoryRequestError as error:
+        print(error)
+        return jsonify(["CreateDirectoryRequestError: " + str(error)]), 400
 
 
 @app.post("/inf")
