@@ -93,7 +93,7 @@ class TestMountContainerFunction(unittest.TestCase):
         )
 
         mock_blob_service_client.create_container.assert_not_called()
-        print(result == None)
+        print(result is None)
         self.assertEqual(result, None)
 
 
@@ -124,7 +124,6 @@ class TestGetBlob(unittest.TestCase):
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_blob_unsuccessful(self, MockFromConnectionString):
-        mock_blob_name = "test_blob"
         mock_blob_content = b"blob content"
 
         mock_blob = Mock()
@@ -142,7 +141,7 @@ class TestGetBlob(unittest.TestCase):
             get_blob(mock_container_client, "nonexisting_blob")
         )
 
-        print(result == False)
+        print(result is False)
 
         self.assertEqual(result, False)
 
