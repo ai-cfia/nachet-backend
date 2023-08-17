@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, Mock
-from api.azure_storage_api import (
+from azure_storage.azure_storage_api import (
     mount_container,
     get_blob
 )

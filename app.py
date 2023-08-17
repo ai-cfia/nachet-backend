@@ -6,7 +6,8 @@ import ssl
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
-import api.azure_storage_api as azure_storage_api
+import azure_storage.azure_storage_api as azure_storage_api
+import model_inference.inference as inference
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
@@ -134,7 +135,7 @@ async def inference_request():
                 result = response.read()
                 result_json = json.loads(result.decode("utf-8"))
                 processed_result_json = (
-                    await azure_storage_api.process_inference_results(
+                    await inference.process_inference_results(
                         result_json, imageDims
                     )
                 )
