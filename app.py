@@ -24,7 +24,7 @@ if (
     raise ServerError("Missing environment variables")
 
 app = Quart(__name__)
-app = cors(app, allow_origin="*")
+app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 
 
 @app.post("/del")
