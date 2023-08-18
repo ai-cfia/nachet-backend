@@ -79,7 +79,7 @@ async def list_directories():
             response = await azure_storage_api.get_directories(container_client)
             return jsonify(response), 200
         else:
-            return jsonify(["missing container name"]), 400
+            return jsonify(["Missing container name"]), 400
 
     except ListDirectoriesRequestError as error:
         print(error)
