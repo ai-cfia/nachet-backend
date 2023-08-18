@@ -1,6 +1,7 @@
 import numpy as np
 from custom_exceptions import ProcessInferenceResultError
 
+
 async def process_inference_results(data, imageDims):
     """
     processes the inference results to add additional attributes
@@ -25,11 +26,11 @@ async def process_inference_results(data, imageDims):
             box["box"]["topY"] = int(
                 np.clip(box["box"]["topY"] * imageDims[1], 5, imageDims[1] - 5)
             )
-        # check if there any overlapping boxes, if so, put the lower score box 
+        # check if there any overlapping boxes, if so, put the lower score box
         # in the overlapping key
         for i, box in enumerate(data[0]["boxes"]):
             for j, box2 in enumerate(data[0]["boxes"]):
-                if (j > i):
+                if j > i:
                     if (
                         box["box"]["bottomX"] >= box2["box"]["topX"]
                         and box["box"]["bottomY"] >= box2["box"]["topY"]
@@ -37,7 +38,7 @@ async def process_inference_results(data, imageDims):
                         and box["box"]["topY"] <= box2["box"]["bottomY"]
                     ):
                         if box["score"] >= box2["score"]:
-                            data[0]["boxes"][i]["overlapping"] = True
+                            data[0]["boxes"][j]["overlapping"] = True
                             data[0]["boxes"][i]["overlappingIndices"].append(j + 1)
                             box2["box"]["bottomX"] = box["box"]["bottomX"]
                             box2["box"]["bottomY"] = box["box"]["bottomY"]
@@ -60,7 +61,7 @@ async def process_inference_results(data, imageDims):
         # add totalBoxes attribute to the inference results
         data[0]["totalBoxes"] = sum(1 for box in data[0]["boxes"])
         return data
-    
+
     except ProcessInferenceResultError as error:
         print(error)
         return False
