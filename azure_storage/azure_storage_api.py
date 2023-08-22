@@ -57,7 +57,12 @@ async def mount_container(connection_string, container_uuid, create_container=Tr
                 return container_client
             elif create_container and not container_client.exists():
                 container_client = blob_service_client.create_container(container_name)
-                return container_client
+                # create general directory for new user container
+                response = await create_folder(container_client, "General")
+                if response:
+                    return container_client
+                else:
+                    return False
         else:
             raise ConnectionStringError("Invalid connection string")
 

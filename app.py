@@ -72,7 +72,6 @@ async def list_directories():
         data = await request.get_json()
         connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
-        print(data)
         if container_name:
             container_client = await azure_storage_api.mount_container(
                 connection_string, container_name, create_container=True
