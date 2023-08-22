@@ -12,11 +12,11 @@ jobs:
     # uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-node.yml@main
     uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
     secrets: inherit
-
+    # ai-cfia/github-workflows/.github/workflows/workflow-build-container.yml@main
   build:
     # if: github.ref == 'refs/heads/main'
     needs: lint-test
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-build-container.yml@main
+    uses: ai-cfia/nachet-backend/.github/workflows/build-container.yml@main
     with:
       container-name: ${{ github.event.repository.name }}
       tag: ${{ github.sha }}
@@ -25,7 +25,7 @@ jobs:
   deploy:
     # if: github.ref == 'refs/heads/main'
     needs: build
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-deploy-gcp.yml@main
+    uses: ai-cfia/nachet-backend/.github/workflows/deploy-gcp.yml@main
     with:
       container-name: ${{ github.event.repository.name }}
       tag: ${{ github.sha }}
