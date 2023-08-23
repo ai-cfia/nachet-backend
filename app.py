@@ -2,6 +2,7 @@ import urllib.request
 import json
 import os
 import base64
+import re
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
@@ -16,12 +17,20 @@ from custom_exceptions import (
 )
 
 load_dotenv()
+connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
+connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
+endpoint_url_regex = r"^https://.*\/score$"
+endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
+
+endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
+
 if (
-    not os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-    or not os.getenv("MODEL_ENDPOINT_REST_URL")
-    or not os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
+    not bool(re.match(connection_string_regex, connection_string))
+    or not bool(re.match(endpoint_url_regex, endpoint_url))
+    or not endpoint_api_key
 ):
-    raise ServerError("Missing environment variables")
+    raise ServerError("Missing or incorrect environment variables")
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
