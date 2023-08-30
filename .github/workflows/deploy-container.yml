@@ -36,26 +36,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{inputs.container-name}}
 
-      # Build and Push Docker image to Azure Container Registry
       - name: Build and Push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ailabcr.azurecr.io/${{inputs.container-name}}:${{inputs.tag}}
+          tags: ailabcr.azurecr.io/${{inputs.container-name}}:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      # Move cache
       - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-      # Deploy to Azure Web App (Optional)
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "nachet-webapp"
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-          images: "<Azure_Container_Registry_Name>.azurecr.io/${{inputs.container-name}}:${{inputs.tag}}"
+          app-name: "nachet-deployment"
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: "ailabcr.azurecr.io/${{inputs.container-name}}:latest"
