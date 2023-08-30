@@ -1,0 +1,62 @@
+name: Reusable Azure Docker container build
+
+on:
+  workflow_call:
+    inputs:
+      container-name:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Azure Login
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Checkout Code
+      - uses: actions/checkout@v3
+
+      # Setup Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-${{inputs.container-name}}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{inputs.container-name}}
+
+      # Build and Push Docker image to Azure Container Registry
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          build-args: REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
+          tags: ailabcr.azurecr.io/${{inputs.container-name}}:${{inputs.tag}}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      # Move cache
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      # Deploy to Azure Web App (Optional)
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "nachet-webapp"
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          images: "<Azure_Container_Registry_Name>.azurecr.io/${{inputs.container-name}}:${{inputs.tag}}"
