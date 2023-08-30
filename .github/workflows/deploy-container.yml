@@ -42,7 +42,6 @@ jobs:
         with:
           context: .
           push: true
-          build-args: REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
           tags: ailabcr.azurecr.io/${{inputs.container-name}}:${{inputs.tag}}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
