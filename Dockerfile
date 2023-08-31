@@ -2,13 +2,15 @@ FROM python:3
 
 WORKDIR /app
 
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=development
+ENV QUART_APP=app.py
+ENV QUART_ENV=development
+ENV PYTHONUNBUFFERED True
+ENV PYTHONPATH=/app
 
 COPY ./requirements.txt .
 
-RUN pip install -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY . ./
 
-CMD [ "python", "app.py" ]
+CMD hypercorn -b :80 -w 1 app:app

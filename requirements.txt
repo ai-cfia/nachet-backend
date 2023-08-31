@@ -1,6 +1,7 @@
-numpy==1.25.1
-azure-storage-blob==12.17.0
-azure-identity==1.13.0
-quart==0.18.4
-quart-cors==0.6.0
-python-dotenv==1.0.0
+numpy
+azure-storage-blob
+azure-identity
+quart
+quart-cors
+python-dotenv
+hypercorn

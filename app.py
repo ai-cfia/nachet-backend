@@ -1,287 +1,202 @@
 import urllib.request
 import json
-import os, uuid
+import os
 import base64
-import ssl
-import hashlib
-import datetime
-import numpy as np
+import re
 from dotenv import load_dotenv
-from quart import Quart, render_template, request, jsonify
+from quart import Quart, request, jsonify
 from quart_cors import cors
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+import azure_storage.azure_storage_api as azure_storage_api
+import model_inference.inference as inference
+from custom_exceptions import (
+    DeleteDirectoryRequestError,
+    ListDirectoriesRequestError,
+    InferenceRequestError,
+    CreateDirectoryRequestError,
+    ServerError,
+)
 
-'''
----- user-container based structure -----
-- container name is user id
-- whenever a new user is created, a new container is created with the user uuid
-- inside the container, there are project folders (project name = project uuid)
-- for each project folder, there is a json file with the project info and creation date, in the container
-- inside the project folder, there is an image file and a json file with the image inference results
-'''
+load_dotenv()
+connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
+connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
+endpoint_url_regex = r"^https://.*\/score$"
+endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
+
+endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
+
+if (
+    not bool(re.match(connection_string_regex, connection_string))
+    or not bool(re.match(endpoint_url_regex, endpoint_url))
+    or not endpoint_api_key
+):
+    raise ServerError("Missing or incorrect environment variables")
 
 app = Quart(__name__)
-app = cors(app, allow_origin="*")
+app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 
-async def generate_hash(image):
-    '''
-    generates a hash value for the image to be used as the image name in the container
-    '''
-    try:
-        hash = hashlib.sha256(image).hexdigest()
-        return hash
-    except Exception as error:
-        return False
-
-async def mount_container(connection_string, container_name, create_container=True):
-    '''
-    given a connection string and a container name, mounts the container and returns the container client as an object that can be used in other functions.
-    if a specified container doesnt exist, it creates one with the provided uuid, if create_container is True
-    '''
-    try:
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-        # look for container
-        container_client = blob_service_client.get_container_client(container_name)
-        # if container doesnt exist, create one with provided uuid, if create_container is True
-        if container_client.exists():
-            return container_client
-        elif create_container and not container_client.exists():
-            container_client = blob_service_client.create_container(container_name)
-            return container_client
-        else:
-            return False
-    except Exception as error:
-        return False
-
-async def get_blob(blob_name, container_client):
-    '''
-    gets the contents of a specified blob in the user's container
-    '''
-    try:
-        blob_client = container_client.get_blob_client(blob_name)
-        blob = blob_client.download_blob()
-        blob_content = blob.readall()
-        return blob_content
-    except Exception as error:
-        return False
-
-async def upload_image(folder_name, image, container_client, hash_value):
-    '''
-    uploads the image to the specified folder within the user's container, if the specified folder doesnt exist, it creates it with a uuid
-    '''
-    try:
-        folders_list = await folder_list(container_client)
-        if folder_name not in folders_list:
-            folder_uuid = uuid.uuid4()
-            folder_data = {
-                "folder_name": folder_name,
-                "date_created": str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-            }
-            image_name = "{}/{}.png".format(folder_uuid, hash_value)
-            folder_name = "{}/{}.json".format(folder_uuid, folder_uuid)
-            container_client.upload_blob(image_name, image, overwrite=True)
-            container_client.upload_blob(folder_name, json.dumps(folder_data), overwrite=True)
-            return image_name
-        else:
-            folder_uuid = await get_folder_uuid(folder_name, container_client)
-            blob_name = "{}/{}.png".format(folder_uuid, hash_value)
-            container_client.upload_blob(blob_name, image, overwrite=True)
-            return blob_name
-    except Exception as error:
-        return False
-
-async def upload_inference_results(folder_name, result, container_client, hash_value):
-    '''
-    uploads the inference results json file to the specified folder in the users container 
-    '''
-    try:
-        folder_uuid = await get_folder_uuid(folder_name, container_client)
-        json_name = "{}/{}.json".format(folder_uuid, hash_value)
-        container_client.upload_blob(json_name, result, overwrite=True)
-        return True
-    except Exception as error:
-        return False
-
-async def get_folder_uuid(folder_name, container_client):
-    '''
-    gets the uuid of a folder in the user's container given the folder name by
-    iterating through the folder json files and extracting the name to match given folder name
-    '''
-    if container_client:
-        folder_list = []
-        blob_list = container_client.list_blobs()
-        for blob in blob_list:
-            if (blob.name.split(".")[-1] == "json" and blob.name.count("/") == 1 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]):
-                folder_json = await get_blob(blob.name, container_client)
-                folder_json = json.loads(folder_json)
-                if folder_json['folder_name'] == folder_name:
-                    return blob.name.split(".")[0].split("/")[-1]
-    else:
-        return False
-
-async def folder_list(container_client):
-    '''
-    returns a list of folder names in the user's container
-    '''
-    if container_client:
-        folder_list = []
-        blob_list = container_client.list_blobs()
-        for blob in blob_list:
-            if (blob.name.split(".")[-1] == "json" and blob.name.count("/") == 1 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]):
-                folder_blob = await get_blob(blob.name, container_client)
-                folder_json = json.loads(folder_blob)
-                folder_list.append(folder_json['folder_name'])
-        folder_list.sort()
-        return list(set(folder_list))
-    return []
-
-async def process_inference_results(data, imageDims):
-    '''
-    processes the inference results to add additional attributes to the inference results that are used in the frontend
-    '''
-    data = data
-
-    for i, box in enumerate(data[0]["boxes"]):
-        # set default overlapping attribute to false for each box
-        data[0]["boxes"][i]["overlapping"] = False
-        # set default overlapping key to None for each box
-        data[0]["boxes"][i]["overlappingIndex"] = -1
-        box["box"]["bottomX"] = int(np.clip(box["box"]["bottomX"] * imageDims[0], 5, imageDims[0] - 5))
-        box["box"]["bottomY"] = int(np.clip(box["box"]["bottomY"] * imageDims[1], 5, imageDims[1] - 5))
-        box["box"]["topX"] = int(np.clip(box["box"]["topX"] * imageDims[0], 5, imageDims[0] - 5))
-        box["box"]["topY"] = int(np.clip(box["box"]["topY"] * imageDims[1], 5, imageDims[1] - 5))
-
-    # check if there any overlapping boxes, if so, put the lower scoer box in the overlapping key
-    for i, box in enumerate(data[0]["boxes"]):
-        for j, box2 in enumerate(data[0]["boxes"]):
-            if i != j:
-                if (box["box"]["bottomX"] >= box2["box"]["topX"] and box["box"]["bottomY"] >= box2["box"]["topY"] and box["box"]["topX"] <= box2["box"]["bottomX"] and box["box"]["topY"] <= box2["box"]["bottomY"]):
-                    if box["score"] >= box2["score"]:
-                        data[0]["boxes"][j]["overlapping"] = True
-                        data[0]["boxes"][j]["overlappingIndex"] = i + 1
-                        box2["box"]["bottomX"] = box["box"]["bottomX"]
-                        box2["box"]["bottomY"] = box["box"]["bottomY"]
-                        box2["box"]["topX"] = box["box"]["topX"]
-                        box2["box"]["topY"] = box["box"]["topY"]
-                    else:
-                        data[0]["boxes"][i]["overlapping"] = True
-                        data[0]["boxes"][i]["overlappingIndex"] = j + 1
-                        box["box"]["bottomX"] = box2["box"]["bottomX"]
-                        box["box"]["bottomY"] = box2["box"]["bottomY"]
-                        box["box"]["topX"] = box2["box"]["topX"]
-                        box["box"]["topY"] = box2["box"]["topY"]
-
-    labelOccurrence = {}
-    for i, box in enumerate(data[0]["boxes"]):
-        if (box["overlapping"] == False):
-            if box["label"] not in labelOccurrence:
-                labelOccurrence[box["label"]] = 1
-            else:
-                labelOccurrence[box["label"]] += 1
-
-    data[0]["labelOccurrence"] = labelOccurrence
-    # add totalBoxes attribute to the inference results
-    data[0]["totalBoxes"] = sum(1 for box in data[0]["boxes"] if box["overlapping"] == False)
-
-    result_json_string = json.dumps(data)
-    return result_json_string
 
 @app.post("/del")
-async def delete_dir():
-    '''
+async def delete_directory():
+    """
     deletes a directory in the user's container
-    '''
-    data = await request.get_json()
-    connection_string = os.getenv("CONNECTION_STRING")
-    if 'container_name' in data and 'folder_name' in data:
-        container_name = data['container_name']
-        folder_name = data['folder_name']
-        container_client = await mount_container(connection_string, container_name, create_container=False)
-        if container_client:
-            folder_uuid = await get_folder_uuid(folder_name, container_client)
-            if folder_uuid:
-                blob_list = container_client.list_blobs()
-                for blob in blob_list:
-                    if blob.name.split("/")[0] == folder_uuid:
-                        container_client.delete_blob(blob.name)
+    """
+    try:
+        data = await request.get_json()
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        container_name = data["container_name"]
+        folder_name = data["folder_name"]
+        if container_name and folder_name:
+            container_client = await azure_storage_api.mount_container(
+                connection_string, container_name, create_container=False
+            )
+            if container_client:
+                folder_uuid = await azure_storage_api.get_folder_uuid(
+                    container_client, folder_name
+                )
+                if folder_uuid:
+                    blob_list = container_client.list_blobs()
+                    for blob in blob_list:
+                        if blob.name.split("/")[0] == folder_uuid:
+                            container_client.delete_blob(blob.name)
+                    return jsonify([True]), 200
+                else:
+                    return jsonify(["directory does not exist"]), 400
+            else:
+                return jsonify(["failed to mount container"]), 400
+        else:
+            return jsonify(["missing container or directory name"]), 400
 
-                return jsonify([True])
-    
-    return jsonify([])
+    except DeleteDirectoryRequestError as error:
+        print(error)
+        return jsonify(["DeleteDirectoryRequestError: " + str(error)]), 400
+
 
 @app.post("/dir")
-async def list_dir():
-    data = await request.get_json()
-    connection_string = os.getenv("CONNECTION_STRING")
-    if 'container_name' in data:
-        container_name = data['container_name']
-        container_client = await mount_container(connection_string, container_name, create_container=False)
-        if container_client:
-            response = await folder_list(container_client)
+async def list_directories():
+    """
+    lists all directories in the user's container
+    """
+    try:
+        data = await request.get_json()
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        container_name = data["container_name"]
+        if container_name:
+            container_client = await azure_storage_api.mount_container(
+                connection_string, container_name, create_container=True
+            )
+            response = await azure_storage_api.get_directories(container_client)
+            return jsonify(response), 200
+        else:
+            return jsonify(["Missing container name"]), 400
+
+    except ListDirectoriesRequestError as error:
+        print(error)
+        return jsonify(["ListDirectoriesRequestError: " + str(error)]), 400
+
+
+@app.post("/create-dir")
+async def create_directory():
+    """
+    creates a directory in the user's container
+    """
+    try:
+        data = await request.get_json()
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        container_name = data["container_name"]
+        folder_name = data["folder_name"]
+        if container_name and folder_name:
+            container_client = await azure_storage_api.mount_container(
+                connection_string, container_name, create_container=False
+            )
+            response = await azure_storage_api.create_folder(
+                container_client, folder_name
+            )
             if response:
-                return jsonify(response)
-    return jsonify([])
+                return jsonify([True]), 200
+            else:
+                return jsonify(["directory already exists"]), 400
+        else:
+            return jsonify(["missing container or directory name"]), 400
+
+    except CreateDirectoryRequestError as error:
+        print(error)
+        return jsonify(["CreateDirectoryRequestError: " + str(error)]), 400
+
 
 @app.post("/inf")
-async def inf():
-    data = await request.get_json()
-    if 'image' in data and 'imageDims' in data and 'folder_name' in data and 'container_name' in data:
-        if not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None):
-            ssl._create_default_https_context = ssl._create_unverified_context
-        connection_string = os.getenv("CONNECTION_STRING")
-        folder_name = data['folder_name']
-        container_name = data['container_name']
-        imageDims = data['imageDims']
-        image_base64 = data['image']
-        header, encoded_data = image_base64.split(',', 1)
-        image_bytes = base64.b64decode(encoded_data)
-        # mount container
-        container_client = await mount_container(connection_string, container_name, create_container=True)
-        if container_client:
-            # generate hash value for image
-            hash_value = await generate_hash(image_bytes)
-            # upload image to azure storage
-            blob_name = await upload_image(folder_name, image_bytes, container_client, hash_value)
-            # get image from azure storage
-            blob = await get_blob(blob_name, container_client)
-            if blob:
-                image_bytes = base64.b64encode(blob).decode("utf8")
-                data =  {
-                    "input_data": {
-                    "columns": [
-                        "image"
-                    ],
+async def inference_request():
+    """
+    performs inference on an image, and returns the results.
+    The image and inference results uploaded to a folder in the user's container.
+    """
+    try:
+        data = await request.get_json()
+        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        folder_name = data["folder_name"]
+        container_name = data["container_name"]
+        imageDims = data["imageDims"]
+        image_base64 = data["image"]
+        if folder_name and container_name and imageDims and image_base64:
+            header, encoded_data = image_base64.split(",", 1)
+            image_bytes = base64.b64decode(encoded_data)
+            container_client = await azure_storage_api.mount_container(
+                connection_string, container_name, create_container=True
+            )
+            hash_value = await azure_storage_api.generate_hash(image_bytes)
+            blob_name = await azure_storage_api.upload_image(
+                container_client, folder_name, image_bytes, hash_value
+            )
+            blob = await azure_storage_api.get_blob(container_client, blob_name)
+            image_bytes = base64.b64encode(blob).decode("utf8")
+            data = {
+                "input_data": {
+                    "columns": ["image"],
                     "index": [0],
-                    "data": [image_bytes]
-                    }
+                    "data": [image_bytes],
                 }
+            }
 
-                body = str.encode(json.dumps(data))
-                endpoint_url = os.getenv("ENDPOINT_URL")
-                endpoint_api_key = os.getenv("ENDPOINT_API_KEY")
-                headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ endpoint_api_key)}
-                req = urllib.request.Request(endpoint_url, body, headers)
-                try:
-                    response = urllib.request.urlopen(req)
-                    result = response.read()
-                    result_json = json.loads(result.decode('utf-8'))
-                    result_json_string = await process_inference_results(result_json, imageDims)
-                    response = await upload_inference_results(folder_name, result_json_string, container_client, hash_value);
+            body = str.encode(json.dumps(data))
+            endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
+            endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": ("Bearer " + endpoint_api_key),
+            }
+            req = urllib.request.Request(endpoint_url, body, headers)
+            try:
+                response = urllib.request.urlopen(req)
+                result = response.read()
+                result_json = json.loads(result.decode("utf-8"))
+                processed_result_json = await inference.process_inference_results(
+                    result_json, imageDims
+                )
+                result_json_string = json.dumps(processed_result_json)
+                app.add_background_task(
+                    azure_storage_api.upload_inference_result,
+                    container_client,
+                    folder_name,
+                    result_json_string,
+                    hash_value,
+                )
+                return jsonify(processed_result_json), 200
 
-                    if response:
-                        return jsonify(result_json)
-                    else:
-                        return jsonify([{"error": "Could not upload inference results to Azure Storage"}])
-                    
-                except urllib.error.HTTPError as error:
-                    return jsonify([{"error": "The request failed with status code: " + str(error)}])
-            else:
-                return jsonify([{}])
+            except urllib.error.HTTPError as error:
+                print(error)
+                return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
+        else:
+            return jsonify(["missing request arguments"]), 400
+
+    except InferenceRequestError as error:
+        print(error)
+        return jsonify(["InferenceRequestError: " + str(error)]), 400
+
 
 @app.get("/ping")
 async def ping():
     return "<html><body><h1>server is running</h1><body/><html/>"
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=8080)
