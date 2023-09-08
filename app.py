@@ -156,7 +156,7 @@ async def inference_request():
                     "data": [image_bytes],
                 }
             }
-
+            # encode the data as json to be sent to the model endpoint
             body = str.encode(json.dumps(data))
             endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
             endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
@@ -164,14 +164,18 @@ async def inference_request():
                 "Content-Type": "application/json",
                 "Authorization": ("Bearer " + endpoint_api_key),
             }
+            # send the request to the model endpoint
             req = urllib.request.Request(endpoint_url, body, headers)
             try:
+                # get the response from the model endpoint
                 response = urllib.request.urlopen(req)
                 result = response.read()
                 result_json = json.loads(result.decode("utf-8"))
+                # process the inference results
                 processed_result_json = await inference.process_inference_results(
                     result_json, imageDims
                 )
+                # upload the inference results to the user's container as async task
                 result_json_string = json.dumps(processed_result_json)
                 app.add_background_task(
                     azure_storage_api.upload_inference_result,
@@ -180,6 +184,7 @@ async def inference_request():
                     result_json_string,
                     hash_value,
                 )
+                # return the inference results to the client
                 return jsonify(processed_result_json), 200
 
             except urllib.error.HTTPError as error:
