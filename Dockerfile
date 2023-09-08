@@ -13,4 +13,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . ./
 
-CMD hypercorn -b :8080 app:app
+CMD hypercorn -b :$PORT app:app
