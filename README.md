@@ -12,7 +12,7 @@
 - Inference results from model endpoint are directly handled in `model_inference/inference.py`
 
 ****
-
+ 
 ### RUNNING NACHET-BACKEND FROM DEVCONTAINER
 When you are developping, you can run the program while in the devcontainer by using this command:
 ```
