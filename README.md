@@ -27,4 +27,14 @@ docker run -p 8080:8080 -v $(pwd):/app nachet-backend
 ```
 
 ### TESTING NACHET-BACKEND
-To test the program, simply run the `run_tests.py` file.
+To test the program, use this command: 
+```
+python -m unittest discover -s tests
+```
+
+****
+### SETTING UP THE .ENV FILE
+In order to use the program, the .env file must be set up. Contact the organization to request this information: cfia.ai-ia.acia@inspection.gc.ca
+* **AZURE_STORAGE_CONNECTION_STRING**: Connection string to access external storage (Azure Blob Storage).
+* **MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed model for inferencing. 
+* **MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint 
