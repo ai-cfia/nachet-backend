@@ -21,7 +21,7 @@ class TestMountContainerFunction(unittest.TestCase):
 
         # Mock the method that returns the blob_list
         mock_blobs = [Mock(), Mock(), Mock()]
-        mock_container_client.list_blobs.return_value = mock_blobs
+        mock_container_client.list_blobs.return_value = iter(mock_blobs)
 
         # mock the client container
         mock_container_client = Mock()
