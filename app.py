@@ -26,20 +26,23 @@ endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
 endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
 
 # Check: do environment variables exist?
-if (
-    connection_string is None
-    or endpoint_url is None
-    or endpoint_api_key is None
-):
-    raise ServerError("Missing environment variables")
+if connection_string is None:
+    raise ServerError("Missing environment variable: AZURE_STORAGE_CONNECTION_STRING")
+
+if endpoint_url is None:
+    raise ServerError("Missing environment variable: MODEL_ENDPOINT_REST_URL")
+
+if endpoint_api_key is None:
+    raise ServerError("Missing environment variables: MODEL_ENDPOINT_ACCESS_KEY")
 
 # Check: are environment variables correct? 
-if (
-    not bool(re.match(connection_string_regex, connection_string))
-    or not bool(re.match(endpoint_url_regex, endpoint_url))
-):
-    raise ServerError("Incorrect environment variables")
+if not bool(re.match(connection_string_regex, connection_string)):
+    raise ServerError("Incorrect environment variable: AZURE_STORAGE_CONNECTION_STRING")
 
+if not bool(re.match(endpoint_url_regex, endpoint_url)):
+    raise ServerError("Incorrect environment variable: MODEL_ENDPOINT_ACCESS_KEY")
+
+# Creating app
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 
