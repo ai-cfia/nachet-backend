@@ -33,8 +33,13 @@ python -m unittest discover -s tests
 ```
 
 ****
-### SETTING UP THE .ENV FILE
-In order to use the program, the .env file must be set up. Contact the organization to request this information: cfia.ai-ia.acia@inspection.gc.ca
+### THE .ENV FILE
+Start by making a copy of `.env.template` and renaming it `.env`. For the backend to function, you will need to add the missing values:
+
 * **AZURE_STORAGE_CONNECTION_STRING**: Connection string to access external storage (Azure Blob Storage).
 * **MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed model for inferencing. 
-* **MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint 
+* **MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
+
+****
+### DEPLOYING NACHET 
+If you need help deploying Nachet for your own needs, please contact us at cfia.ai-ia.acia@inspection.gc.ca.
