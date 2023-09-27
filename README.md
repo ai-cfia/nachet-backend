@@ -43,4 +43,3 @@ Start by making a copy of `.env.template` and renaming it `.env`. For the backen
 ****
 ### DEPLOYING NACHET 
 If you need help deploying Nachet for your own needs, please contact us at cfia.ai-ia.acia@inspection.gc.ca.
-
