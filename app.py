@@ -25,12 +25,22 @@ endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
-if (
-    not bool(re.match(connection_string_regex, connection_string))
-    or not bool(re.match(endpoint_url_regex, endpoint_url))
-    or not endpoint_api_key
-):
-    raise ServerError("Missing or incorrect environment variables")
+# Check: do environment variables exist?
+if connection_string is None:
+    raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+if endpoint_url is None:
+    raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
+
+if endpoint_api_key is None:
+    raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+# Check: are environment variables correct? 
+if not bool(re.match(connection_string_regex, connection_string)):
+    raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+if not bool(re.match(endpoint_url_regex, endpoint_url)):
+    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
