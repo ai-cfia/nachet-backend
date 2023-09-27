@@ -33,12 +33,12 @@ python -m unittest discover -s tests
 ```
 
 ****
-### THE .ENV FILE
+### ENVIRONMENT VARIABLES
 Start by making a copy of `.env.template` and renaming it `.env`. For the backend to function, you will need to add the missing values:
 
-* **AZURE_STORAGE_CONNECTION_STRING**: Connection string to access external storage (Azure Blob Storage).
-* **MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed model for inferencing. 
-* **MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
+* **NACHET_AZURE_STORAGE_CONNECTION_STRING**: Connection string to access external storage (Azure Blob Storage).
+* **NACHET_MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed model for inferencing. 
+* **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
 
 ****
 ### DEPLOYING NACHET 

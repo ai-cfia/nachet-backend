@@ -18,31 +18,30 @@ from custom_exceptions import (
 
 load_dotenv()
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
-connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 endpoint_url_regex = r"^https://.*\/score$"
-endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
+endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 
-endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
+endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 # Check: do environment variables exist?
 if connection_string is None:
-    raise ServerError("Missing environment variable: AZURE_STORAGE_CONNECTION_STRING")
+    raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 if endpoint_url is None:
-    raise ServerError("Missing environment variable: MODEL_ENDPOINT_REST_URL")
+    raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
 
 if endpoint_api_key is None:
-    raise ServerError("Missing environment variables: MODEL_ENDPOINT_ACCESS_KEY")
+    raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 # Check: are environment variables correct? 
 if not bool(re.match(connection_string_regex, connection_string)):
-    raise ServerError("Incorrect environment variable: AZURE_STORAGE_CONNECTION_STRING")
+    raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 if not bool(re.match(endpoint_url_regex, endpoint_url)):
-    raise ServerError("Incorrect environment variable: MODEL_ENDPOINT_ACCESS_KEY")
+    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
-# Creating app
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 
@@ -54,7 +53,7 @@ async def delete_directory():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
@@ -90,7 +89,7 @@ async def list_directories():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         if container_name:
             container_client = await azure_storage_api.mount_container(
@@ -113,7 +112,7 @@ async def create_directory():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
@@ -143,7 +142,7 @@ async def inference_request():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
@@ -169,8 +168,8 @@ async def inference_request():
             }
             # encode the data as json to be sent to the model endpoint
             body = str.encode(json.dumps(data))
-            endpoint_url = os.getenv("MODEL_ENDPOINT_REST_URL")
-            endpoint_api_key = os.getenv("MODEL_ENDPOINT_ACCESS_KEY")
+            endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
+            endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": ("Bearer " + endpoint_api_key),
