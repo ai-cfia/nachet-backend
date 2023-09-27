@@ -33,7 +33,7 @@ python -m unittest discover -s tests
 ```
 
 ****
-### THE .ENV FILE
+### ENVIRONMENT VARIABLES
 Start by making a copy of `.env.template` and renaming it `.env`. For the backend to function, you will need to add the missing values:
 
 * **NACHET_AZURE_STORAGE_CONNECTION_STRING**: Connection string to access external storage (Azure Blob Storage).
