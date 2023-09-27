@@ -12,7 +12,7 @@
 - Inference results from model endpoint are directly handled in `model_inference/inference.py`
 
 ****
-
+ 
 ### RUNNING NACHET-BACKEND FROM DEVCONTAINER
 When you are developping, you can run the program while in the devcontainer by using this command:
 ```
@@ -27,4 +27,20 @@ docker run -p 8080:8080 -v $(pwd):/app nachet-backend
 ```
 
 ### TESTING NACHET-BACKEND
-To test the program, simply run the `run_tests.py` file.
+To test the program, use this command: 
+```
+python -m unittest discover -s tests
+```
+
+****
+### THE .ENV FILE
+Start by making a copy of `.env.template` and renaming it `.env`. For the backend to function, you will need to add the missing values:
+
+* **NACHET_AZURE_STORAGE_CONNECTION_STRING**: Connection string to access external storage (Azure Blob Storage).
+* **NACHET_MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed model for inferencing. 
+* **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
+
+****
+### DEPLOYING NACHET 
+If you need help deploying Nachet for your own needs, please contact us at cfia.ai-ia.acia@inspection.gc.ca.
+
