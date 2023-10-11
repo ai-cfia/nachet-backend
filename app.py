@@ -25,6 +25,10 @@ endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
+seed_info_url = os.getenv("NACHET_SEED_INFO_URL")
+
+seed_cache = {}
+
 # Check: do environment variables exist?
 if connection_string is None:
     raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
@@ -207,6 +211,32 @@ async def inference_request():
         print(error)
         return jsonify(["InferenceRequestError: " + str(error)]), 400
 
+
+@app.get("/seed-info/<seed_name>")
+async def get_seed_info(seed_name):
+    """
+    Retrieves JSON document containing seed Fact Sheet information
+    """
+    global seed_cache
+    # Verify if seed already in cache
+    if seed_name in seed_cache:  
+        return jsonify(seed_cache[seed_name])
+    
+    try:
+        with urllib.request.urlopen(seed_info_url) as response:
+            result = response.read()
+            result_json = json.loads(result.decode("utf-8"))
+
+            # Cache the result
+            seed_cache = result_json
+
+            return jsonify(result_json[seed_name])
+
+    except urllib.error.HTTPError as error:
+        return jsonify({"error": f"Failed to retrieve the JSON. \
+                        HTTP Status Code: {error.code}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.get("/ping")
 async def ping():
