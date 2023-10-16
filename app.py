@@ -25,9 +25,9 @@ endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
-seed_info_url = os.getenv("NACHET_SEED_INFO_URL")
+nachet_data_url = os.getenv("NACHET_DATA")
 
-seed_cache = {}
+cache = {}
 
 # Check: do environment variables exist?
 if connection_string is None:
@@ -48,7 +48,6 @@ if not bool(re.match(endpoint_url_regex, endpoint_url)):
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-
 
 @app.post("/del")
 async def delete_directory():
@@ -215,22 +214,25 @@ async def inference_request():
 @app.get("/seed-info/<seed_name>")
 async def get_seed_info(seed_name):
     """
-    Retrieves JSON document containing seed Fact Sheet information
+    Returns JSON containing requested seed information
     """
-    global seed_cache
-    # Verify if seed already in cache
-    if seed_name in seed_cache:  
-        return jsonify(seed_cache[seed_name])
+    if seed_name in cache:  
+        return jsonify(cache[seed_name])
+    else:
+        return jsonify(f"No information found for {seed_name}.")
     
+    
+async def fetch_seed_json():
+    """
+    Fetches JSON document of all seed info from Nachet-Data and caches it
+    """
+    global cache
     try:
-        with urllib.request.urlopen(seed_info_url) as response:
+        all_seeds_json_url = os.path.join(nachet_data_url, "seeds/all.json")
+        with urllib.request.urlopen(all_seeds_json_url) as response:
             result = response.read()
             result_json = json.loads(result.decode("utf-8"))
-
-            # Cache the result
-            seed_cache = result_json
-
-            return jsonify(result_json[seed_name])
+            cache = result_json
 
     except urllib.error.HTTPError as error:
         return jsonify({"error": f"Failed to retrieve the JSON. \
@@ -238,10 +240,17 @@ async def get_seed_info(seed_name):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.get("/ping")
-async def ping():
-    return "<html><body><h1>server is running</h1><body/><html/>"
+
+@app.get("/health")
+async def health():
+    return os.environ.get("NACHET_HEALTH_MESSAGE")
+
+
+@app.before_serving
+async def before_serving():
+    await fetch_seed_json()
 
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
+    
