@@ -25,9 +25,11 @@ endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
-nachet_data_url = os.getenv("NACHET_DATA")
+NACHET_DATA = os.getenv("NACHET_DATA")
 
-cache = {}
+NACHET_HEALTH_MESSAGE = os.getenv("NACHET_HEALTH_MESSAGE")
+
+SEED_CACHE = {}
 
 # Check: do environment variables exist?
 if connection_string is None:
@@ -216,8 +218,8 @@ async def get_seed_info(seed_name):
     """
     Returns JSON containing requested seed information
     """
-    if seed_name in cache:  
-        return jsonify(cache[seed_name])
+    if seed_name in SEED_CACHE:  
+        return jsonify(SEED_CACHE[seed_name])
     else:
         return jsonify(f"No information found for {seed_name}.")
     
@@ -226,13 +228,13 @@ async def fetch_seed_json():
     """
     Fetches JSON document of all seed info from Nachet-Data and caches it
     """
-    global cache
+    global SEED_CACHE
     try:
-        all_seeds_json_url = os.path.join(nachet_data_url, "seeds/all.json")
+        all_seeds_json_url = os.path.join(NACHET_DATA, "seeds/all.json")
         with urllib.request.urlopen(all_seeds_json_url) as response:
             result = response.read()
             result_json = json.loads(result.decode("utf-8"))
-            cache = result_json
+            SEED_CACHE = result_json
 
     except urllib.error.HTTPError as error:
         return jsonify({"error": f"Failed to retrieve the JSON. \
@@ -243,7 +245,7 @@ async def fetch_seed_json():
 
 @app.get("/health")
 async def health():
-    return os.environ.get("NACHET_HEALTH_MESSAGE")
+    return NACHET_HEALTH_MESSAGE, 200
 
 
 @app.before_serving
