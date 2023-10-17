@@ -25,6 +25,12 @@ endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
+NACHET_DATA = os.getenv("NACHET_DATA")
+
+NACHET_HEALTH_MESSAGE = os.getenv("NACHET_HEALTH_MESSAGE")
+
+SEED_CACHE = {}
+
 # Check: do environment variables exist?
 if connection_string is None:
     raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
@@ -44,7 +50,6 @@ if not bool(re.match(endpoint_url_regex, endpoint_url)):
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-
 
 @app.post("/del")
 async def delete_directory():
@@ -208,10 +213,46 @@ async def inference_request():
         return jsonify(["InferenceRequestError: " + str(error)]), 400
 
 
-@app.get("/ping")
-async def ping():
-    return "<html><body><h1>server is running</h1><body/><html/>"
+@app.get("/seed-info/<seed_name>")
+async def get_seed_info(seed_name):
+    """
+    Returns JSON containing requested seed information
+    """
+    if seed_name in SEED_CACHE:  
+        return jsonify(SEED_CACHE[seed_name])
+    else:
+        return jsonify(f"No information found for {seed_name}.")
+    
+    
+async def fetch_seed_json():
+    """
+    Fetches JSON document of all seed info from Nachet-Data and caches it
+    """
+    global SEED_CACHE
+    try:
+        all_seeds_json_url = os.path.join(NACHET_DATA, "seeds/all.json")
+        with urllib.request.urlopen(all_seeds_json_url) as response:
+            result = response.read()
+            result_json = json.loads(result.decode("utf-8"))
+            SEED_CACHE = result_json
+
+    except urllib.error.HTTPError as error:
+        return jsonify({"error": f"Failed to retrieve the JSON. \
+                        HTTP Status Code: {error.code}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.get("/health")
+async def health():
+    return NACHET_HEALTH_MESSAGE, 200
+
+
+@app.before_serving
+async def before_serving():
+    await fetch_seed_json()
 
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
+    

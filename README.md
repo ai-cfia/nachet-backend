@@ -39,6 +39,8 @@ Start by making a copy of `.env.template` and renaming it `.env`. For the backen
 * **NACHET_AZURE_STORAGE_CONNECTION_STRING**: Connection string to access external storage (Azure Blob Storage).
 * **NACHET_MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed model for inferencing. 
 * **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
+* **NACHET_DATA**: Url to access nachet-data repository
+* **NACHET_HEALTH_MESSAGE**: Health check message for the server.
 
 ****
 ### DEPLOYING NACHET 
