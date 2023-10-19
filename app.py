@@ -27,8 +27,6 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 
-NACHET_HEALTH_MESSAGE = os.getenv("NACHET_HEALTH_MESSAGE")
-
 SEED_CACHE = {}
 
 # Check: do environment variables exist?
@@ -238,7 +236,7 @@ async def reload_seed_data():
 
 @app.get("/health")
 async def health():
-    return NACHET_HEALTH_MESSAGE, 200
+    return "ok", 200
 
 
 async def fetch_seed_json():
