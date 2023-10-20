@@ -27,8 +27,6 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 
-NACHET_HEALTH_MESSAGE = os.getenv("NACHET_HEALTH_MESSAGE")
-
 SEED_CACHE = {}
 
 # Check: do environment variables exist?
@@ -213,20 +211,37 @@ async def inference_request():
         return jsonify(["InferenceRequestError: " + str(error)]), 400
 
 
-@app.get("/seed-info/<seed_name>")
-async def get_seed_info(seed_name):
+@app.get("/seed-data/<seed_name>")
+async def get_seed_data(seed_name):
     """
-    Returns JSON containing requested seed information
+    Returns JSON containing requested seed data
     """
     if seed_name in SEED_CACHE:  
-        return jsonify(SEED_CACHE[seed_name])
+        return jsonify(SEED_CACHE[seed_name]), 200
     else:
-        return jsonify(f"No information found for {seed_name}.")
+        return jsonify(f"No information found for {seed_name}."), 400
     
-    
+
+@app.get("/reload-seed-data")
+async def reload_seed_data():
+    """
+    Reloads seed data JSON document from Nachet-Data
+    """
+    try:
+        await fetch_seed_json()
+        return jsonify(["Seed data reloaded successfully"]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.get("/health")
+async def health():
+    return "ok", 200
+
+
 async def fetch_seed_json():
     """
-    Fetches JSON document of all seed info from Nachet-Data and caches it
+    Fetches JSON document of all seed data from Nachet-Data and caches it
     """
     global SEED_CACHE
     try:
@@ -235,18 +250,12 @@ async def fetch_seed_json():
             result = response.read()
             result_json = json.loads(result.decode("utf-8"))
             SEED_CACHE = result_json
-
     except urllib.error.HTTPError as error:
         return jsonify({"error": f"Failed to retrieve the JSON. \
                         HTTP Status Code: {error.code}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-@app.get("/health")
-async def health():
-    return NACHET_HEALTH_MESSAGE, 200
-
+    
 
 @app.before_serving
 async def before_serving():
