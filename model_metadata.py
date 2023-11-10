@@ -56,7 +56,6 @@ def generate_model_metadata():
 
     return job_data
         
-
 if __name__ == "__main__":
     job_json = generate_model_metadata()
     print(job_json["component"]) 
