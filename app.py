@@ -29,8 +29,8 @@ NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 CACHE = {
-    'seeds': {},
-    'endpoints': {}
+    'seeds': None,
+    'endpoints': None
 }
 
 # Check: do environment variables exist?
@@ -236,6 +236,17 @@ async def reload_seed_data():
         return jsonify(["Seed data reloaded successfully"]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.get("/endpoint-metadata")
+async def get_endpoint_metadata():
+    """
+    Returns JSON containing the deployed endpoints' metadata
+    """
+    if CACHE['endpoints']:  
+        return jsonify(CACHE['endpoints']), 200
+    else:
+        return jsonify("Error retrieving endpoint metadata.", 400)
 
 
 @app.get("/health")
