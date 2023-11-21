@@ -238,15 +238,15 @@ async def reload_seed_data():
         return jsonify({"error": str(e)}), 500
 
 
-@app.get("/endpoint-metadata")
-async def get_endpoint_metadata():
+@app.get("/model-endpoints-metadata")
+async def get_model_endpoints_metadata():
     """
     Returns JSON containing the deployed endpoints' metadata
     """
     if CACHE['endpoints']:  
         return jsonify(CACHE['endpoints']), 200
     else:
-        return jsonify("Error retrieving endpoint metadata.", 400)
+        return jsonify("Error retrieving model endpoints metadata.", 400)
 
 
 @app.get("/health")
@@ -254,7 +254,7 @@ async def health():
     return "ok", 200
 
     
-async def fetch_json(repo_URL: str, key: str, file_path: str):
+async def fetch_json(repo_URL, key, file_path):
     """
     Fetches JSON document from a GitHub repository and caches it
     """
