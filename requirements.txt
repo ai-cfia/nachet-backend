@@ -5,5 +5,3 @@ quart
 quart-cors
 python-dotenv
 hypercorn
-azure-ai-ml 
-azure-identity
