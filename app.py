@@ -274,7 +274,7 @@ async def fetch_json(repo_URL, key, file_path):
 @app.before_serving
 async def before_serving():
     await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
-    await fetch_json(NACHET_MODEL, 'endpoints', 'models_metadata.json')
+    await fetch_json(NACHET_MODEL, 'endpoints', 'model_endpoints_metadata.json')
 
 
 if __name__ == "__main__":
