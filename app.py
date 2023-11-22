@@ -26,8 +26,12 @@ endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
+NACHET_MODEL = os.getenv("NACHET_MODEL")
 
-SEED_CACHE = {}
+CACHE = {
+    'seeds': None,
+    'endpoints': None
+}
 
 # Check: do environment variables exist?
 if connection_string is None:
@@ -216,8 +220,8 @@ async def get_seed_data(seed_name):
     """
     Returns JSON containing requested seed data
     """
-    if seed_name in SEED_CACHE:  
-        return jsonify(SEED_CACHE[seed_name]), 200
+    if seed_name in CACHE['seeds']:  
+        return jsonify(CACHE['seeds'][seed_name]), 200
     else:
         return jsonify(f"No information found for {seed_name}."), 400
     
@@ -228,28 +232,38 @@ async def reload_seed_data():
     Reloads seed data JSON document from Nachet-Data
     """
     try:
-        await fetch_seed_json()
+        await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
         return jsonify(["Seed data reloaded successfully"]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.get("/model-endpoints-metadata")
+async def get_model_endpoints_metadata():
+    """
+    Returns JSON containing the deployed endpoints' metadata
+    """
+    if CACHE['endpoints']:  
+        return jsonify(CACHE['endpoints']), 200
+    else:
+        return jsonify("Error retrieving model endpoints metadata.", 400)
 
 
 @app.get("/health")
 async def health():
     return "ok", 200
 
-
-async def fetch_seed_json():
+    
+async def fetch_json(repo_URL, key, file_path):
     """
-    Fetches JSON document of all seed data from Nachet-Data and caches it
+    Fetches JSON document from a GitHub repository and caches it
     """
-    global SEED_CACHE
     try:
-        all_seeds_json_url = os.path.join(NACHET_DATA, "seeds/all.json")
-        with urllib.request.urlopen(all_seeds_json_url) as response:
+        json_url = os.path.join(repo_URL, file_path)
+        with urllib.request.urlopen(json_url) as response:
             result = response.read()
             result_json = json.loads(result.decode("utf-8"))
-            SEED_CACHE = result_json
+            CACHE[key] = result_json
     except urllib.error.HTTPError as error:
         return jsonify({"error": f"Failed to retrieve the JSON. \
                         HTTP Status Code: {error.code}"}), 400
@@ -259,7 +273,8 @@ async def fetch_seed_json():
 
 @app.before_serving
 async def before_serving():
-    await fetch_seed_json()
+    await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
+    await fetch_json(NACHET_MODEL, 'endpoints', 'model_endpoints_metadata.json')
 
 
 if __name__ == "__main__":
