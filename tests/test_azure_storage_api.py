@@ -14,20 +14,15 @@ import asyncio
 class TestMountContainerFunction(unittest.TestCase):
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_mount_existing_container(self, MockFromConnectionString):
-
         # mock the client container
         mock_container_client = Mock()
         mock_container_client.exists.return_value = True
-
-        # Mock the method that returns the blob_list
-        mock_blobs = [Mock(), Mock(), Mock()]
-        mock_container_client.list_blobs.return_value = iter(mock_blobs)
-
         # mock the blob service client
         mock_blob_service_client = MockFromConnectionString.return_value
         mock_blob_service_client.get_container_client.return_value = (
             mock_container_client
         )
+
         connection_string = "test_connection_string"
         container_name = "testcontainer"
 
@@ -41,7 +36,6 @@ class TestMountContainerFunction(unittest.TestCase):
 
         self.assertEqual(result, mock_container_client)
 
-
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_mount_nonexisting_container_create(self, MockFromConnectionString):
         """
@@ -51,10 +45,6 @@ class TestMountContainerFunction(unittest.TestCase):
         # mock the client container and blob service client
         mock_container_client = Mock()
         mock_container_client.exists.return_value = False
-
-        # Mock the method that returns the blob_list
-        mock_blobs = [Mock(), Mock(), Mock()]
-        mock_container_client.list_blobs.return_value = mock_blobs  # Return the list directly
 
         mock_blob_service_client = MockFromConnectionString.return_value
         mock_blob_service_client.get_container_client.return_value = (
@@ -82,7 +72,6 @@ class TestMountContainerFunction(unittest.TestCase):
         )
         print(result == mock_new_container_client)
         self.assertEqual(result, mock_new_container_client)
-
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_mount_nonexisting_container_no_create(self, MockFromConnectionString):
