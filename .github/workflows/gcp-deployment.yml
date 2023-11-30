@@ -1,0 +1,31 @@
+name: Docker GCP deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  lint-test:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
+    secrets: inherit
+
+  build:
+    if: github.ref == 'refs/heads/main'
+    needs: lint-test
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-build-container.yml@main
+    with:
+      container-name: ${{ github.event.repository.name }}
+      tag: ${{ github.sha }}
+    secrets: inherit
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-deploy-gcp.yml@main
+    with:
+      container-name: ${{ github.event.repository.name }}
+      tag: ${{ github.sha }}
+    secrets: inherit
