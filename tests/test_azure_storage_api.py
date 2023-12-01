@@ -12,6 +12,16 @@ import asyncio
 
 
 class TestMountContainerFunction(unittest.TestCase):
+
+    def setUp(self):
+        # Set up a new event loop for each test
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        # Close the event loop after each test
+        self.loop.close()
+
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_mount_existing_container(self, MockFromConnectionString):
         # mock the client container
@@ -26,9 +36,8 @@ class TestMountContainerFunction(unittest.TestCase):
         connection_string = "test_connection_string"
         container_name = "testcontainer"
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
+
+        result = self.loop.run_until_complete(
             mount_container(connection_string, container_name)
         )
 
@@ -37,41 +46,43 @@ class TestMountContainerFunction(unittest.TestCase):
         self.assertEqual(result, mock_container_client)
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_mount_nonexisting_container_create(self, MockFromConnectionString):
-        """
-        tests when a container does not exists and create_container flag is set to True,
-        should create a new container and return the container client
-        """
-        # mock the client container and blob service client
+    @patch("azure_storage.azure_storage_api.get_directories")
+    def test_mount_nonexisting_container_create(self, mock_get_directories, MockFromConnectionString):
+        # Mock the BlobServiceClient
+        mock_blob_service_client = MockFromConnectionString.return_value
+
+        # Mock the container client
         mock_container_client = Mock()
         mock_container_client.exists.return_value = False
 
-        mock_blob_service_client = MockFromConnectionString.return_value
-        mock_blob_service_client.get_container_client.return_value = (
-            mock_container_client
-        )
+        # Set the return value for get_container_client
+        mock_blob_service_client.get_container_client.return_value = mock_container_client
 
         # Simulate that a new container is created
         mock_new_container_client = Mock()
-        mock_blob_service_client.create_container.return_value = (
-            mock_new_container_client
-        )
+        mock_blob_service_client.create_container.return_value = mock_new_container_client
 
+        # Mock get_directories to return an empty dictionary
+        mock_get_directories.return_value = {}
+
+        # Test setup
         connection_string = "test_connection_string"
         container_name = "testcontainer"
         expected_container_name = "user-{}".format(container_name)
 
+        # Run the test
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            mount_container(connection_string, container_name, create_container=True)
-        )
+        try:
+            result = loop.run_until_complete(
+                mount_container(connection_string, container_name, create_container=True)
+            )
+            self.assertEqual(result, mock_new_container_client)
+            mock_blob_service_client.create_container.assert_called_once_with(expected_container_name)
+        finally:
+            loop.close()
 
-        mock_blob_service_client.create_container.assert_called_once_with(
-            expected_container_name
-        )
-        print(result == mock_new_container_client)
-        self.assertEqual(result, mock_new_container_client)
+
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_mount_nonexisting_container_no_create(self, MockFromConnectionString):
@@ -98,6 +109,13 @@ class TestMountContainerFunction(unittest.TestCase):
 
 
 class TestGetBlob(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_blob_successful(self, MockFromConnectionString):
         mock_blob_name = "test_blob"
@@ -112,13 +130,10 @@ class TestGetBlob(unittest.TestCase):
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
+        # Use the event loop set up in setUp
+        result = self.loop.run_until_complete(
             get_blob(mock_container_client, mock_blob_name)
         )
-
-        print(result == mock_blob_content)
 
         self.assertEqual(result, mock_blob_content)
 
@@ -135,13 +150,10 @@ class TestGetBlob(unittest.TestCase):
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
+        # Use the event loop set up in setUp
+        result = self.loop.run_until_complete(
             get_blob(mock_container_client, "nonexisting_blob")
         )
-
-        print(result is False)
 
         self.assertEqual(result, False)
 
