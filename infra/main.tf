@@ -82,7 +82,7 @@ resource "azurerm_linux_web_app" "nachet-web-app" {
     application_stack {
       docker_image_name        = "nachet-backend:latest"
       docker_registry_url      = "https://${azurerm_container_registry.nachet-registry.login_server}"
-      docker_registry_username = "registryNachet"
+      docker_registry_username = "aciacfiaregistry"
       docker_registry_password = var.docker_registry_password
     }
 
