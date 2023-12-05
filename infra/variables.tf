@@ -17,3 +17,11 @@ variable "tenant_id" {
 variable "docker_registry_password" {
   type = string
 }
+
+variable "cloud_organization" {
+    type = string
+}
+
+variable "cloud_workspaces" {
+    type = string
+}

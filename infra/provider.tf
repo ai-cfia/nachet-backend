@@ -7,10 +7,10 @@ terraform {
   }
 
   cloud {
-    organization = "ACIA-CFIA"
+    organization = var.cloud_organization
 
     workspaces {
-      name = "nachet"
+      name = var.cloud_workspaces
     }
   }
 }
