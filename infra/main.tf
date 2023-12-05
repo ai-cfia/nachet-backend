@@ -1,10 +1,10 @@
 resource "azurerm_resource_group" "nachet-resources-group" {
-  name     = "nachet"
+  name     = "nachet-rg"
   location = "canadacentral"
 }
 
 resource "azurerm_container_registry" "nachet-registry" {
-  name                = "registryNachet"
+  name                = "aciacfiaregistry"
   resource_group_name = azurerm_resource_group.nachet-resources-group.name
   location            = azurerm_resource_group.nachet-resources-group.location
   sku                 = "Basic"
@@ -12,7 +12,7 @@ resource "azurerm_container_registry" "nachet-registry" {
 }
 
 resource "azurerm_storage_account" "nachet-storage-account" {
-  name                     = "nachetstaorageaccount"
+  name                     = "nachetstorageaccount"
   resource_group_name      = azurerm_resource_group.nachet-resources-group.name
   location                 = azurerm_resource_group.nachet-resources-group.location
   account_tier             = "Standard"
