@@ -10,7 +10,7 @@ terraform {
     organization = var.cloud_organization
 
     workspaces {
-      name = var.cloud_workspaces
+      name = "nachet"
     }
   }
 }

@@ -22,6 +22,3 @@ variable "cloud_organization" {
     type = string
 }
 
-variable "cloud_workspaces" {
-    type = string
-}
