@@ -18,12 +18,12 @@ from custom_exceptions import (
 
 load_dotenv()
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
-connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
+NACHET_AZURE_STORAGE_CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 endpoint_url_regex = r"^https://.*\/score$"
-endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
+NACHET_MODEL_ENDPOINT_REST_URL = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
 
-endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+NACHET_MODEL_ENDPOINT_ACCESS_KEY = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
@@ -34,20 +34,20 @@ CACHE = {
 }
 
 # Check: do environment variables exist?
-if connection_string is None:
+if NACHET_AZURE_STORAGE_CONNECTION_STRING is None:
     raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
-if endpoint_url is None:
+if NACHET_MODEL_ENDPOINT_REST_URL is None:
     raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
 
-if endpoint_api_key is None:
+if NACHET_MODEL_ENDPOINT_ACCESS_KEY is None:
     raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 # Check: are environment variables correct? 
-if not bool(re.match(connection_string_regex, connection_string)):
+if not bool(re.match(connection_string_regex, NACHET_AZURE_STORAGE_CONNECTION_STRING)):
     raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
-if not bool(re.match(endpoint_url_regex, endpoint_url)):
+if not bool(re.match(endpoint_url_regex, NACHET_MODEL_ENDPOINT_REST_URL)):
     raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 app = Quart(__name__)
@@ -60,7 +60,7 @@ async def delete_directory():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string: str = NACHET_AZURE_STORAGE_CONNECTION_STRING
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
@@ -96,7 +96,7 @@ async def list_directories():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string: str = NACHET_AZURE_STORAGE_CONNECTION_STRING
         container_name = data["container_name"]
         if container_name:
             container_client = await azure_storage_api.mount_container(
@@ -119,7 +119,7 @@ async def create_directory():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string: str = NACHET_AZURE_STORAGE_CONNECTION_STRING
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
@@ -144,12 +144,15 @@ async def create_directory():
 @app.post("/inf")
 async def inference_request():
     """
-    performs inference on an image, and returns the results.
-    The image and inference results uploaded to a folder in the user's container.
+    performs inference on an image, and returns the results. The image and
+    inference results uploaded to a folder in the user's container.
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
+        #Testing
+        data["multi_call"] = False
+        
+        connection_string: str = NACHET_AZURE_STORAGE_CONNECTION_STRING
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
@@ -175,38 +178,43 @@ async def inference_request():
             }
             # encode the data as json to be sent to the model endpoint
             body = str.encode(json.dumps(data))
-            endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
-            endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": ("Bearer " + endpoint_api_key),
-            }
-            # send the request to the model endpoint
-            req = urllib.request.Request(endpoint_url, body, headers)
-            try:
-                # get the response from the model endpoint
-                response = urllib.request.urlopen(req)
-                result = response.read()
-                result_json = json.loads(result.decode("utf-8"))
-                # process the inference results
-                processed_result_json = await inference.process_inference_results(
-                    result_json, imageDims
-                )
-                # upload the inference results to the user's container as async task
-                result_json_string = json.dumps(processed_result_json)
-                app.add_background_task(
-                    azure_storage_api.upload_inference_result,
-                    container_client,
-                    folder_name,
-                    result_json_string,
-                    hash_value,
-                )
-                # return the inference results to the client
-                return jsonify(processed_result_json), 200
 
-            except urllib.error.HTTPError as error:
-                print(error)
-                return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
+            if data["multi_call"]:
+                pass
+            else:
+                endpoint_url = NACHET_MODEL_ENDPOINT_REST_URL
+                endpoint_api_key = NACHET_MODEL_ENDPOINT_ACCESS_KEY
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": ("Bearer " + endpoint_api_key),
+                }
+                # send the request to the model endpoint
+                req = urllib.request.Request(endpoint_url, body, headers)
+                try:
+                    # get the response from the model endpoint
+                    response = urllib.request.urlopen(req)
+                    result = response.read()
+                    result_json = json.loads(result.decode("utf-8"))
+                    # process the inference results
+                    processed_result_json = await inference.process_inference_results(
+                        result_json, imageDims
+                    )
+                    # upload the inference results to the user's container as
+                    # async task
+                    result_json_string = json.dumps(processed_result_json)
+                    app.add_background_task(
+                        azure_storage_api.upload_inference_result,
+                        container_client,
+                        folder_name,
+                        result_json_string,
+                        hash_value,
+                    )
+                    # return the inference results to the client
+                    return jsonify(processed_result_json), 200
+
+                except urllib.error.HTTPError as error:
+                    print(error)
+                    return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
         else:
             return jsonify(["missing request arguments"]), 400
 

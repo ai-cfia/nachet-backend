@@ -71,17 +71,11 @@ class TestMountContainerFunction(unittest.TestCase):
         expected_container_name = "user-{}".format(container_name)
 
         # Run the test
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            result = loop.run_until_complete(
-                mount_container(connection_string, container_name, create_container=True)
-            )
-            self.assertEqual(result, mock_new_container_client)
-            mock_blob_service_client.create_container.assert_called_once_with(expected_container_name)
-        finally:
-            loop.close()
-
+        result = self.loop.run_until_complete(
+            mount_container(connection_string, container_name, create_container=True)
+        )
+        self.assertEqual(result, mock_new_container_client)
+        mock_blob_service_client.create_container.assert_called_once_with(expected_container_name)
 
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
@@ -97,9 +91,7 @@ class TestMountContainerFunction(unittest.TestCase):
         connection_string = "test_connection_string"
         container_name = "testcontainer"
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
+        result = self.loop.run_until_complete(
             mount_container(connection_string, container_name, create_container=False)
         )
 

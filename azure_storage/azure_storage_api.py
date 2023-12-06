@@ -217,7 +217,6 @@ async def get_directories(container_client):
     try:
         directories = {}
         blob_list = container_client.list_blobs()
-        print("PLEASE: ", blob_list)
         for blob in blob_list:
             if (
                 blob.name.split(".")[-1] == "json"
