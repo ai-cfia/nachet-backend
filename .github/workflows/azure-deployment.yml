@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-azure.yml@main
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-azure.yml@55-azure-workflow-deployment-missing
     with:
       container-name: ${{ github.event.repository.name }}
       tag: ${{ github.sha }}
