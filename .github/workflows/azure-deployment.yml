@@ -1,0 +1,27 @@
+name: Docker Azure deployment
+
+on:
+  push:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  lint-test:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
+    secrets: inherit
+
+  build:
+    needs: lint-test
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-azure.yml@main
+    with:
+      container-name: ${{ github.event.repository.name }}
+      tag: ${{ github.sha }}
+    secrets: inherit
+
+  deploy:
+    needs: build
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-deploy-azure.yml@55-azure-workflow-deployment-missing
+    with:
+        container-name: ${{ github.event.repository.name }}
+        tag: ${{ github.sha }}
+    secrets: inherit
