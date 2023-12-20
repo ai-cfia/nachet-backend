@@ -31,7 +31,6 @@ def post_request(MICROSCOPE_URL, method, params, headers):
 
     try:
         resp = requests.post(url, data=data, headers=headers)
-        print(resp.text)
         return resp.json()
     except OpenApiError as e:
         print(f"Request Error: {e}")
