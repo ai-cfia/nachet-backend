@@ -1,6 +1,10 @@
 import json
 import requests
 from custom_exceptions import OpenApiError
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 methods = [
     "getVersion",       # Returns microscope version
@@ -12,12 +16,12 @@ methods = [
     "getSharpness"      # Returns position of the Sharpness slider
 ]
 
-api_url = "http://192.168.0.101/"
+MICROSCOPE_URL = os.getenv("MICROSCOPE_URL")
 params = {"id": 6969}
 headers = {'Content-Type': 'application/json'}
 
-def post_request(api_url, method, params, headers):
-    url = f"{api_url}?jsonrpc=2.0&method={method}&id={params['id']}"
+def post_request(MICROSCOPE_URL, method, params, headers):
+    url = f"{MICROSCOPE_URL}?jsonrpc=2.0&method={method}&id={params['id']}"
 
     data = json.dumps({
         "jsonrpc": "2.0",
@@ -42,7 +46,7 @@ def is_hex(s):
 def get_microscope_configuration():
     config = {}
     for method in methods:
-        resp = post_request(api_url, method, params, headers)
+        resp = post_request(MICROSCOPE_URL, method, params, headers)
         result = resp["result"]
 
         # Check if the response is in hexadecimal and convert it
