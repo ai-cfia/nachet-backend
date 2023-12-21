@@ -7,9 +7,12 @@ from azure_storage.azure_storage_api import (
 from custom_exceptions import (
     GetBlobError,
 )
-
+import app
 import asyncio
-
+from quart.testing import QuartClient
+import json
+import base64
+import os
 
 class TestMountContainerFunction(unittest.TestCase):
 
@@ -148,6 +151,42 @@ class TestGetBlob(unittest.TestCase):
         )
 
         self.assertEqual(result, False)
+
+class TestInferenceRequest(unittest.TestCase):
+    def setUp(self):
+        self.app = app.app
+        self.client = QuartClient(self.app)
+
+    def test_valid_inference_request(self):
+        asyncio.run(self.async_test_valid_inference_request())
+
+    async def async_test_valid_inference_request(self):
+        current_dir = os.path.dirname(__file__)
+        image_path = os.path.join(current_dir, '1310_1.png')
+
+        with open(image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+
+        with patch('urllib.request.urlopen') as mock_urlopen:
+            # Mock the response from the model endpoint
+            mock_response = Mock()
+            inference_result = {'result': 'inference_result'}
+            mock_response.read.return_value = json.dumps(inference_result).encode()
+            mock_urlopen.return_value = mock_response
+
+            # Define a valid request payload with a properly formatted and valid base64 image string
+            valid_payload = {
+                'folder_name': 'test_folder',
+                'container_name': 'test_container',
+                'imageDims': [100, 100],
+                'image': 'data:image/png;base64,' + encoded_string
+            }
+
+            # Send a POST request to the inference endpoint
+            response = await self.client.post('/inf', json=valid_payload)
+            response_json = await response.get_json()
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('inference_result', response_json)
 
 
 if __name__ == "__main__":
