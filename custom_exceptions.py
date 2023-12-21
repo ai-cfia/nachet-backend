@@ -65,5 +65,6 @@ class ValidateEnvVariablesError(Exception):
 class ServerError(Exception):
     pass
 
-class OpenApiError(Exception):
+
+class MicroscopeQueryError(Exception):
     pass
