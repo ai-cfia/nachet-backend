@@ -3,12 +3,13 @@ import json
 import uuid
 import logging
 import requests
-from custom_exceptions import MicroscopeQueryError
 from dotenv import load_dotenv
+from custom_exceptions import MicroscopeQueryError
 
 load_dotenv()
 
-METHODS = os.getenv("METHODS")
+methods_str  = os.getenv("METHODS", "[]")
+METHODS = json.loads(methods_str)
 MICROSCOPE_URL = os.getenv("MICROSCOPE_URL")
 params = {"id": int(uuid.uuid4())}
 HEADERS = {'Content-Type': 'application/json'}
@@ -28,7 +29,7 @@ def post_request(MICROSCOPE_URL, method, params, headers=HEADERS):
         return resp.json()
     except requests.RequestException as e:
         logging.error(f"Request Error: {e}")
-        raise MicroscopeQueryError(f"OpenApiError: {e}") from e
+        raise MicroscopeQueryError(f"MicroscopeQueryError: {e}") from e
 
 def is_hex(s):
     try:
@@ -40,14 +41,19 @@ def is_hex(s):
 def get_microscope_configuration(METHODS):
     config = {}
     for method in METHODS:
-        resp = post_request(MICROSCOPE_URL, method, params, HEADERS)
-        result = resp["result"]
+        try:
+            resp = post_request(MICROSCOPE_URL, method, params, HEADERS)
+            result = resp["result"]
 
-        # Check if the response is in hexadecimal and convert it
-        if isinstance(result, str) and is_hex(result):
-            result = int(result, 16)
+            # Check if the response is in hexadecimal and convert it
+            if isinstance(result, str) and is_hex(result):
+                result = int(result, 16)
 
-        config[method] = result
+            config[method] = result
+            
+        except MicroscopeQueryError as mqe:
+            config[method] = None
+            logging.error(f"MicroscopeQueryError: {mqe}")
 
     return config
 
