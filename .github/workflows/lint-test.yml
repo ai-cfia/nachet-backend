@@ -1,0 +1,13 @@
+name: Lint test
+
+on: 
+  pull_request:
+    types:
+      - opened
+      - closed
+      - synchronize
+
+jobs:
+  lint-test:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
+    secrets: inherit
