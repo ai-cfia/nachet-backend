@@ -1,4 +1,4 @@
-name: Markdown check
+name: Workflows
 
 on: 
   pull_request:
@@ -8,10 +8,18 @@ on:
       - synchronize
 
 jobs:
+  lint-test:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
+    secrets: inherit
+
   markdown-check:
     uses: ai-cfia/github-workflows/.github/workflows/workflow-markdown-check.yml@main
     with:
       config-file-path: '.mlc_config.json'
+    secrets: inherit
+
+  repo-standard:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-repo-standards-validation.yml@main
     secrets: inherit
 
   build-deploy:
