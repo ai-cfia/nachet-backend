@@ -2,10 +2,15 @@ FROM python:3
 
 WORKDIR /app
 
-ENV QUART_APP=app.py
-ENV QUART_ENV=development
-ENV PYTHONUNBUFFERED True
-ENV PYTHONPATH=/app
+ARG ARG_QUART_APP
+ARG ARG_QUART_ENV
+ARG ARG_PYTHONUNBUFFERED
+ARG ARG_PYTHONPATH
+
+ENV QUART_APP=${ARG_QUART_APP:-app.py}
+ENV QUART_ENV=${ARG_QUART_ENV:-development}
+ENV PYTHONUNBUFFERED=${ARG_PYTHONUNBUFFERED:-True}
+ENV PYTHONPATH=${ARG_PYTHONPATH:-/app}
 
 COPY ./requirements.txt .
 
@@ -13,4 +18,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . ./
 
-CMD hypercorn -b :$PORT app:app
+CMD hypercorn -b :8080 app:app
