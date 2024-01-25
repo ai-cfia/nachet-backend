@@ -18,21 +18,21 @@ framework
 ### RUNNING NACHET-BACKEND FROM DEVCONTAINER
 When you are developping, you can run the program while in the devcontainer
 by using this command:
-```
+```bash
 hypercorn -b :8080 app:app
 ```
 
 ### RUNNING NACHET-BACKEND AS A DOCKER CONTAINER
 If you want to run the program as a Docker container (e.g., for production),
 use:
-```
+```bash
 docker build -t nachet-backend .
 docker run -p 8080:8080 -v $(pwd):/app nachet-backend
 ```
 
 ### TESTING NACHET-BACKEND
 To test the program, use this command:
-```
+```bash
 python -m unittest discover -s tests
 ```
 
