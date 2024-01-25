@@ -9,7 +9,7 @@
 framework
 - Quart is an asyncio reimplementation of Flask
 - All HTTP requests are handled in `app.py` in the root folder
-- Azure Storage API calls are handled in the `azure_storage_api/azure_Storage_api.py
+- Azure Storage API calls are handled in the `azure_storage_api/azure_Storage_api.py`
 - Inference results from model endpoint are directly handled in
 `model_inference/inference.py`
 
