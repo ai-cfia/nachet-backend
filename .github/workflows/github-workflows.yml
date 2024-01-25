@@ -12,6 +12,7 @@ jobs:
     uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
     secrets: inherit
 
+
   markdown-check:
     uses: ai-cfia/github-workflows/.github/workflows/workflow-markdown-check.yml@71-fix-every-workflow-inside-this-repository-and-make-sure-nachet-finesse-and-infra-have-the-right-workflow
     with:
