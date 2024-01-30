@@ -1,0 +1,112 @@
+# Inference Request with n pipelines
+
+## Glossary
+
+### Pipelines
+Pipelines are define as a set of models that follow each others where output of
+one model is used as input for the next models. A pipeline contains from 1 to n
+models.
+
+```mermaid
+flowchart LR
+
+A{Pipeline entry point}-->|user input|SB1-->F{Pipeline exit point}-->|"last model
+output"|G>"return
+result.json to user"]
+
+subgraph SB1[In pipeline]
+    direction TB
+
+    B(model 01)-->|"model output
+    send to the next one"|C(model 02)-->|can have n models|D(n models)
+
+end
+```
+
+### Models
+A model is a AI model who's part of a pipeline. A model accept images as input
+and return json as output. Generally json contains coordinate of object in the
+source image, that he may prompt out to feed the next step of the model.
+
+
+### Model from Frontend
+On the frontend interface, a pipeline will be call a model, since the user will
+not be aware of the difference. From the user perspective, he sent data to a
+model and receive the result.
+
+*Suggestion: we could call the pipeline a method, if we don't want to mix term.*
+
+# Sequence Diagram for inference request
+
+```mermaid
+sequenceDiagram
+
+    actor Client
+    participant Frontend
+    participant Backend
+    participant Blob storage
+    participant Model
+
+    Note over Backend,Blob storage: initialisation
+    Backend-)Backend: before_serving()
+    Backend-)Backend: get_pipelines_models()
+    alt
+    Backend-)Blob storage: HTTP POST req.
+    Blob storage--)Backend: return pipelines_models.json
+    else
+    Backend-)Frontend: error 400 No pipeline found
+    end
+    Note over Backend,Blob storage: end of initialisation
+   
+    Client->>Frontend: applicationStart()
+    Frontend-)Backend: HTTP POST req.
+    Backend-)Backend: get_pipelines_names()
+    Backend--)Frontend: Pipelines names res.
+    Note left of Backend: return pipelines names and metadata
+
+    Frontend->>Client: application is ready
+    Client-->>Frontend: client ask action from specific pipeline
+    Frontend-)Backend: HTTP POST req.
+    Backend-)Backend: inference_request(pipeline_name, folder_name, container_name, imageDims, image)
+    alt missing argument
+        Backend--)Frontend: Error 400 missing arguments
+    else no missing argument
+        Backend-)Backend: mount_container(connection_string(Environnement Variable, container_name))
+        Backend-)Blob storage: HTTP POST req.
+        Blob storage--)Backend: container_client
+        
+        Backend-)Backend: upload_image(container_client, folder_name, image_bytes, hash_value)
+        Backend-)Blob storage: HTTP POST req.
+        Blob storage--)Backend: blob_name
+
+        Backend-)Backend: get_blob(container_client, blob_name)
+        Backend-)Blob storage: HTTP POST req.
+        Blob storage--)Backend: blob
+
+        loop for every model in pipeline
+            note over Backend, Blob storage: Header construction
+            Note over Backend,Blob storage: {"Content-Type": "application/json", <br>"Authorization": ("Bearer " + endpoint_api_key),}
+            Backend-)Backend: urllib.request.Request(endpoint_url, body, header)
+            Backend-)Model: HTTP POST req.
+            Model--)Backend: Result res.
+            alt next model is not None
+                note over Backend, Blob storage: restart the loop process
+                Backend-)Backend: record_result(model, result)
+                Backend-)Blob storage: HTTP POST req.
+                note over Backend, Blob storage: record the result produced by the model
+
+            end
+        end
+        
+        par Backend to Frontend
+            Backend-)Backend: inference.process_inference_results(data, imageDims)
+            Backend--)Frontend: Processed result res.
+        and Backend to Blob storage
+            Backend-)Backend: upload_inference_result(container_client, folder_name, result_json_string, hash_value)
+            Backend-)Blob storage: HTTP POST req.
+        end
+    end
+    Frontend--)Client: display result
+```
+
+![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
