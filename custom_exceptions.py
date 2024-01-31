@@ -68,3 +68,7 @@ class ServerError(Exception):
 
 class MicroscopeQueryError(Exception):
     pass
+
+
+class ExifNonPresentError(Exception):
+    pass
