@@ -3,13 +3,13 @@
 ## Main objective for milestones 1
 The main objective of the Tagarno API integration is to be able to retrieve data
 from the image taken by the microscope to build a trust threshold. For example,
-we want to build confidence level base on the condition and configuration a
+we want to build confidence level, base on the condition and configuration a
 picture was taken. Having data on this will help build a confidence level in
 Nachet prediction.
 
 ### Opportunity Tagarno API
 ---
-Tagarno is offering an API to work with that can retrieve and set the config of
+Tagarno is offering an API that can retrieve and set the config of
 the microscope. However, there is no function that return all the config at
 once.
 
@@ -17,6 +17,7 @@ once.
 documentation](https://t6x6f6w2.rocketcdn.me/wp-content/uploads/2022/12/TAGARNO-Microscope-API-Documentation.pdf)
 
 ### Opportunity Picture Properties
+---
 
 When a picture is taken, a lot of metadata is record. See
 [exif](#exif-information-in-image) for more.
@@ -74,6 +75,7 @@ able to only call specific Tagarno function to get a full configuration dataset.
 |executeWhiteBalanceCalibration|None|Execute white balance calibration|
 
 ### Exif information in Image
+---
 
 #### What is exif?
 Exif (Exchangeable image file format) a standard that specifies formats for
@@ -85,3 +87,6 @@ This format record information that is present in the property of a picture
 under details.
 
 ### Test
+- [ ] Validate that Tagarno image produce exif metadata
+- [ ] Validate that image coming from frontend also produced exif metadata
+- [ ] 
