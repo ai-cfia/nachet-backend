@@ -9,9 +9,8 @@ Nachet prediction.
 
 ### Opportunity Tagarno API
 ---
-Tagarno is offering an API that can retrieve and set the config of
-the microscope. However, there is no function that return all the config at
-once.
+Tagarno is offering an API that can retrieve and set the config of the
+microscope. However, there is no function that return all the config at once.
 
 [Tagarno API
 documentation](https://t6x6f6w2.rocketcdn.me/wp-content/uploads/2022/12/TAGARNO-Microscope-API-Documentation.pdf)
@@ -86,7 +85,33 @@ by digital cameras. [Wikipédia](https://en.wikipedia.org/wiki/Exif)
 This format record information that is present in the property of a picture
 under details.
 
-### Test
+### List of validation
+---
 - [ ] Validate that Tagarno image produce exif metadata
 - [ ] Validate that image coming from frontend also produced exif metadata
-- [ ] 
+- [ ] Find another way to collect metadata from image if they don't recorded
+  exif
+- [ ] Incorporate tiff tag into the functionnality since Tagarno image are .tiff
+  extension
+- [ ] Waiting for Jack to return email on API
+
+### get exif function
+```mermaid
+sequenceDiagram
+    actor Client
+    participant Frontend
+    participant Backend
+    participant Microscope Modul
+    participant Blob Storage
+
+    Client-)Frontend: Upload picture
+    Frontend-)Backend: HTTP POST req.
+    Backend-)Backend: inference_request()
+    note over Backend, Blob Storage: While in inference call <br> see inference doc
+    Backend-)Microscope Modul: get_picture_details(data)
+    note over Backend, Microscope Modul: Need to validate what data is pass <br> to the function image or path ?
+    Microscope Modul-)Backend: return exif_dict
+    Backend-)Blob Storage: HTTP POST req.
+    note over Backend, Blob Storage: Storing metadata and image path with the rest of the inference result
+
+```
