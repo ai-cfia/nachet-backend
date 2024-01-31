@@ -3,8 +3,9 @@ import json
 import uuid
 import logging
 import requests
+from PIL import Image, ExifTags
 from dotenv import load_dotenv
-from custom_exceptions import MicroscopeQueryError
+from custom_exceptions import MicroscopeQueryError, ExifNonPresentError
 
 load_dotenv()
 
@@ -15,6 +16,16 @@ params = {"id": int(uuid.uuid4())}
 HEADERS = {'Content-Type': 'application/json'}
 
 def post_request(MICROSCOPE_URL, method, params, headers=HEADERS):
+    '''
+    This method call Tagarno's API with a specific function and return the result.
+
+    :param: MICROSCOPE_URL str
+    :param: method str
+    :param: params list
+    :param: headers dict
+
+    :return: json response
+    '''
     url = f"{MICROSCOPE_URL}?jsonrpc=2.0&method={method}&id={params['id']}"
 
     data = json.dumps({
@@ -32,6 +43,11 @@ def post_request(MICROSCOPE_URL, method, params, headers=HEADERS):
         raise MicroscopeQueryError(f"MicroscopeQueryError: {e}") from e
 
 def is_hex(s):
+    '''
+    Validate if a value is hexadecimal
+
+    :return: bool True or False    
+    '''
     try:
         int(s, 16)
         return True
@@ -39,6 +55,13 @@ def is_hex(s):
         return False
 
 def get_microscope_configuration(METHODS):
+    '''
+    This method return the actual config of the Tagarno microscope.
+
+    :param: METHODES list
+
+    :return: config dict
+    '''
     config = {}
     for method in METHODS:
         try:
@@ -56,6 +79,19 @@ def get_microscope_configuration(METHODS):
             logging.error(f"MicroscopeQueryError: {mqe}")
 
     return config
+
+
+def get_picture_details(path:str) -> dict:
+    # Source 1 : https://thepythoncode.com/article/extracting-image-metadata-in-python
+    # Source 2 : https://www.geeksforgeeks.org/how-to-extract-image-metadata-in-python/
+    '''
+    Retrieve exif details from picture.
+    '''
+    img = Image.open(path)
+
+    full_exif = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
+    return full_exif
+   
 
 
 if __name__ == "__main__":
