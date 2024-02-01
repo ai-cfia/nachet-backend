@@ -3,8 +3,8 @@
 ## Glossary
 
 ### Pipelines
-Pipelines are define as a set of models that follow each others where output of
-one model is used as input for the next models. A pipeline contains from 1 to n
+Pipelines are defined as a set of models that follow each other, where the output of
+one model is used as input for the next models, and so on. A pipeline contains from 1 to n
 models.
 
 ```mermaid
@@ -24,14 +24,14 @@ end
 ```
 
 ### Models
-A model is a AI model who's part of a pipeline. A model accept images as input
-and return json as output. Generally json contains coordinate of object in the
-source image, that he may prompt out to feed the next step of the model.
+A model is an AI model who is a part of a pipeline. A model accepts images as input
+and returns JSON as output. Generally, this JSON contains the coordinates of objects in the
+source image, that the model may pass along to feed the next step of the pipeline.
 
 
 ### Model from Frontend
-On the frontend interface, a pipeline will be call a model, since the user will
-not be aware of the difference. From the user perspective, he sent data to a
+On the frontend interface, a pipeline will be called a model, because the user will
+not be aware of the difference. From the user'S perspective, they sent data to a
 model and receive the result.
 
 *Suggestion: we could call the pipeline a method, if we don't want to mix term.*
