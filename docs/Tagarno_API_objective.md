@@ -87,19 +87,24 @@ under details.
 
 ### Potential issue
 ---
-We need to carefully exchange image. If a transformation occurs during the exchange process, exif information can be lost. Therefore, we need to valide if data follow the picture when it goes through the frontend to the backend.
+We need to carefully exchange image. If a transformation occurs during the
+exchange process, exif information can be lost. Therefore, we need to valide if
+data follow the picture when it goes through the frontend to the backend.
 
 ### List of validation
 ---
-- [ ] Validate that Tagarno image produce exif metadata
-- [ ] Validate that image coming from frontend also produced exif metadata
+- [ ] Validate that Tagarno image produce exif metadata 
+- [x] Validate that image coming from frontend also produced exif metadata :x:
 - [ ] Find another way to collect metadata from image if they don't recorded
   exif
-- [ ] Incorporate tiff tag into the functionnality since Tagarno image are .tiff
+- [ ] Incorporate TIFF tag into the functionnality since Tagarno image are .tiff
   extension
-- [x] Waiting for Jack to return email on API
+- [x] Waiting for Jack to return email on API :x:
 
 ### Return on validation
+
+#### Validate that Targano image produce exif metadata
+Ongoing
 
 #### Validate that image coming from frontend also produced exif metadata
 Nachet frontend send png image to be analyze by the pipelines(list of models).
@@ -111,6 +116,20 @@ can access exif data from there, or rewoke the capture picture functionnality to
 directly took a picture from the camera that is connected in JPG or TIFF format.
 As confirmed by Taran, TIFF format is used at the laboratory and was used to
 train our models.
+
+#### Find another way to collect metadata from image if they don't recorded
+Ongoing
+
+#### Incorporate TIFF tag into the functionnality since Tagarno image are .tiff
+Ongoing
+
+#### Waiting for Jack to return email on API
+It was confirm by Anders Ravnskjaer Pedersen (after Jake from Tagarno ask him)
+that there is no functionnality in the API that return all the microscope
+configuration at once.
+
+In the same email chain, Jill Gagnon confirm that we could not have an extension
+on our API trial. The invoice was forwaded by Ricky to Noureddine. 
 
 ### get exif function
 ```mermaid
