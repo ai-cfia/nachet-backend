@@ -1,4 +1,4 @@
-# Targano API Objective
+# Tagarno API Objective
 
 ## Main objective for milestones 1
 The main objective of the Tagarno API integration is to be able to retrieve data
@@ -85,6 +85,10 @@ by digital cameras. [Wikipédia](https://en.wikipedia.org/wiki/Exif)
 This format record information that is present in the property of a picture
 under details.
 
+### Potential issue
+---
+We need to carefully exchange image. If a transformation occurs during the exchange process, exif information can be lost. Therefore, we need to valide if data follow the picture when it goes through the frontend to the backend.
+
 ### List of validation
 ---
 - [ ] Validate that Tagarno image produce exif metadata
@@ -93,7 +97,20 @@ under details.
   exif
 - [ ] Incorporate tiff tag into the functionnality since Tagarno image are .tiff
   extension
-- [ ] Waiting for Jack to return email on API
+- [x] Waiting for Jack to return email on API
+
+### Return on validation
+
+#### Validate that image coming from frontend also produced exif metadata
+Nachet frontend send png image to be analyze by the pipelines(list of models).
+Therefore, no metadata seems to be taken since PNG file doesn't store exif
+information. [png_documentation](https://www.w3.org/TR/png/#11Chunks)
+
+Since we ask the user if we can use is camera, we could explore how the frontend
+can access exif data from there, or rewoke the capture picture functionnality to
+directly took a picture from the camera that is connected in JPG or TIFF format.
+As confirmed by Taran, TIFF format is used at the laboratory and was used to
+train our models.
 
 ### get exif function
 ```mermaid
@@ -113,5 +130,4 @@ sequenceDiagram
     Microscope Modul-)Backend: return exif_dict
     Backend-)Blob Storage: HTTP POST req.
     note over Backend, Blob Storage: Storing metadata and image path with the rest of the inference result
-
 ```
