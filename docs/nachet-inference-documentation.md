@@ -1,5 +1,16 @@
 # Inference Request with n pipelines
 
+## Executive summary
+Following the objective of milestones 1, Nachet back end need to deploy a
+functionality to switch in between different model. However, a model can call
+another model for more accurate result. Therefore creating a pipeline of models.
+In order to not be mix in between terms, a glossary to explain what is a
+pipeline and what is model was needed.
+
+Since pipeline can have n models, the use of the blob storage as a temporarily
+solution to store all pipeline available was suggested.
+
+
 ## Glossary
 
 ### Pipelines
@@ -7,6 +18,7 @@ Pipelines are defined as a set of models that follow each other, where the outpu
 one model is used as input for the next models, and so on. A pipeline contains from 1 to n
 models.
 
+#### Pipelines flowchart 1.0.0
 ```mermaid
 flowchart LR
 
@@ -36,7 +48,7 @@ model and receive the result.
 
 *Suggestion: we could call the pipeline a method, if we don't want to mix term.*
 
-# Sequence Diagram for inference request
+# Sequence Diagram for inference request 1.0.0
 
 ```mermaid
 sequenceDiagram
