@@ -5,9 +5,9 @@
 Nachet interactive is building toward enhancing users effectiveness and
 experience detecting regulated seeds. In order to reach these goals, Nachet
 interactive is implementing different AI models to achieve specific tasks.
-Models can work together to improve result's accuracy. This document purpose is
-to provide design of the technical implementation of a multi-model
-functionality.
+Models can work together to improve result’s accuracy where output of one is
+used as input for the next one. This document purpose is to provide design of
+the technical implementation of a multi-model functionality.
 
 ## Glossary
 
