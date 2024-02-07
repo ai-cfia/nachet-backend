@@ -6,6 +6,8 @@ import re
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
+from PIL import Image
+import io
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
 from custom_exceptions import (
@@ -22,8 +24,12 @@ connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 endpoint_url_regex = r"^https://.*\/score$"
 endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
+swin_endpoint = os.getenv("NACHET_SWIN_ENDPOINT")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+swin_api_key = os.getenv("NACHET_SWIN_ACCESS_KEY")
+
+endpoints = [[endpoint_url, endpoint_api_key],[swin_endpoint, swin_api_key]]
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
@@ -149,13 +155,14 @@ async def inference_request():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
+        # connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
         if folder_name and container_name and imageDims and image_base64:
             header, encoded_data = image_base64.split(",", 1)
+            print(header)
             image_bytes = base64.b64decode(encoded_data)
             container_client = await azure_storage_api.mount_container(
                 connection_string, container_name, create_container=True
@@ -166,6 +173,7 @@ async def inference_request():
             )
             blob = await azure_storage_api.get_blob(container_client, blob_name)
             image_bytes = base64.b64encode(blob).decode("utf8")
+
             data = {
                 "input_data": {
                     "columns": ["image"],
@@ -173,21 +181,68 @@ async def inference_request():
                     "data": [image_bytes],
                 }
             }
+            #============================================================#
             # encode the data as json to be sent to the model endpoint
             body = str.encode(json.dumps(data))
-            endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
-            endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": ("Bearer " + endpoint_api_key),
-            }
-            # send the request to the model endpoint
-            req = urllib.request.Request(endpoint_url, body, headers)
+            
             try:
+                
+                endpoint_url, endpoint_api_key = endpoints[0]
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": ("Bearer " + endpoint_api_key),
+                }
+                # send the request to the model endpoint
+                req = urllib.request.Request(endpoint_url, body, headers)
                 # get the response from the model endpoint
                 response = urllib.request.urlopen(req)
                 result = response.read()
                 result_json = json.loads(result.decode("utf-8"))
+
+                # Cropping image and feed them to the next model
+
+                image_io_byte = io.BytesIO(base64.b64decode(image_bytes))
+                image_io_byte.seek(0)
+                image = Image.open(image_io_byte)
+
+                format = image.format
+
+                boxes = result_json[0]['boxes']
+
+                cropped_images = [bytes(0) for _ in boxes]
+
+                for i, box in enumerate(boxes):
+                    topX = int(box['box']['topX'] * image.width)
+                    topY = int(box['box']['topY'] * image.height)
+                    bottomX = int(box['box']['bottomX'] * image.width)
+                    bottomY = int(box['box']['bottomY'] * image.height)
+
+                    buffered = io.BytesIO()
+                    img = image.crop((topX, topY, bottomX, bottomY))
+                    
+                    img.save(buffered, format)
+                    cropped_images[i] = base64.b64encode(buffered.getvalue())
+    
+                # Second model call
+                    
+                endpoint, api_key = endpoints[1]
+                
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": ("Bearer " + api_key),
+                }
+
+                for idx, img_bytes in enumerate(cropped_images):
+                    req = urllib.request.Request(endpoint, img_bytes, headers)
+
+                    response = urllib.request.urlopen(req)
+                    result = response.read()
+                    test_result_json = json.loads(result.decode("utf-8"))
+
+                    print(idx)
+                
+            #=======================================================================#
+
                 # process the inference results
                 processed_result_json = await inference.process_inference_results(
                     result_json, imageDims
@@ -269,6 +324,11 @@ async def fetch_json(repo_URL, key, file_path):
                         HTTP Status Code: {error.code}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+async def data_factory(**kwargs):
+    return {
+        "input_data": kwargs,
+    }
     
 
 @app.before_serving
