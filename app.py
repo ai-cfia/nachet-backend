@@ -24,12 +24,14 @@ connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 endpoint_url_regex = r"^https://.*\/score$"
 endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
+sd_endpoint = os.getenv("NACHET_SEED_DETECTOR_ENDPOINT")
 swin_endpoint = os.getenv("NACHET_SWIN_ENDPOINT")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+sd_api_key = os.getenv("NACHET_SEED_DETECTOR_ACCESS_KEY")
 swin_api_key = os.getenv("NACHET_SWIN_ACCESS_KEY")
 
-endpoints = [[endpoint_url, endpoint_api_key],[swin_endpoint, swin_api_key]]
+endpoints = [[endpoint_url, endpoint_api_key],[sd_endpoint, sd_api_key],[swin_endpoint, swin_api_key]]
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
@@ -161,8 +163,7 @@ async def inference_request():
         imageDims = data["imageDims"]
         image_base64 = data["image"]
         if folder_name and container_name and imageDims and image_base64:
-            header, encoded_data = image_base64.split(",", 1)
-            print(header)
+            _, encoded_data = image_base64.split(",", 1)
             image_bytes = base64.b64decode(encoded_data)
             container_client = await azure_storage_api.mount_container(
                 connection_string, container_name, create_container=True
@@ -186,11 +187,11 @@ async def inference_request():
             body = str.encode(json.dumps(data))
             
             try:
-                
-                endpoint_url, endpoint_api_key = endpoints[0]
+                endpoint_url, endpoint_api_key = endpoints[1]
                 headers = {
                     "Content-Type": "application/json",
                     "Authorization": ("Bearer " + endpoint_api_key),
+                    'azureml-model-deployment': 'seed-detector-1'
                 }
                 # send the request to the model endpoint
                 req = urllib.request.Request(endpoint_url, body, headers)
@@ -225,7 +226,7 @@ async def inference_request():
     
                 # Second model call
                     
-                endpoint, api_key = endpoints[1]
+                endpoint, api_key = endpoints[2]
                 
                 headers = {
                     "Content-Type": "application/json",
@@ -237,9 +238,9 @@ async def inference_request():
 
                     response = urllib.request.urlopen(req)
                     result = response.read()
-                    test_result_json = json.loads(result.decode("utf-8"))
-
-                    print(idx)
+                    classification = json.loads(result.decode("utf-8"))
+                    result_json[0]['boxes'][idx]['label'] = classification[0].get('label')
+                    result_json[0]['boxes'][idx]['score'] = classification[0].get('score')
                 
             #=======================================================================#
 
