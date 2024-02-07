@@ -6,6 +6,8 @@ import re
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
+from PIL import Image
+import io
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
 from custom_exceptions import (
@@ -22,8 +24,18 @@ connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 endpoint_url_regex = r"^https://.*\/score$"
 endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
+sd_endpoint = os.getenv("NACHET_SEED_DETECTOR_ENDPOINT")
+swin_endpoint = os.getenv("NACHET_SWIN_ENDPOINT")
 
 endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+sd_api_key = os.getenv("NACHET_SEED_DETECTOR_ACCESS_KEY")
+swin_api_key = os.getenv("NACHET_SWIN_ACCESS_KEY")
+
+pipelines_endpoints = {
+    "legacy": (endpoint_url, endpoint_api_key),
+    "swin": ((sd_endpoint, sd_api_key), (swin_endpoint, swin_api_key))
+}
+
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
@@ -144,75 +156,132 @@ async def create_directory():
 @app.post("/inf")
 async def inference_request():
     """
-    performs inference on an image, and returns the results.
-    The image and inference results uploaded to a folder in the user's container.
+    Performs inference on an image, and returns the results.
+    The image and inference results are uploaded to a folder in the user's container.
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
+        pipeline_name = data.get("model_name", "defaul_model")
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
-        if folder_name and container_name and imageDims and image_base64:
-            header, encoded_data = image_base64.split(",", 1)
-            image_bytes = base64.b64decode(encoded_data)
-            container_client = await azure_storage_api.mount_container(
-                connection_string, container_name, create_container=True
-            )
-            hash_value = await azure_storage_api.generate_hash(image_bytes)
-            blob_name = await azure_storage_api.upload_image(
-                container_client, folder_name, image_bytes, hash_value
-            )
-            blob = await azure_storage_api.get_blob(container_client, blob_name)
-            image_bytes = base64.b64encode(blob).decode("utf8")
-            data = {
-                "input_data": {
-                    "columns": ["image"],
-                    "index": [0],
-                    "data": [image_bytes],
-                }
+        if not (folder_name and container_name and imageDims and image_base64):
+            return jsonify(["missing request arguments"]), 400
+        
+        _, encoded_data = image_base64.split(",", 1)
+        image_bytes = base64.b64decode(encoded_data)
+        container_client = await azure_storage_api.mount_container(
+            connection_string, container_name, create_container=True
+        )
+        hash_value = await azure_storage_api.generate_hash(image_bytes)
+        blob_name = await azure_storage_api.upload_image(
+            container_client, folder_name, image_bytes, hash_value
+        )
+        blob = await azure_storage_api.get_blob(container_client, blob_name)
+        image_bytes = base64.b64encode(blob).decode("utf8")
+
+        data = {
+            "input_data": {
+                "columns": ["image"],
+                "index": [0],
+                "data": [image_bytes],
             }
-            # encode the data as json to be sent to the model endpoint
-            body = str.encode(json.dumps(data))
-            endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
-            endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+        }
+
+        if not pipelines_endpoints.get(pipeline_name):
+            return jsonify([f"Model {pipeline_name} not found"]), 400
+
+        #============================================================#
+        # encode the data as json to be sent to the model endpoint
+        body = str.encode(json.dumps(data))
+        
+        try:
+            endpoint_url, endpoint_api_key = pipelines_endpoints.get("swin")[0]
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": ("Bearer " + endpoint_api_key),
+                'azureml-model-deployment': 'seed-detector-1'
             }
             # send the request to the model endpoint
             req = urllib.request.Request(endpoint_url, body, headers)
-            try:
-                # get the response from the model endpoint
+            # get the response from the model endpoint
+            response = urllib.request.urlopen(req)
+            result = response.read()
+            result_json = json.loads(result.decode("utf-8"))
+
+            # Cropping image and feed them to the next model
+
+            image_io_byte = io.BytesIO(base64.b64decode(image_bytes))
+            image_io_byte.seek(0)
+            image = Image.open(image_io_byte)
+
+            format = image.format
+
+            boxes = result_json[0]['boxes']
+
+            cropped_images = [bytes(0) for _ in boxes]
+
+            for i, box in enumerate(boxes):
+                topX = int(box['box']['topX'] * image.width)
+                topY = int(box['box']['topY'] * image.height)
+                bottomX = int(box['box']['bottomX'] * image.width)
+                bottomY = int(box['box']['bottomY'] * image.height)
+
+                buffered = io.BytesIO()
+                img = image.crop((topX, topY, bottomX, bottomY))
+                
+                img.save(buffered, format)
+                cropped_images[i] = base64.b64encode(buffered.getvalue())
+
+            # Second model call
+                
+            endpoint, api_key = pipelines_endpoints.get("swin")[1]
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": ("Bearer " + api_key),
+            }
+
+            for idx, img_bytes in enumerate(cropped_images):
+                req = urllib.request.Request(endpoint, img_bytes, headers)
+
                 response = urllib.request.urlopen(req)
                 result = response.read()
-                result_json = json.loads(result.decode("utf-8"))
-                # process the inference results
-                processed_result_json = await inference.process_inference_results(
-                    result_json, imageDims
-                )
-                # upload the inference results to the user's container as async task
-                result_json_string = json.dumps(processed_result_json)
-                app.add_background_task(
-                    azure_storage_api.upload_inference_result,
-                    container_client,
-                    folder_name,
-                    result_json_string,
-                    hash_value,
-                )
-                # return the inference results to the client
-                return jsonify(processed_result_json), 200
+                classification = json.loads(result.decode("utf-8"))
+                result_json[0]['boxes'][idx]['label'] = classification[0].get('label')
+                result_json[0]['boxes'][idx]['score'] = classification[0].get('score')
+            
+        #=======================================================================#
 
-            except urllib.error.HTTPError as error:
-                print(error)
-                return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
-        else:
-            return jsonify(["missing request arguments"]), 400
+            # process the inference results
+            processed_result_json = await inference.process_inference_results(
+                result_json, imageDims
+            )
+        except urllib.error.HTTPError as error:
+            print(error)
+            return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
+        
+        # upload the inference results to the user's container as async task
+        result_json_string = json.dumps(processed_result_json)
+        app.add_background_task(
+            azure_storage_api.upload_inference_result,
+            container_client,
+            folder_name,
+            result_json_string,
+            hash_value,
+        )
+        # return the inference results to the client
+        return jsonify(processed_result_json), 200
+
 
     except InferenceRequestError as error:
         print(error)
         return jsonify(["InferenceRequestError: " + str(error)]), 400
+    
+    except Exception as error:
+        print(error)
+        return jsonify(["Unexpected error occured"]), 500
 
 
 @app.get("/seed-data/<seed_name>")
@@ -269,6 +338,11 @@ async def fetch_json(repo_URL, key, file_path):
                         HTTP Status Code: {error.code}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+async def data_factory(**kwargs):
+    return {
+        "input_data": kwargs,
+    }
     
 
 @app.before_serving
