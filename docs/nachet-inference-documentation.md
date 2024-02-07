@@ -2,7 +2,7 @@
 
 ## Executive summary
 
-Nachet Interactive is currently working on improving the effectiveness and
+Nachet Interactive is working on improving the effectiveness and
 experience of users in detecting regulated seeds. To achieve this objective, the
 AI Lab is implementing various AI models that are capable of performing specific
 tasks. These models can work together or independently to enhance the accuracy
