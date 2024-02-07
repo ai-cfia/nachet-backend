@@ -1,15 +1,13 @@
 # Inference Request with n pipelines
 
 ## Executive summary
-Following the objective of milestones 1, Nachet back end need to deploy a
-functionality to switch in between different model. However, a model can call
-another model for more accurate result. Therefore creating a pipeline of models.
-In order to not be mix in between terms, a glossary to explain what is a
-pipeline and what is model was needed.
 
-Since pipeline can have n models, the use of the blob storage as a temporarily
-solution to store all pipeline available was suggested.
-
+Nachet interactive is building toward enhancing users effectiveness and
+experience detecting regulated seeds. In order to reach these goals, Nachet
+interactive is implementing different AI models to achieve specific tasks.
+Models can work together to improve result's accuracy. This document purpose is
+to provide design of the technical implementation of a multi-model
+functionality.
 
 ## Glossary
 
