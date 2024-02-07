@@ -2,12 +2,14 @@
 
 ## Executive summary
 
-Nachet interactive is building toward enhancing users effectiveness and
-experience detecting regulated seeds. In order to reach these goals, Nachet
-interactive is implementing different AI models to achieve specific tasks.
-Models can work together to improve result’s accuracy where output of one is
-used as input for the next one. This document purpose is to provide design of
-the technical implementation of a multi-model functionality.
+Nachet Interactive is currently working on improving the effectiveness and
+experience of users in detecting regulated seeds. To achieve this objective, the
+AI Lab is implementing various AI models that are capable of performing specific
+tasks. These models can work together or independently to enhance the accuracy
+of the results. When combined with other models, each model builds upon the work
+of the previous one to deliver the final outcome. The purpose of this document
+is to provide a technical design for the implementation of multi-model
+functionality.
 
 ## Glossary
 
