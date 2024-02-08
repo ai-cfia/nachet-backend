@@ -1,15 +1,19 @@
-# Inference Request with n pipelines
+# Inference Request with n-models pipelines
 
 ## Executive summary
 
-Nachet Interactive is working on improving the effectiveness and
-experience of users in detecting regulated seeds. To achieve this objective, the
-AI Lab is implementing various AI models that are capable of performing specific
-tasks. These models can work together or independently to enhance the accuracy
-of the results. When combined with other models, each model builds upon the work
-of the previous one to deliver the final outcome. The purpose of this document
-is to provide a technical design for the implementation of multi-model
-functionality.
+Nachet Interactive is currently working on improving the effectiveness and user
+experience of detecting regulated seeds. To achieve this goal, the AI Lab is
+implementing various AI models that can perform tasks such as seed detection in
+an image or seed classification. These models can work together or independently
+to enhance the accuracy of the results. When combined with other models, each
+model builds upon the work of the previous one to deliver the final outcome.
+This process is defined as a pipeline of models.
+
+Each model delivers a result based on its inference, which is the conclusion it
+can reach from its training. The purpose of this document is to provide a
+technical design for the implementation of the inference request with multiple
+pipelines.
 
 ## Glossary
 
