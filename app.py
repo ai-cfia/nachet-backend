@@ -31,18 +31,16 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 sd_api_key = os.getenv("NACHET_SEED_DETECTOR_ACCESS_KEY")
 swin_api_key = os.getenv("NACHET_SWIN_ACCESS_KEY")
 
-pipelines_endpoints = {
-    "legacy": (endpoint_url, endpoint_api_key),
-    "swin": ((sd_endpoint, sd_api_key), (swin_endpoint, swin_api_key))
-}
-
-
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 CACHE = {
     'seeds': None,
-    'endpoints': None
+    'endpoints': None,
+    'pipelines': {
+        "legacy": (endpoint_url, endpoint_api_key),
+        "swin": ((sd_endpoint, sd_api_key), (swin_endpoint, swin_api_key))
+    }
 }
 
 # Check: do environment variables exist?
@@ -166,6 +164,9 @@ async def inference_request():
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
+
+        pipelines_endpoints = CACHE.get("pipelines")
+
         if not (folder_name and container_name and imageDims and image_base64):
             return jsonify(["missing request arguments"]), 400
         
