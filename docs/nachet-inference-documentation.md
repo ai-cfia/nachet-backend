@@ -40,17 +40,17 @@ end
 ```
 
 ### Models
-A model is an AI model who is a part of a pipeline. A model accepts images as input
+A model is an AI model that is a part of a pipeline. A model accepts images as input
 and returns JSON as output. Generally, this JSON contains the coordinates of objects in the
 source image, that the model may pass along to feed the next step of the pipeline.
 
 
 ### Model from Frontend
 On the frontend interface, a pipeline will be called a model, because the user will
-not be aware of the difference. From the user'S perspective, they sent data to a
+not be aware of the difference. From the user's perspective, they send data to a
 model and receive the result.
 
-*Suggestion: we could call the pipeline a method, if we don't want to mix term.*
+*Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
 # Sequence Diagram for inference request 1.0.0
 
