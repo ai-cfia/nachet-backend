@@ -38,8 +38,8 @@ CACHE = {
     'seeds': None,
     'endpoints': None,
     'pipelines': {
-        "legacy": (endpoint_url, endpoint_api_key),
-        "swin": ((sd_endpoint, sd_api_key), (swin_endpoint, swin_api_key))
+        "Legacy": ((endpoint_url, endpoint_api_key),),
+        "Seed Classification": ((endpoint_url, endpoint_api_key),(swin_endpoint, swin_api_key)) # swin (sd_endpoint, sd_api_key)
     }
 }
 
@@ -196,13 +196,14 @@ async def inference_request():
         #============================================================#
         # encode the data as json to be sent to the model endpoint
         body = str.encode(json.dumps(data))
+
+        #if
         
         try:
-            endpoint_url, endpoint_api_key = pipelines_endpoints.get("swin")[0]
+            endpoint_url, endpoint_api_key = pipelines_endpoints.get(pipeline_name)[0]
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": ("Bearer " + endpoint_api_key),
-                'azureml-model-deployment': 'seed-detector-1'
             }
             # send the request to the model endpoint
             req = urllib.request.Request(endpoint_url, body, headers)
@@ -237,7 +238,7 @@ async def inference_request():
 
             # Second model call
                 
-            endpoint, api_key = pipelines_endpoints.get("swin")[1]
+            endpoint, api_key = pipelines_endpoints.get(pipeline_name)[1]
             
             headers = {
                 "Content-Type": "application/json",
@@ -250,6 +251,10 @@ async def inference_request():
                 response = urllib.request.urlopen(req)
                 result = response.read()
                 classification = json.loads(result.decode("utf-8"))
+
+                with open("result.txt", "w+") as file:
+                    file.write(str(classification))
+
                 result_json[0]['boxes'][idx]['label'] = classification[0].get('label')
                 result_json[0]['boxes'][idx]['score'] = classification[0].get('score')
             
@@ -322,6 +327,21 @@ async def get_model_endpoints_metadata():
 @app.get("/health")
 async def health():
     return "ok", 200
+
+async def request_factory(data, endpoint_url: str, api_key: str) -> urllib.request.Request:
+    """
+    Return a request for calling AzureML AI model
+    """
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": ("Bearer " + api_key),
+    }
+
+    body = str.encode(json.dumps(data))
+
+    return urllib.request.Request(endpoint_url, body, headers)
+
 
     
 async def fetch_json(repo_URL, key, file_path):
