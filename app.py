@@ -6,10 +6,10 @@ import re
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
-from PIL import Image
-import io
+import time
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
+import model_utilitary_functions as utils
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
@@ -35,11 +35,11 @@ NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 CACHE = {
-    'seeds': None,
-    'endpoints': None,
-    'pipelines': {
-        "Legacy": ((endpoint_url, endpoint_api_key),),
-        "Seed Classification": ((endpoint_url, endpoint_api_key),(swin_endpoint, swin_api_key)) # swin (sd_endpoint, sd_api_key)
+    "seeds": None,
+    "endpoints": None,
+    "pipelines": {
+        "Seed Classification": ((endpoint_url, endpoint_api_key),),
+        "Swin": ((sd_endpoint, sd_api_key),(swin_endpoint, swin_api_key)) # swin 
     }
 }
 
@@ -156,8 +156,10 @@ async def inference_request():
     """
     Performs inference on an image, and returns the results.
     The image and inference results are uploaded to a folder in the user's container.
-    """
+    """   
+    seconds = time.perf_counter() # transform into logging
     try:
+        print("Entering inference request") # Transform into logging
         data = await request.get_json()
         pipeline_name = data.get("model_name", "defaul_model")
         folder_name = data["folder_name"]
@@ -193,70 +195,47 @@ async def inference_request():
         if not pipelines_endpoints.get(pipeline_name):
             return jsonify([f"Model {pipeline_name} not found"]), 400
 
-        #============================================================#
         # encode the data as json to be sent to the model endpoint
         body = str.encode(json.dumps(data))
-
-        #if
         
+        #============================================================#
         try:
             endpoint_url, endpoint_api_key = pipelines_endpoints.get(pipeline_name)[0]
+            # Select good header for pipelines
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": ("Bearer " + endpoint_api_key),
-            }
+            } if pipeline_name != "Swin" else await utils.seed_detector_header(endpoint_api_key)
+
             # send the request to the model endpoint
             req = urllib.request.Request(endpoint_url, body, headers)
             # get the response from the model endpoint
             response = urllib.request.urlopen(req)
             result = response.read()
             result_json = json.loads(result.decode("utf-8"))
-
-            # Cropping image and feed them to the next model
-
-            image_io_byte = io.BytesIO(base64.b64decode(image_bytes))
-            image_io_byte.seek(0)
-            image = Image.open(image_io_byte)
-
-            format = image.format
-
-            boxes = result_json[0]['boxes']
-
-            cropped_images = [bytes(0) for _ in boxes]
-
-            for i, box in enumerate(boxes):
-                topX = int(box['box']['topX'] * image.width)
-                topY = int(box['box']['topY'] * image.height)
-                bottomX = int(box['box']['bottomX'] * image.width)
-                bottomY = int(box['box']['bottomY'] * image.height)
-
-                buffered = io.BytesIO()
-                img = image.crop((topX, topY, bottomX, bottomY))
-                
-                img.save(buffered, format)
-                cropped_images[i] = base64.b64encode(buffered.getvalue())
-
-            # Second model call
-                
-            endpoint, api_key = pipelines_endpoints.get(pipeline_name)[1]
             
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": ("Bearer " + api_key),
-            }
+            print("Get seed detector result") # transform to logging
 
-            for idx, img_bytes in enumerate(cropped_images):
-                req = urllib.request.Request(endpoint, img_bytes, headers)
+            if pipeline_name == "Swin":
+                sliced_images = utils.image_slicing(result_json[0]['boxes'])
+                
+                # Second model call
+                second_endpoint, second_api_key = pipelines_endpoints.get(pipeline_name)[1]
 
-                response = urllib.request.urlopen(req)
-                result = response.read()
-                classification = json.loads(result.decode("utf-8"))
+                headers = utils.swin_request_constructor(second_endpoint, second_api_key, sliced_images)
+        
+                # build a request to the endpoint sending cropped images
+                for idx, img_bytes in enumerate(sliced_images):
+                    req = urllib.request.Request(second_endpoint, img_bytes, headers)
+                    response = urllib.request.urlopen(req)
+                    result = response.read()
+                    classification = json.loads(result.decode("utf-8"))
 
-                with open("result.txt", "w+") as file:
-                    file.write(str(classification))
+                    with open("result.txt", "w+") as file:
+                        file.write(str(classification) + "\n")
 
-                result_json[0]['boxes'][idx]['label'] = classification[0].get('label')
-                result_json[0]['boxes'][idx]['score'] = classification[0].get('score')
+                    result_json[0]['boxes'][idx]['label'] = classification[0].get('label')
+                    result_json[0]['boxes'][idx]['score'] = classification[0].get('score')
             
         #=======================================================================#
 
@@ -278,8 +257,8 @@ async def inference_request():
             hash_value,
         )
         # return the inference results to the client
-        return jsonify(processed_result_json), 200
-
+        print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds")
+        return jsonify(processed_result_json), 200 
 
     except InferenceRequestError as error:
         print(error)
@@ -327,22 +306,6 @@ async def get_model_endpoints_metadata():
 @app.get("/health")
 async def health():
     return "ok", 200
-
-async def request_factory(data, endpoint_url: str, api_key: str) -> urllib.request.Request:
-    """
-    Return a request for calling AzureML AI model
-    """
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": ("Bearer " + api_key),
-    }
-
-    body = str.encode(json.dumps(data))
-
-    return urllib.request.Request(endpoint_url, body, headers)
-
-
     
 async def fetch_json(repo_URL, key, file_path):
     """
