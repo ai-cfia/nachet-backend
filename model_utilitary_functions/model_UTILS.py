@@ -1,0 +1,68 @@
+import io
+import base64
+import json
+from PIL import Image
+from urllib.request import Request
+
+async def image_slicing(image_bytes: bytes, boxes: list[dict]) -> list:
+    image_io_byte = io.BytesIO(base64.b64decode(image_bytes))
+    image_io_byte.seek(0)
+    image = Image.open(image_io_byte)
+
+    format = image.format
+
+    cropped_images = [_ for _ in boxes]
+
+    for i, box in enumerate(boxes):
+        topX = int(box['box']['topX'] * image.width)
+        topY = int(box['box']['topY'] * image.height)
+        bottomX = int(box['box']['bottomX'] * image.width)
+        bottomY = int(box['box']['bottomY'] * image.height)
+
+        img = image.crop((topX, topY, bottomX, bottomY))
+
+        buffered = io.BytesIO()
+        img.save(buffered, format)
+
+        encoded_img = base64.b64encode(buffered.getvalue()).decode("utf8").split(",", 1)
+
+        cropped_images[i] = base64.b64decode(encoded_img)
+    
+    return cropped_images
+
+async def seed_detector_header(api_key: str) -> dict:
+    return {
+        "Content-Type": "application/json",
+        "Authorization": ("Bearer " + api_key),
+        "azureml-model-deployment": "seed-detector-1",
+    }
+
+async def swin_header(api_key: str) -> dict:
+    return {
+        "Content-Type": "application/json",
+        "Authorization": ("Bearer " + api_key),
+    }
+
+# Eventually the goals would be to have a request factory that would return
+# a request for the specified models such as the following:
+async def request_factory(img_bytes: bytes, endpoint_url: str, api_key: str) -> Request:
+    """
+    Return a request for calling AzureML AI model
+    """
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": ("Bearer " + api_key),
+    }
+
+    data = {
+       "input_data": {
+           "columns": ["image"],
+           "index": [0],
+           "data": [img_bytes],
+       }
+   }
+
+    body = str.encode(json.dumps(data))
+
+    return Request(endpoint_url, body, headers)
