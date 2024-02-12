@@ -4,7 +4,8 @@ import json
 from PIL import Image
 from urllib.request import Request
 
-async def image_slicing(image_bytes: bytes, boxes: list[dict]) -> list:
+async def image_slicing(image_bytes: bytes, result_json: dict) -> list:
+    boxes = result_json[0]['boxes']
     image_io_byte = io.BytesIO(base64.b64decode(image_bytes))
     image_io_byte.seek(0)
     image = Image.open(image_io_byte)
@@ -28,8 +29,12 @@ async def image_slicing(image_bytes: bytes, boxes: list[dict]) -> list:
     
     return cropped_images
 
-async def swin_result_parser(result: dict) -> list:
-    pass
+async def swin_result_parser(img_box:dict, results: dict) -> list:
+    for i, result in enumerate(results):
+        img_box[0]['boxes'][i]['label'] = result[0].get('label')
+        img_box[0]['boxes'][i]['score'] = result[0].get('score')
+    
+    return img_box
 
 async def seed_detector_header(api_key: str) -> dict:
     return {
