@@ -10,10 +10,11 @@ to enhance the accuracy of the results. When combined with other models, each
 model builds upon the work of the previous one to deliver the final outcome.
 This process is defined as a pipeline of models.
 
-Each model delivers a result based on its inference, which is the conclusion it
-can reach from its training. The purpose of this document is to provide a
-technical design for the implementation of the inference request with multiple
-pipelines.
+Each model produces a result based on its inference, which is the process of
+machine learning to generate predictions from a dataset. The purpose of this
+document is to provide a technical design for the implementation of the
+inference request with multiple pipelines where the pipeline to run against is
+selected by a parameter.
 
 ## Glossary
 
@@ -40,15 +41,16 @@ end
 ```
 
 ### Models
-A model is an AI model that is a part of a pipeline. A model accepts images as input
-and returns JSON as output. Generally, this JSON contains the coordinates of objects in the
-source image, that the model may pass along to feed the next step of the pipeline.
+A model is an AI model that is a part of a pipeline. A model accepts images as
+input and returns JSON as output. Generally, this JSON contains the coordinates
+of objects in the source image, that the model may pass along to feed the next
+step of the pipeline.
 
 
 ### Model from Frontend
-On the frontend interface, a pipeline will be called a model, because the user will
-not be aware of the difference. From the user's perspective, they send data to a
-model and receive the result.
+On the frontend interface, a pipeline will be called a model, because the user
+will not be aware of the difference. From the user's perspective, they send data
+to a model and receive the result.
 
 *Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
