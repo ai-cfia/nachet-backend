@@ -161,7 +161,7 @@ async def inference_request():
     try:
         print("Entering inference request") # Transform into logging
         data = await request.get_json()
-        pipeline_name = data.get("model_name", "defaul_model")
+        pipeline_name = data.get("model_name", "defaul_mode")
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
@@ -189,7 +189,7 @@ async def inference_request():
 
         try:
             for model in pipelines_endpoints.get(pipeline_name):
-
+                
                 endpoint_url, endpoint_api_key, utilitary_function = model
                 model_name = endpoint_url.split("/")[2].split(".")[0]
 
@@ -202,21 +202,22 @@ async def inference_request():
                 result_json = json.loads(result.decode("utf-8"))
 
                 if utilitary_function:
-                    image_bytes = await utilitary_function(image_bytes, result_json[0]['boxes'])
+                    image_bytes = await utilitary_function(image_bytes, result_json)
+                    # cache_json_result = result_json
 
             if model_name == "swin-endpoint":
                 #second_endpoint, second_api_key, _ = pipelines_endpoints.get(pipeline_name)[1]
                 headers = await utils.swin_header(endpoint_api_key)
 
                 # build a request to the endpoint sending cropped images
-                for idx, img_bytes in enumerate(image_bytes):
+                all_classification = []
+                for img_bytes in image_bytes:
                     req = urllib.request.Request(endpoint_url, img_bytes, headers)
                     response = urllib.request.urlopen(req)
                     result = response.read()
-                    classification = json.loads(result.decode("utf-8"))
+                    all_classification.append(json.loads(result.decode("utf-8")))
 
-                    result_json[0]['boxes'][idx]['label'] = classification[0].get('label')
-                    result_json[0]['boxes'][idx]['score'] = classification[0].get('score')
+                result_json = await utils.swin_result_parser(result_json, all_classification)
 
             print("End of inference request") # Transform into logging
             print("Process results") # Transform into logging
@@ -299,22 +300,22 @@ async def fetch_json(repo_URL, key, file_path):
             result_json = json.loads(result.decode("utf-8"))
             CACHE[key] = result_json
             # logic to build pipeline
-            if key == "endpoints":
+            if key == "endpoints":                 
                 endpoint_name = [v for k, v in result_json[0].items() if k == "endpoint_name"]
                 keys = [v for k, v in result_json[0].items() if k == "model_name"]
 
                 for i, t in enumerate(tuple_endpoints):
-                    if i > len(endpoint_name):
+                    if i > len(endpoint_name) - 1:
                         break
                     if re.search(endpoint_name[i], t[i][0]):
                         CACHE["pipelines"][keys[i]] = t
-
+                
+                CACHE["pipelines"]["default_mode"] = tuple_endpoints[1]                
 
     except urllib.error.HTTPError as error:
         return jsonify({"error": f"Failed to retrieve the JSON. \
                         HTTP Status Code: {error.code}"}), 400
     except Exception as e:
-        print(str(e))
         return jsonify({"error": str(e)}), 500
     
 async def data_factory(**kwargs):
@@ -327,6 +328,20 @@ async def data_factory(**kwargs):
 async def before_serving():
     await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
     await fetch_json(NACHET_MODEL, 'endpoints', 'model_endpoints_metadata.json')
+    # Set default value for default_mode
+    CACHE["endpoints"].append({
+        "endpoint_name": "default_mode",
+        "model_name": "default_mode",
+        "created_by": "",
+        "creation_date": "",
+        "version": "1",
+        "description": "",
+        "job_name": "",
+        "dataset": "",
+        "metrics": [],
+        "identifiable": []
+    })
+                   
 
 
 if __name__ == "__main__":
