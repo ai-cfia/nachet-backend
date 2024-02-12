@@ -11,7 +11,7 @@ async def image_slicing(image_bytes: bytes, boxes: list[dict]) -> list:
 
     format = image.format
 
-    cropped_images = [_ for _ in boxes]
+    cropped_images = [bytes(0) for _ in boxes]
 
     for i, box in enumerate(boxes):
         topX = int(box['box']['topX'] * image.width)
@@ -24,11 +24,12 @@ async def image_slicing(image_bytes: bytes, boxes: list[dict]) -> list:
         buffered = io.BytesIO()
         img.save(buffered, format)
 
-        encoded_img = base64.b64encode(buffered.getvalue()).decode("utf8").split(",", 1)
-
-        cropped_images[i] = base64.b64decode(encoded_img)
+        cropped_images[i] = base64.b64encode(buffered.getvalue()) #.decode("utf8")
     
     return cropped_images
+
+async def swin_result_parser(result: dict) -> list:
+    pass
 
 async def seed_detector_header(api_key: str) -> dict:
     return {
@@ -50,10 +51,12 @@ async def request_factory(img_bytes: bytes, endpoint_url: str, api_key: str) -> 
     Return a request for calling AzureML AI model
     """
 
+    model_name = endpoint_url.split("/")[2].split(".")[0]
+
     headers = {
         "Content-Type": "application/json",
         "Authorization": ("Bearer " + api_key),
-    }
+    } if model_name != "seed-detector" else await seed_detector_header(api_key)
 
     data = {
        "input_data": {
