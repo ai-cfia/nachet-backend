@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 from azure_storage.azure_storage_api import (
     mount_container,
     get_blob,
@@ -43,7 +43,7 @@ class TestMountContainerFunction(unittest.TestCase):
         should create a new container and return the container client
         """
         # mock the client container and blob service client
-        mock_container_client = Mock()
+        mock_container_client = MagicMock()
         mock_container_client.exists.return_value = False
 
         mock_blob_service_client = MockFromConnectionString.return_value
@@ -52,7 +52,7 @@ class TestMountContainerFunction(unittest.TestCase):
         )
 
         # Simulate that a new container is created
-        mock_new_container_client = Mock()
+        mock_new_container_client = MagicMock()
         mock_blob_service_client.create_container.return_value = (
             mock_new_container_client
         )
