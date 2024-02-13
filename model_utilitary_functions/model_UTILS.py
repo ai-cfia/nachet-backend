@@ -51,7 +51,7 @@ async def swin_header(api_key: str) -> dict:
 
 # Eventually the goals would be to have a request factory that would return
 # a request for the specified models such as the following:
-async def request_factory(img_bytes: bytes, endpoint_url: str, api_key: str) -> Request:
+async def request_factory(img_bytes: str | bytes, endpoint_url: str, api_key: str) -> Request:
     """
     Return a request for calling AzureML AI model
     """
@@ -63,14 +63,17 @@ async def request_factory(img_bytes: bytes, endpoint_url: str, api_key: str) -> 
         "Authorization": ("Bearer " + api_key),
     } if model_name != "seed-detector" else await seed_detector_header(api_key)
 
-    data = {
-       "input_data": {
-           "columns": ["image"],
-           "index": [0],
-           "data": [img_bytes],
-       }
-   }
 
-    body = str.encode(json.dumps(data))
+    if isinstance(img_bytes, str): 
+        data = {
+            "input_data": {
+                "columns": ["image"],
+                "index": [0],
+                "data": [img_bytes],
+            }
+        } 
+        body = str.encode(json.dumps(data))
+    elif isinstance(img_bytes, bytes):
+        body = img_bytes
 
     return Request(endpoint_url, body, headers)
