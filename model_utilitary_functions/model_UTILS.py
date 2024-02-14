@@ -58,21 +58,14 @@ async def swin_result_parser(img_box:dict, results: dict) -> list:
         list: The updated image box with modified labels and scores.
     """
     for i, result in enumerate(results):
-        img_box[0]['boxes'][i]['label'] = result[0].get('label')
-        img_box[0]['boxes'][i]['score'] = result[0].get('score')
+        img_box[0]['boxes'][i]['label'] = [d.get("label") for d in result]
+        img_box[0]['boxes'][i]['score'] = [d.get("score") for d in result]
     
     return img_box
 
-async def seed_detector_header(api_key: str) -> dict:
-    return {
-        "Content-Type": "application/json",
-        "Authorization": ("Bearer " + api_key),
-        "azureml-model-deployment": "seed-detector-1",
-    }
-
 # Eventually the goals would be to have a request factory that would return
 # a request for the specified models such as the following:
-async def request_factory(img_bytes: str | bytes, endpoint_url: str, api_key: str) -> Request:
+async def request_factory(img_bytes: str | bytes, endpoint_url: str, api_key: str, model_name: str) -> Request:
     """
     Args:
         img_bytes (str | bytes): The image data as either a string or bytes.
@@ -82,14 +75,11 @@ async def request_factory(img_bytes: str | bytes, endpoint_url: str, api_key: st
     Returns:
         Request: The request object for calling the AI model.
     """
-
-    model_name = endpoint_url.split("/")[2].split(".")[0]
-
     headers = {
         "Content-Type": "application/json",
         "Authorization": ("Bearer " + api_key),
-    } if model_name != "seed-detector" else await seed_detector_header(api_key)
-
+        "azureml-model-deployment": model_name,
+    }
 
     if isinstance(img_bytes, str): 
         data = {

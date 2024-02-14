@@ -35,7 +35,11 @@ NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 # The following tuples will be used to store the endpoints and their respective utilitary functions
-tuple_endpoints = (((endpoint_url, endpoint_api_key, ""),),((sd_endpoint, sd_api_key, utils.image_slicing),(swin_endpoint, swin_api_key, utils.swin_result_parser)))
+tuple_endpoints = (
+    ((endpoint_url, endpoint_api_key, "m-14of15seeds-6seedsmag", None),)
+    ,((sd_endpoint, sd_api_key, "seed-detector-1", utils.image_slicing),
+      (swin_endpoint, swin_api_key, "swinv1-base-dataaugv2-1", utils.swin_result_parser))
+)
 
 CACHE = {
     "seeds": None,
@@ -156,7 +160,8 @@ async def inference_request():
     """
     Performs inference on an image, and returns the results.
     The image and inference results are uploaded to a folder in the user's container.
-    """   
+    """  
+     
     seconds = time.perf_counter() # transform into logging
     try:
         print("Entering inference request") # Transform into logging
@@ -191,18 +196,18 @@ async def inference_request():
             cache_json_result = None
             for model in pipelines_endpoints.get(pipeline_name):
                 
-                endpoint_url, endpoint_api_key, utilitary_function = model
+                endpoint_url, endpoint_api_key, model_name, utilitary_function = model
 
                 if isinstance(image_bytes, list):
                     result_json = []
                     for img in image_bytes:
-                        req = await utils.request_factory(img, endpoint_url, endpoint_api_key)
+                        req = await utils.request_factory(img, endpoint_url, endpoint_api_key, model_name)
                         response = urllib.request.urlopen(req)
                         result = response.read()
                         result_json.append(json.loads(result.decode("utf-8")))
 
                 elif isinstance(image_bytes, str):
-                    req = await utils.request_factory(image_bytes, endpoint_url, endpoint_api_key)
+                    req = await utils.request_factory(image_bytes, endpoint_url, endpoint_api_key, model_name)
                     response = urllib.request.urlopen(req)
                     result = response.read()
                     result_json = json.loads(result.decode("utf-8"))
