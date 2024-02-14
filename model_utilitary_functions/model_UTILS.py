@@ -58,8 +58,9 @@ async def swin_result_parser(img_box:dict, results: dict) -> list:
         list: The updated image box with modified labels and scores.
     """
     for i, result in enumerate(results):
-        img_box[0]['boxes'][i]['label'] = [d.get("label") for d in result]
-        img_box[0]['boxes'][i]['score'] = [d.get("score") for d in result]
+        img_box[0]['boxes'][i]['label'] = result[0].get("label")
+        img_box[0]['boxes'][i]['score'] = result[0].get("score")
+        img_box[0]['boxes'][i]["all_result"] = [d for d in result]
     
     return img_box
 
