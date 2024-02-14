@@ -9,7 +9,7 @@ from quart_cors import cors
 import time
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
-import model_utilitary_functions.model_UTILS as utils
+import model_request.model_request as req
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
@@ -37,8 +37,8 @@ NACHET_MODEL = os.getenv("NACHET_MODEL")
 # The following tuples will be used to store the endpoints and their respective utilitary functions
 tuple_endpoints = (
     ((endpoint_url, endpoint_api_key, "m-14of15seeds-6seedsmag", None),)
-    ,((sd_endpoint, sd_api_key, "seed-detector-1", utils.image_slicing),
-      (swin_endpoint, swin_api_key, "swinv1-base-dataaugv2-1", utils.swin_result_parser))
+    ,((sd_endpoint, sd_api_key, "seed-detector-1", inference.image_slicing),
+      (swin_endpoint, swin_api_key, "swinv1-base-dataaugv2-1", inference.swin_result_parser))
 )
 
 CACHE = {
@@ -201,13 +201,13 @@ async def inference_request():
                 if isinstance(image_bytes, list):
                     result_json = []
                     for img in image_bytes:
-                        req = await utils.request_factory(img, endpoint_url, endpoint_api_key, model_name)
+                        req = await req.request_factory(img, endpoint_url, endpoint_api_key, model_name)
                         response = urllib.request.urlopen(req)
                         result = response.read()
                         result_json.append(json.loads(result.decode("utf-8")))
 
                 elif isinstance(image_bytes, str):
-                    req = await utils.request_factory(image_bytes, endpoint_url, endpoint_api_key, model_name)
+                    req = await req.request_factory(image_bytes, endpoint_url, endpoint_api_key, model_name)
                     response = urllib.request.urlopen(req)
                     result = response.read()
                     result_json = json.loads(result.decode("utf-8"))
