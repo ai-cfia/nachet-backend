@@ -9,7 +9,7 @@ from quart_cors import cors
 import time
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
-import model_request.model_request as req
+import model_request.model_request as reqt
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
@@ -201,13 +201,13 @@ async def inference_request():
                 if isinstance(image_bytes, list):
                     result_json = []
                     for img in image_bytes:
-                        req = await req.request_factory(img, endpoint_url, endpoint_api_key, model_name)
+                        req = await reqt.request_factory(img, endpoint_url, endpoint_api_key, model_name)
                         response = urllib.request.urlopen(req)
                         result = response.read()
                         result_json.append(json.loads(result.decode("utf-8")))
 
                 elif isinstance(image_bytes, str):
-                    req = await req.request_factory(image_bytes, endpoint_url, endpoint_api_key, model_name)
+                    req = await reqt.request_factory(image_bytes, endpoint_url, endpoint_api_key, model_name)
                     response = urllib.request.urlopen(req)
                     result = response.read()
                     result_json = json.loads(result.decode("utf-8"))
