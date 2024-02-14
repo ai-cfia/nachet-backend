@@ -1,6 +1,6 @@
 name: Docker build and push to ghcr.io/ai-cfia and lint test
 
-on: 
+on:
   pull_request:
     types:
       - opened
@@ -9,11 +9,13 @@ on:
 
 jobs:
   lint-test:
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
+    uses:
+      ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
     secrets: inherit
 
   deploy:
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-github-registry.yml@63-as-a-devops-i-would-like-to-create-a-workflow-to-push-images-to-this-organisation-docker-registry
+    uses:
+      ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-github-registry.yml@63-as-a-devops-i-would-like-to-create-a-workflow-to-push-images-to-this-organisation-docker-registry
     with:
       container-name: ${{ github.event.repository.name }}
       tag: ${{ github.sha }}
@@ -28,7 +30,7 @@ jobs:
   markdown-check:
     uses:
       ai-cfia/github-workflows/.github/workflows/workflow-markdown-check.yml@main
-  
+
   yaml-check:
     uses:
       ai-cfia/github-workflows/.github/workflows/workflow-yaml-check.yml@main
