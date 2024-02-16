@@ -6,10 +6,13 @@ import re
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
+from ast import parse, AsyncFunctionDef
 import time
+
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
-import model_request.model_request as reqt
+from model_inference import type_one_model_inference, type_two_model_inference
+# import model_request.model_request as reqt
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
@@ -36,15 +39,17 @@ NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 # The following tuples will be used to store the endpoints and their respective utilitary functions
 tuple_endpoints = (
-    ((endpoint_url, endpoint_api_key, "m-14of15seeds-6seedsmag", None),)
-    ,((sd_endpoint, sd_api_key, "seed-detector-1", inference.image_slicing),
-      (swin_endpoint, swin_api_key, "swinv1-base-dataaugv2-1", inference.swin_result_parser))
+    ((1, "m-14of15seeds-6seedsmag", "0.1.0",endpoint_url, endpoint_api_key, ["Nachet 6seed"], "json",[None]),),
+    (
+        (1, "seed-detector-1", "0.1.0", sd_endpoint, sd_api_key, ["Swin pipeline"], "bytes", [inference.image_slicing]),
+        (2, "swinv1-base-dataaugv2-1", "0.1.0", swin_endpoint, swin_api_key, ["Swin pipeline"], "json", [inference.swin_result_parser]),
+    )
 )
 
 CACHE = {
     "seeds": None,
     "endpoints": None,
-    "pipelines": {}
+    "pipelines": {},
 }
 
 # Check: do environment variables exist?
@@ -66,6 +71,7 @@ if not bool(re.match(endpoint_url_regex, endpoint_url)):
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
+
 
 @app.post("/del")
 async def delete_directory():
@@ -166,7 +172,7 @@ async def inference_request():
     try:
         print("Entering inference request") # Transform into logging
         data = await request.get_json()
-        pipeline_name = data.get("model_name", "defaul_mode")
+        pipeline_name = data.get("model_name")
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
@@ -180,7 +186,12 @@ async def inference_request():
         if not pipelines_endpoints.get(pipeline_name):
             return jsonify([f"Model {pipeline_name} not found"]), 400
         
-        _, encoded_data = image_base64.split(",", 1)
+        header, encoded_data = image_base64.split(",", 1)
+
+        # Validate image header
+        if not header.startswith("data:image/"):
+            return jsonify(["Invalid image header"]), 400
+
         image_bytes = base64.b64decode(encoded_data)
         container_client = await azure_storage_api.mount_container(
             connection_string, container_name, create_container=True
@@ -193,31 +204,25 @@ async def inference_request():
         image_bytes = base64.b64encode(blob).decode("utf8")
 
         try:
-            cache_json_result = None
-            for model in pipelines_endpoints.get(pipeline_name):
+            # Keep track of every output given by the models
+            # TO DO add it to CACHE variable
+            cache_json_result = [image_bytes]
+
+            for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
                 
-                endpoint_url, endpoint_api_key, model_name, utilitary_function = model
+                model_type = model[0]
 
-                if isinstance(image_bytes, list):
-                    result_json = []
-                    for img in image_bytes:
-                        req = await reqt.request_factory(img, endpoint_url, endpoint_api_key, model_name)
-                        response = urllib.request.urlopen(req)
-                        result = response.read()
-                        result_json.append(json.loads(result.decode("utf-8")))
-
-                elif isinstance(image_bytes, str):
-                    req = await reqt.request_factory(image_bytes, endpoint_url, endpoint_api_key, model_name)
-                    response = urllib.request.urlopen(req)
-                    result = response.read()
-                    result_json = json.loads(result.decode("utf-8"))
-
-                if utilitary_function:
-                    if isinstance(image_bytes, str):
-                        image_bytes = await utilitary_function(image_bytes, result_json)
-                    elif isinstance(image_bytes, list):
-                        result_json = await utilitary_function(cache_json_result, result_json)
-                    cache_json_result = result_json
+                match model_type:
+                    case 1:
+                        print("Type 1 model") # Transform into logging
+                        result_json = await type_one_model_inference(model, cache_json_result[idx])
+                    case 2:
+                        print("Type 2 model") # Transform into logging
+                        result_json = await type_two_model_inference(model, cache_json_result[idx])
+                    case _:
+                        return jsonify([f"Model {pipeline_name} not categorize yet"]), 400
+                
+                cache_json_result.append(result_json)
 
             print("End of inference request") # Transform into logging
             print("Process results") # Transform into logging
@@ -307,7 +312,7 @@ async def fetch_json(repo_URL, key, file_path):
                 for i, t in enumerate(tuple_endpoints):
                     if i > len(endpoint_name) - 1:
                         break
-                    if re.search(endpoint_name[i], t[i][0]):
+                    if re.search(endpoint_name[i], t[i][3]):
                         CACHE["pipelines"][keys[i]] = t
                 
                 CACHE["pipelines"]["default_mode"] = tuple_endpoints[1]                
@@ -340,6 +345,13 @@ async def before_serving():
         "metrics": [],
         "identifiable": []
     })
+
+    # Set inference function key value
+    filename = "model_inference/inference.py"
+    with open(filename) as file:
+        node = parse(file.read())
+
+    CACHE["inference_function"] = {n.name: n for n in node.body if isinstance(n, AsyncFunctionDef)}
                    
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)

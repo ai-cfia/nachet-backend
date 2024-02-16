@@ -66,7 +66,7 @@ async def swin_result_parser(img_box:dict, results: dict) -> list:
 
 async def process_inference_results(data, imageDims):
     """
-    processes the inference results to add additional attributes
+    processes the pipeline (last output) inference results to add additional attributes
     to the inference results that are used in the frontend
     """
     try:
