@@ -3,6 +3,8 @@ import json
 import os
 import base64
 import re
+import io
+from PIL import Image
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
@@ -14,6 +16,7 @@ from custom_exceptions import (
     InferenceRequestError,
     CreateDirectoryRequestError,
     ServerError,
+    ImageValidationError,
 )
 
 load_dotenv()
@@ -141,6 +144,61 @@ async def create_directory():
         return jsonify(["CreateDirectoryRequestError: " + str(error)]), 400
 
 
+@app.post("/image-validation")
+async def image_validation():
+    """
+    Validates an image based on its extension, header, size, and resizability.
+    
+    Returns:
+        A JSON response containing a boolean indicating whether the image is valid and a validator hash.
+        
+    Raises:
+        ImageValidationError: If the image fails any of the validation checks.
+    """
+    try:
+        valide_extension = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
+        valide_dimension = [1920, 1080]
+
+        data = await request.get_json()
+        image_base64 = data["image"]
+
+        header, encoded_image = image_base64.split(",", 1)
+
+        image = Image.open(io.BytesIO(base64.b64decode(encoded_image)))
+        image_extension = image.format.lower()
+
+        # extension check
+        if image_extension not in valide_extension:
+           raise ImageValidationError("Invalid file extension")
+        
+        expected_header = f"data:image/{image_extension};base64"
+        
+        # header check
+        if header.lower() != expected_header:
+            raise ImageValidationError("Invalid file header")
+        
+        # size check
+        if image.size[0] > valide_dimension[0] and image.size[1] > valide_dimension[1]:
+            raise ImageValidationError("Invalid file size")
+                
+        # resizable check
+        try:
+            size = (100,150)
+            image.thumbnail(size)
+        except IOError:
+            raise ImageValidationError("Invalid file not resizable")
+
+        validator = await azure_storage_api.generate_hash(base64.b64decode(encoded_image))
+        return jsonify([True, validator]), 200
+    
+    except ImageValidationError as error:
+        print(error)
+        return jsonify([False, error.message]), 400
+    except Exception as error:
+        print(error)
+        return jsonify([False, "ImageValidationError: " + str(error)]), 400
+
+
 @app.post("/inf")
 async def inference_request():
     """
@@ -154,6 +212,7 @@ async def inference_request():
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
+
         if folder_name and container_name and imageDims and image_base64:
             header, encoded_data = image_base64.split(",", 1)
             image_bytes = base64.b64decode(encoded_data)
