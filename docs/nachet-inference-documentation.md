@@ -128,3 +128,53 @@ sequenceDiagram
 ```
 
 ![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
+
+### Input and Output for inference request
+The inference request will process the following parameters:
+
+|Key parameters | Expected Value|
+--|--
+model_name | The name of the pipeline
+folder_name | The folder where the image is upload in the user's container
+container_name | The user's container
+imageDims | The dimension of the image
+image | The image encoded in b64 (ascii)
+
+The inference request will return a list with the following information:
+|key parameters | hierarchy Levels | Return Value |
+--|--|--
+Boxes | 0 | Contains all the boxes return by the inference request
+Box | 1 | Contains all the information of one seed in the image
+totalBoxes | 1 | Boxes total number
+label | 2 | Contains the top label for the seed
+score | 2 | Contains the top score for the seed
+topResult | 2 | Contains the top 5 scores for the seed
+overlapping | 2 | Contains a boolean to tell if the box overlap with another one
+overlappingIndices | 2 | Contains the index of the overlapping box
+
+**topResult** contains the top 5 predictions of the models:
+```json
+"topResult": [
+    {
+        'label': seed_name,
+        'score': 0,75
+    }
+    {
+        'label': seed_name,
+        'score': 0,18
+    }
+    {
+        'label': seed_name,
+        'score': 0,05
+    }
+    {
+        'label': seed_name,
+        'score': 0,019
+    }
+    {
+        'label': seed_name,
+        'score': 0,001
+    }
+]
+```
+

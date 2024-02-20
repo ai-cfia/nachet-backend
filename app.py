@@ -239,9 +239,6 @@ async def inference_request():
                 result_json, imageDims
             )
 
-            with open("inference_result.json", "w") as f:
-                json.dump(processed_result_json, f)
-
         except urllib.error.HTTPError as error:
             print(error)
             return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
