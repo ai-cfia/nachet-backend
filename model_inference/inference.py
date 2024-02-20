@@ -4,7 +4,7 @@ import base64
 from PIL import Image
 from custom_exceptions import ProcessInferenceResultError
 
-async def image_slicing(image_bytes: bytes, result_json: dict) -> list:
+async def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:
     """
     This function takes the image bytes and the result_json from the model and
     returns a list of cropped images.
@@ -48,7 +48,7 @@ async def image_slicing(image_bytes: bytes, result_json: dict) -> list:
     
     return cropped_images
 
-async def swin_result_parser(img_box:dict, results: dict) -> list:
+async def process_swin_result(img_box:dict, results: dict) -> list:
     """
     Args:
         img_box (dict): The image box containing the bounding boxes and labels.
@@ -60,7 +60,7 @@ async def swin_result_parser(img_box:dict, results: dict) -> list:
     for i, result in enumerate(results):
         img_box[0]['boxes'][i]['label'] = result[0].get("label")
         img_box[0]['boxes'][i]['score'] = result[0].get("score")
-        img_box[0]['boxes'][i]["all_result"] = [d for d in result]
+        img_box[0]['boxes'][i]["topResult"] = [d for d in result]
     
     return img_box
 
