@@ -44,10 +44,10 @@ NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 # The following tuples will be used to store the endpoints and their respective utilitary functions
 tuple_endpoints = (
-    ((1, "m-14of15seeds-6seedsmag", "0.1.0",endpoint_url, endpoint_api_key, ["Nachet 6seed"], "json",[None]),),
+    ((3, "m-14of15seeds-6seedsmag", "0.1.0",endpoint_url, endpoint_api_key, ["Nachet 6seed"], "json",[None]),),
     (
-        (1, "seed-detector-1", "0.1.0", sd_endpoint, sd_api_key, ["Swin pipeline"], "bytes", [inference.image_slicing]),
-        (2, "swinv1-base-dataaugv2-1", "0.1.0", swin_endpoint, swin_api_key, ["Swin pipeline"], "json", [inference.swin_result_parser]),
+        (2, "seed-detector-1", "0.1.0", sd_endpoint, sd_api_key, ["Swin pipeline"], "bytes", [inference.image_slicing]),
+        (1, "swinv1-base-dataaugv2-1", "0.1.0", swin_endpoint, swin_api_key, ["Swin pipeline"], "json", [inference.swin_result_parser]),
     )
 )
 
@@ -238,6 +238,10 @@ async def inference_request():
             processed_result_json = await inference.process_inference_results(
                 result_json, imageDims
             )
+
+            with open("inference_result.json", "w") as f:
+                json.dump(processed_result_json, f)
+
         except urllib.error.HTTPError as error:
             print(error)
             return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
