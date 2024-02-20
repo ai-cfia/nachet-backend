@@ -11,7 +11,12 @@ import time
 
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
-from model_inference import type_one_model_inference, type_two_model_inference
+from model_inference import(
+    type_one_model_inference,
+    type_two_model_inference,
+    type_three_model_inference,
+    ModelConfig
+)
 # import model_request.model_request as reqt
 from custom_exceptions import (
     DeleteDirectoryRequestError,
@@ -219,6 +224,9 @@ async def inference_request():
                     case 2:
                         print("Type 2 model") # Transform into logging
                         result_json = await type_two_model_inference(model, cache_json_result[idx])
+                    case 3:
+                        print("Type 3 model")
+                        result_json = await type_three_model_inference(model, cache_json_result[idx])
                     case _:
                         return jsonify([f"Model {pipeline_name} not categorize yet"]), 400
                 

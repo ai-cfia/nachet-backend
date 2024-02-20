@@ -3,3 +3,4 @@
 from model_inference.model_module import ModelConfig
 from model_inference.model_module import type_one_model_inference
 from model_inference.model_module import type_two_model_inference
+from model_inference.model_module import type_three_model_inference

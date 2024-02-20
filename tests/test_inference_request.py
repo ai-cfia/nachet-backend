@@ -107,3 +107,4 @@ class TestInferenceRequest(unittest.TestCase):
             response_json = await response.get_json()
             self.assertEqual(response.status_code, 200)
             self.assertIn('inference_result', response_json)
+            
