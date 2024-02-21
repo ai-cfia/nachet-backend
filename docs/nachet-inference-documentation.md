@@ -135,15 +135,18 @@ The inference request will process the following parameters:
 |Key parameters | Expected Value|
 --|--
 model_name | The name of the pipeline
-folder_name | The folder where the image is upload in the user's container
+folder_name | The folder where the image is uploaded in the user's container
 container_name | The user's container
 imageDims | The dimension of the image
-image | The image encoded in b64 (ascii)
+image | The image encoded in b64 (ASCII)
+
+Note that since the information is received from the frontend, the model_name is
+an abstraction for a pipeline.
 
 The inference request will return a list with the following information:
 |key parameters | hierarchy Levels | Return Value |
 --|--|--
-Boxes | 0 | Contains all the boxes return by the inference request
+Boxes | 0 | Contains all the boxes returned by the inference request
 Box | 1 | Contains all the information of one seed in the image
 totalBoxes | 1 | Boxes total number
 label | 2 | Contains the top label for the seed
