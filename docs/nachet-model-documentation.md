@@ -16,9 +16,10 @@ Nachet Interactive models' perform the following tasks:
 |[Object Detection](https://huggingface.co/tasks/object-detection) | Identify and locate an object belonging to a specific class within an image. |The object detection models take an image as an input and output the image with a label and a box around the detected object. |
 |[Segmentation](https://huggingface.co/tasks/image-segmentation) | Segmentation is the task of dividing images into different parts, where each pixel in the image is mapped to an object. It includes instance segmentation, panoptic segmentation, and semantic segmentation.| The segmentation models take an image as input and return an image divided into objects. |
 
-> As of today (2024-02-22), no model uses segmentation.
-> To know more about each task, click on the task to follow the link to their hugging face page
-> To know more about AI tasks in general: [Hugging Face Tasks](https://huggingface.co/tasks)
+> As of today (2024-02-22), no model uses segmentation. To know more about each
+> task, click on the task to follow the link to their hugging face page. To know
+> more about AI tasks in general: [Hugging Face
+> Tasks](https://huggingface.co/tasks)
 
 ## List of models
 
@@ -89,11 +90,11 @@ headers = {
 
 ### Body
 
-The body structure difference is based on the model tasks. A
-classification model can only classify one seed in an image, whereas an object
-detection model can detect if the image contains one or multiple seeds. It
-remains to be determined whether a segmentation model requires a different body
-structure. [See task](#task)
+The body structure difference is based on the model tasks. A classification
+model can only classify one seed in an image, whereas an object detection model
+can detect if the image contains one or multiple seeds. It remains to be
+determined whether a segmentation model requires a different body structure.
+[See task](#task)
 
 ```python
 # Object Detection model
@@ -115,7 +116,8 @@ body = b64encode(image)
 
 A list of common error models returns to the backend.
 
-> To access the error from the model, go to the model endpoint in azure and look for the logs : CFIA/ACIA/workspace/endpoint/model/logs
+> To access the error from the model, go to the model endpoint in azure and look
+> for the logs : CFIA/ACIA/workspace/endpoint/model/logs
 
 |Error|Model|Reason|Message|
 |--|--|--|--|

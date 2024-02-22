@@ -12,9 +12,9 @@ import time
 import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
 from model_inference import(
-    type_one_model_inference,
-    type_two_model_inference,
-    type_three_model_inference,
+    classification_model_inference,
+    object_detection_model_inference,
+    segmentation_model_inference,
     ModelConfig
 )
 # import model_request.model_request as reqt
@@ -42,21 +42,6 @@ swin_api_key = os.getenv("NACHET_SWIN_ACCESS_KEY")
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
-# The following tuples will be used to store the endpoints and their respective utilitary functions
-tuple_endpoints = (
-    ((3, "m-14of15seeds-6seedsmag", "0.1.0",endpoint_url, endpoint_api_key, ["Nachet 6seed"], "json",[None]),),
-    (
-        (2, "seed-detector-1", "0.1.0", sd_endpoint, sd_api_key, ["Swin pipeline"], "bytes", [inference.image_slicing]),
-        (1, "swinv1-base-dataaugv2-1", "0.1.0", swin_endpoint, swin_api_key, ["Swin pipeline"], "json", [inference.swin_result_parser]),
-    )
-)
-
-CACHE = {
-    "seeds": None,
-    "endpoints": None,
-    "pipelines": {},
-}
-
 # Check: do environment variables exist?
 if connection_string is None:
     raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
@@ -74,6 +59,20 @@ if not bool(re.match(connection_string_regex, connection_string)):
 if not bool(re.match(endpoint_url_regex, endpoint_url)):
     raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
+# The following tuples will be used to store the endpoints and their respective utilitary functions
+tuple_endpoints = (
+    (ModelConfig("object-detection", "m-14of15seeds-6seedsmag", "0.1.0",endpoint_url, endpoint_api_key, ["Nachet 6seed"], [None]),),
+    (
+        ModelConfig("object-detection", "seed-detector-1", "0.1.0", sd_endpoint, sd_api_key, ["Swin pipeline"], [inference.image_slicing]),
+        ModelConfig("classification", "swinv1-base-dataaugv2-1", "0.1.0", swin_endpoint, swin_api_key, ["Swin pipeline"], [inference.swin_result_parser]),
+    )
+)
+
+CACHE = {
+    "seeds": None,
+    "endpoints": None,
+    "pipelines": {},
+}
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 
@@ -215,20 +214,20 @@ async def inference_request():
 
             for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
                 
-                model_type = model[0]
+                model_task = model.task
 
-                match model_type:
-                    case 1:
-                        print("Type 1 model") # Transform into logging
-                        result_json = await type_one_model_inference(model, cache_json_result[idx])
-                    case 2:
-                        print("Type 2 model") # Transform into logging
-                        result_json = await type_two_model_inference(model, cache_json_result[idx])
-                    case 3:
-                        print("Type 3 model")
-                        result_json = await type_three_model_inference(model, cache_json_result[idx])
+                match model_task:
+                    case "classification":
+                        print("Classification model") # Transform into logging
+                        result_json = await classification_model_inference(model, cache_json_result[idx])
+                    case "object-detection":
+                        print("Object detection model") # Transform into logging
+                        result_json = await object_detection_model_inference(model, cache_json_result[idx])
+                    case "segmentation":
+                        print("Segmentation model")
+                        result_json = await segmentation_model_inference(model, cache_json_result[idx])
                     case _:
-                        return jsonify([f"Model {pipeline_name} not categorize yet"]), 400
+                        return jsonify([f"Model {model.name} not categorize yet"]), 400
                 
                 cache_json_result.append(result_json)
 
@@ -238,6 +237,9 @@ async def inference_request():
             processed_result_json = await inference.process_inference_results(
                 result_json, imageDims
             )
+
+            with open("inference_result.json", "w+") as f:
+                json.dump(processed_result_json, f, indent=4)
 
         except urllib.error.HTTPError as error:
             print(error)
