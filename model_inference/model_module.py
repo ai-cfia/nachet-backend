@@ -1,110 +1,96 @@
+"""
+This module contains functions for performing inference using different models.
+
+Functions:
+    request_inference_from_swin: Perform inference using the SWIN model on a list of images.
+    request_inference_from_seed_detector: Requests inference from the seed detector model using the provided previous result.
+    request_inference_from_nachet_six_seed: Requests inference from the Nachet Six Seed model.
+"""
 import urllib.request
 import model_request.model_request as reqt
 import json
-
-from dataclasses import dataclass
-from model_inference.inference import (
-    image_slicing,
-    swin_result_parser,
-)
-
+from collections import namedtuple
 from custom_exceptions import InferenceRequestError
 
 
-@dataclass(frozen=True)
-class ModelConfig:
-    task: int
-    name: str
-    # endpoint_name: str
-    version: str
-    endpoint: str
-    api_key: str
-    pipeline: list # TO DO decide if this parameter also contain the position in pipeline
-    inference_function: list
-    # created_by: str
-    # creation_date: str
-    # version: str
-    # description: str
-    # job_name: str
-    # dataset: str
-    # metrics: list
-    # identifiable: list
 
-
-async def classification_model_inference(model: ModelConfig, previous_result):
+async def request_inference_from_swin(model: namedtuple, previous_result: list[bytes]):
     """
-    Perform inference using a classification model.
+    Perform inference using the SWIN model on a list of images.
 
     Args:
-        model ModelConfig: Object containing the model configuration parameters.
-        previous_result: The previous result to be used for inference.
+        model (namedtuple): The SWIN model to use for inference.
+        previous_result (list[bytes]): The previous result containing the images to perform inference on.
 
     Returns:
-        dict or tuple: If the test result is not "seed", returns the result JSON.
-                      If the test result is "seed", returns a dictionary containing the result JSON
-                      and the sliced image.
+        The result of the inference.
+
+    Raises:
+        InferenceRequestError: If an error occurs while processing the request.
     """
     try:
-        model_config = ModelConfig(*model)
-
         result_json = []
-        for img in previous_result.get("image_sliced"):
-            req = await reqt.request_factory(img, model_config.endpoint, model_config.api_key, model_config.name)
+        for img in previous_result.get("images"):
+            req = await reqt.request_factory(img, model)
             response = urllib.request.urlopen(req)
             result = response.read()
             result_json.append(json.loads(result.decode("utf8")))
 
-        return await swin_result_parser(previous_result.get("result_json"), result_json)
+        return await model.inference_function(previous_result.get("result_json"), result_json)
     except Exception as e:
        raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
 
 
-async def object_detection_model_inference(model: ModelConfig, previous_result):
+async def request_inference_from_seed_detector(model: namedtuple, previous_result: str):
     """
-    Perform model inference using a object detection model.
+    Requests inference from the seed detector model using the provided previous result.
 
     Args:
-        model ModelConfig: Object containing the model configuration parameters.
-        previous_result: The previous result obtained from the model inference.
+        model (namedtuple): The seed detector model.
+        previous_result (str): The previous result used for inference.
 
     Returns:
-        The parsed result obtained from the model inference.
+        dict: A dictionary containing the result JSON and the images generated from the inference.
+    
+    Raises:
+        InferenceRequestError: If an error occurs while processing the request.
     """
     try:
-        model_config = ModelConfig(*model)
-
-        req = await reqt.request_factory(previous_result, model_config.endpoint, model_config.api_key, model_config.name)
+        req = await reqt.request_factory(previous_result, model)
         response = urllib.request.urlopen(req)
         result = response.read()
         result_json = json.loads(result.decode("utf8"))
 
         return {
             "result_json": result_json,
-            "image_sliced": await image_slicing(previous_result, result_json)
+            "images": await model.inference_function(previous_result, result_json)
         }
     except Exception as e:
         raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
     
 
-async def segmentation_model_inference(model: ModelConfig, previous_result):
+async def request_inference_from_nachet_6seeds(model: namedtuple, previous_result: str):
     """
-    Perform model inference using a segmentation model.
+    Requests inference from the Nachet Six Seed model.
 
     Args:
-        model ModelConfig: Object containing the model configuration parameters.
-        previous_result: The previous result obtained from the model inference.
+        model (namedtuple): The model to use for inference.
+        previous_result (str): The previous result to pass to the model.
 
     Returns:
-        The parsed result obtained from the model inference.
-    """
-    pass
-    # try:
-    #     model_config = ModelConfig(*model)
+        dict: The result of the inference as a JSON object.
 
-    #     req = await reqt.request_factory(previous_result, model_config.endpoint, model_config.api_key, model_config.name)
-    #     response = urllib.request.urlopen(req)
-    #     result = response.read()
-    #     return json.loads(result.decode("utf8"))
-    
-    # except Exception as e:
-    #    raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
+    Raises:
+        InferenceRequestError: If an error occurs while processing the request.
+    """
+    try:
+        req = await reqt.request_factory(previous_result, model)
+        response = urllib.request.urlopen(req)
+        result = response.read()
+        result_json = json.loads(result.decode("utf8"))
+
+        return result_json,
+
+    except Exception as e:
+        raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
+   

@@ -133,9 +133,16 @@ following data structure was designed.
 {
     [
         {
-            "Pipeline_name": "pipeline name",
-            "version": "0.1.0",
-            "models": []
+            "endpoint_name": ["seed-detector", "swin-endpoint"],
+            "piepline_name": "Swin transformer",
+            "created_by": "Amir Ardalan Kalantari Dehaghi",
+            "creation_date": "2023-12-01",
+            "version": "1",
+            "description": "",
+            "job_name": "",
+            "dataset": "",
+            "metrics": [],
+            "identifiable": []
         },
     ]
 }
@@ -144,22 +151,25 @@ following data structure was designed.
 {
     [
         {
-            "category": "object-detection",
-            "name": "seed-detector-1",
-            "endpoint_name": "seed-detector",
+            "task": "object-detection",
+            "api_call_function": "function_key",
             "endpoint": "endpoint",
             "api_key": "key",
-            "pipeline": ["pipeline_name", 1], // tuple containing pipeline and position in the pipeline
-            "infeference functions": [], // function in the backend needed to process the result return by the model
-            "created_by": "",
-            "creation_date": "",
+            "infeference functions": "function_key",
+            "content-type": "application/json",
+            "deployment_platform": {"azure": "azureml-model-deployment"},
+            // To front-end
+            "endpoint_name": "nachet-6seeds",
+            "model_name": "14of15Seeds_6SEEDSMag",
+            "created_by": "Amir Ardalan Kalantari Dehaghi",
+            "creation_date": "2023-04-27",
             "version": "1",
-            "description": "",
-            "job_name": "",
+            "description": "trained using 6 seed images per image of 14of15 tagarno",
+            "job_name": "neat_cartoon_k0y4m0vz",
             "dataset": "",
             "metrics": [],
             "identifiable": []
-        },
+        }
     //...
     ]
 }

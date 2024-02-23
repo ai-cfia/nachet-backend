@@ -1,6 +1,0 @@
-# model_inference/__init__.py
-
-from model_inference.model_module import ModelConfig
-from model_inference.model_module import classification_model_inference
-from model_inference.model_module import object_detection_model_inference
-from model_inference.model_module import segmentation_model_inference

@@ -3,21 +3,17 @@ import json
 import os
 import base64
 import re
+import time
+import azure_storage.azure_storage_api as azure_storage_api
+import model_inference.inference as inference
+import model_inference.model_module as model_module
+
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
-from ast import parse, AsyncFunctionDef
-import time
+from collections import namedtuple
 
-import azure_storage.azure_storage_api as azure_storage_api
-import model_inference.inference as inference
-from model_inference import(
-    classification_model_inference,
-    object_detection_model_inference,
-    segmentation_model_inference,
-    ModelConfig
-)
-# import model_request.model_request as reqt
+
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
@@ -49,8 +45,20 @@ if connection_string is None:
 if endpoint_url is None:
     raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
 
+if sd_endpoint is None:
+    raise ServerError("Missing environment variable: NACHET_SEED_DETECTOR")
+
+if swin_endpoint is None:
+    raise ServerError("Missing environment variable: NACHET_SWIN_ENDPOINT")
+
 if endpoint_api_key is None:
     raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+if sd_api_key is None:
+    raise ServerError("Missing environment variables: NACHET_SEED_DETECTOR_ACCESS_KEY")
+
+if swin_api_key is None:
+    raise ServerError("Missing environment variables: NACHET_SWIN_ACCESS_KEY")
 
 # Check: are environment variables correct? 
 if not bool(re.match(connection_string_regex, connection_string)):
@@ -59,19 +67,29 @@ if not bool(re.match(connection_string_regex, connection_string)):
 if not bool(re.match(endpoint_url_regex, endpoint_url)):
     raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
-# The following tuples will be used to store the endpoints and their respective utilitary functions
-tuple_endpoints = (
-    (ModelConfig("object-detection", "m-14of15seeds-6seedsmag", "0.1.0",endpoint_url, endpoint_api_key, ["Nachet 6seed"], [None]),),
-    (
-        ModelConfig("object-detection", "seed-detector-1", "0.1.0", sd_endpoint, sd_api_key, ["Swin pipeline"], [inference.image_slicing]),
-        ModelConfig("classification", "swinv1-base-dataaugv2-1", "0.1.0", swin_endpoint, swin_api_key, ["Swin pipeline"], [inference.swin_result_parser]),
-    )
-)
+if not bool(re.match(endpoint_url_regex, sd_endpoint)):
+    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+if not bool(re.match(endpoint_url_regex, swin_endpoint)):
+    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+Model = namedtuple(
+    'Model',
+    [
+        'entry_function',
+        'name',
+        'endpoint',
+        'api_key',
+        'inference_function',
+        'content_type',
+        'deployment_platform',
+    ])
 
 CACHE = {
     "seeds": None,
     "endpoints": None,
     "pipelines": {},
+    "inference_function": None
 }
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
@@ -213,29 +231,15 @@ async def inference_request():
             cache_json_result = [image_bytes]
 
             for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
-                
-                model_task = model.task
-
-                match model_task:
-                    case "classification":
-                        print("Classification model") # Transform into logging
-                        result_json = await classification_model_inference(model, cache_json_result[idx])
-                    case "object-detection":
-                        print("Object detection model") # Transform into logging
-                        result_json = await object_detection_model_inference(model, cache_json_result[idx])
-                    case "segmentation":
-                        print("Segmentation model")
-                        result_json = await segmentation_model_inference(model, cache_json_result[idx])
-                    case _:
-                        return jsonify([f"Model {model.name} not categorize yet"]), 400
-                
+                print(f"Entering {model.name.upper()} model") # Transform into logging
+                result_json = await model.entry_function(model, cache_json_result[idx])
                 cache_json_result.append(result_json)
 
             print("End of inference request") # Transform into logging
             print("Process results") # Transform into logging
 
             processed_result_json = await inference.process_inference_results(
-                result_json, imageDims
+                cache_json_result[-1], imageDims
             )
 
             with open("inference_result.json", "w+") as f:
@@ -304,66 +308,66 @@ async def get_model_endpoints_metadata():
 @app.get("/health")
 async def health():
     return "ok", 200
-    
-async def fetch_json(repo_URL, key, file_path):
+
+
+async def fetch_json(repo_URL, key, file_path, mock=False):
     """
     Fetches JSON document from a GitHub repository and caches it
     """
     try:
-        json_url = os.path.join(repo_URL, file_path)
-        with urllib.request.urlopen(json_url) as response:
-            result = response.read()
-            result_json = json.loads(result.decode("utf-8"))
-            CACHE[key] = result_json
-            # logic to build pipeline
-            if key == "endpoints":                 
-                endpoint_name = [v for k, v in result_json[0].items() if k == "endpoint_name"]
-                keys = [v for k, v in result_json[0].items() if k == "model_name"]
+        if key != "endpoints":
+            json_url = os.path.join(repo_URL, file_path)
+            with urllib.request.urlopen(json_url) as response:
+                result = response.read()
+                result_json = json.loads(result.decode("utf-8"))
+            return result_json
+        # logic to build pipelines
+        if mock:
+            with open("mock_pipeline_json.json", "r+") as f:
+                result_json = json.load(f)
+        
+        api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
+        inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
+        models = ()
+        for model in result_json.get("models"):
+            m = Model(
+                api_call_function.get(model.get("api_call_function")),
+                model.get("model_name"),
+                model.get("endpoint"),
+                model.get("api_key"),
+                inference_functions.get(model.get("inference_function")),
+                model.get("content-type"),
+                model.get("deployment_platform")
+            )
+            models += (m,)
+        
+        for pipeline in result_json.get("pipelines"):
+            CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
-                for i, t in enumerate(tuple_endpoints):
-                    if i > len(endpoint_name) - 1:
-                        break
-                    if re.search(endpoint_name[i], t[i][3]):
-                        CACHE["pipelines"][keys[i]] = t
-                
-                CACHE["pipelines"]["default_mode"] = tuple_endpoints[1]                
+        return result_json.get("pipelines") 
 
     except urllib.error.HTTPError as error:
         return jsonify({"error": f"Failed to retrieve the JSON. \
                         HTTP Status Code: {error.code}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
 async def data_factory(**kwargs):
     return {
         "input_data": kwargs,
     }
-    
+
+
 @app.before_serving
 async def before_serving():
-    await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
-    await fetch_json(NACHET_MODEL, 'endpoints', 'model_endpoints_metadata.json')
-    # Set default value for default_mode
-    CACHE["endpoints"].append({
-        "endpoint_name": "default_mode",
-        "model_name": "default_mode",
-        "created_by": "",
-        "creation_date": "",
-        "version": "1",
-        "description": "",
-        "job_name": "",
-        "dataset": "",
-        "metrics": [],
-        "identifiable": []
-    })
+    try:
+        # Get all the inference functions from the model_module and map them in a dictionary
+        CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
+        CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json", mock=True)
+    except:
+        raise ValueError("Failed to load the JSON document.")
 
-    # Set inference function key value
-    filename = "model_inference/inference.py"
-    with open(filename) as file:
-        node = parse(file.read())
-
-    CACHE["inference_function"] = {n.name: n for n in node.body if isinstance(n, AsyncFunctionDef)}
-                   
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
     
