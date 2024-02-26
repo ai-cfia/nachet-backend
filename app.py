@@ -325,7 +325,10 @@ async def fetch_json(repo_URL, key, file_path, mock=False):
         if mock:
             with open("mock_pipeline_json.json", "r+") as f:
                 result_json = json.load(f)
-        
+        else:
+            # TO DO: call the blob storage to get the file
+            result_json = await azure_storage_api.get_pipeline_info(connection_string, "user-bab1da84-5937-4016-965e-67e1ea6e29c4", "0.1.0")
+            
         api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
         inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
         models = ()
@@ -347,10 +350,9 @@ async def fetch_json(repo_URL, key, file_path, mock=False):
         return result_json.get("pipelines") 
 
     except urllib.error.HTTPError as error:
-        return jsonify({"error": f"Failed to retrieve the JSON. \
-                        HTTP Status Code: {error.code}"}), 400
+        raise ValueError(str(error))
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        raise ValueError(str(e))
 
 
 async def data_factory(**kwargs):
@@ -364,9 +366,11 @@ async def before_serving():
     try:
         # Get all the inference functions from the model_module and map them in a dictionary
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json", mock=True)
-    except:
-        raise ValueError("Failed to load the JSON document.")
+        CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json") #, mock=True)
+        print(CACHE["endpoints"])
+    except Exception as e:
+        print(e)
+        raise ServerError("Failed to retrieve data from the repository")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)

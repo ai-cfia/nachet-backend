@@ -13,6 +13,7 @@ from custom_exceptions import (
     FolderListError,
     GenerateHashError,
     CreateDirectoryError,
+    PipelineNotFoundError,
 )
 
 """
@@ -234,3 +235,37 @@ async def get_directories(container_client):
     except FolderListError as error:
         print(error)
         return []
+
+async def get_pipeline_info(
+        connection_string: str,
+        pipeline_container_name: str,
+        pipeline_version: str
+    ) -> json:
+    try:
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string
+        )
+
+        if blob_service_client:
+            container_client = blob_service_client.get_container_client(
+                pipeline_container_name
+            )
+            
+            blob_list = container_client.list_blobs()
+            for blob in blob_list:
+                if blob.name.split(".")[-1] != "json":
+                    print("WARNING a non JSON file is in the folder")
+                else:
+                    json_blob = await get_blob(container_client, blob.name)
+                    if json_blob:
+                        pipeline = json.loads(json_blob)
+                        if pipeline.get("version") == pipeline_version:
+                            return pipeline
+            else:
+                raise PipelineNotFoundError(
+                    "This version of the pipeline was not found."
+                )
+
+    except FolderListError as error:
+        print(error)
+        return False
