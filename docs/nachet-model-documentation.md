@@ -23,11 +23,15 @@ Nachet Interactive models' perform the following tasks:
 
 ## List of models
 
-|Model|Full name|Task|Active|Accuracy|
-|--|--|:--:|:--:|:--:|
-|Nachet-6seeds | m-14of15seeds-6seedsmag | Object Detection | Yes | - |
-|Seed-detector | seed-detector-1 |  Object Detection | Yes | - |
-|Swin | swinv1-base-dataaugv2-1 | Classification | Yes | - |
+|Model|Full name|Task|API Call Function|Inference Function|Active|Accuracy|
+|--|--|:--:|:--:|:--:|:--:|:--:|
+|Nachet-6seeds | m-14of15seeds-6seedsmag | Object Detection | nachet_6seeds | None | Yes | - |
+|Seed-detector | seed-detector-1 |  Object Detection | seed_detector | process_image_slicing | Yes | - |
+|Swin | swinv1-base-dataaugv2-1 | Classification | swin | process_swin_result | Yes | - |
+
+### Inference and API Call Function
+
+The inference and API call functions act as entry and exit points for the model. The API call explicitly requests a prediction from the specified model (such as Swin, Nachet-6seeds, etc.). The inference function processes the data before sending it to the frontend if the model requires it. For instance, the Seed-detector only returns "seed" as a label, and its inference needs to be processed and passed to the next model which assigns the correct label to the seeds.
 
 ## Return value of models
 
@@ -43,25 +47,25 @@ Nachet Interactive models' perform the following tasks:
             },
         "label": "top_label_name",
         "score": 0.912,
-        "topResult": [
+        "topN": [
             {
-                "score": 0.912
+                "score": 0.912,
                 "label": "top_label_name",
             },
             {
-                "score": 0.053
+                "score": 0.053,
                 "label": "seed_name",
             },
             {
-                "score": 0.0029
+                "score": 0.0029,
                 "label": "seed_name",
             },
             {
-                "score": 0.005
+                "score": 0.005,
                 "label": "seed_name",
             },
             {
-                "score": 0.001
+                "score": 0.001,
                 "label": "seed_name",
             }
         ],
@@ -75,6 +79,13 @@ Nachet Interactive models' perform the following tasks:
     "totalBoxes": 1
 }
 ```
+### Why topN
+We decided to named the top results property top N because this value can return n predictions. Usually in AI, the top 5 result are use to measure the accuracy of a model. If the correct result is the top 5, then it is considered that the prediction was true.
+
+This is useful in case were the user have is attention on more then 1 result.
+
+ > "Top N accuracy — Top N accuracy is when you measure how often your predicted class falls in the top N values of your softmax distribution."
+ [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*. Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
 
 ## Different ways of calling models
 

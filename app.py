@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
-
+from cryptography.fernet import Fernet
 
 from custom_exceptions import (
     DeleteDirectoryRequestError,
@@ -25,6 +25,10 @@ from custom_exceptions import (
 load_dotenv()
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
 connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
+PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
+PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 endpoint_url_regex = r"^https://.*\/score$"
 endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
@@ -321,53 +325,53 @@ async def fetch_json(repo_URL, key, file_path, mock=False):
                 result = response.read()
                 result_json = json.loads(result.decode("utf-8"))
             return result_json
-        # logic to build pipelines
-        if mock:
-            with open("mock_pipeline_json.json", "r+") as f:
-                result_json = json.load(f)
-        else:
-            # TO DO: call the blob storage to get the file
-            result_json = await azure_storage_api.get_pipeline_info(connection_string, "user-bab1da84-5937-4016-965e-67e1ea6e29c4", "0.1.0")
-            
-        api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
-        inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
-        models = ()
-        for model in result_json.get("models"):
-            m = Model(
-                api_call_function.get(model.get("api_call_function")),
-                model.get("model_name"),
-                model.get("endpoint"),
-                model.get("api_key"),
-                inference_functions.get(model.get("inference_function")),
-                model.get("content-type"),
-                model.get("deployment_platform")
-            )
-            models += (m,)
-        
-        for pipeline in result_json.get("pipelines"):
-            CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
-
-        return result_json.get("pipelines") 
 
     except urllib.error.HTTPError as error:
         raise ValueError(str(error))
     except Exception as e:
         raise ValueError(str(e))
 
+async def get_pipeline(mock:bool = False):
+    if mock:
+        with open("mock_pipeline_json.json", "r+") as f:
+            result_json = json.load(f)
+    else:
+        result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
+        cipher_suite = Fernet(FERNET_KEY)
+        
+    api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
+    inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
+
+    models = ()
+    for model in result_json.get("models"):
+        m = Model(
+            api_call_function.get(model.get("api_call_function")),
+            model.get("model_name"),
+            cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
+            cipher_suite.decrypt(model.get("api_key").encode()).decode(),
+            inference_functions.get(model.get("inference_function")),
+            model.get("content-type"),
+            model.get("deployment_platform")
+        )
+        models += (m,)
+    
+    for pipeline in result_json.get("pipelines"):
+        CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
+
+    return result_json.get("pipelines") 
 
 async def data_factory(**kwargs):
     return {
         "input_data": kwargs,
     }
 
-
 @app.before_serving
 async def before_serving():
     try:
         # Get all the inference functions from the model_module and map them in a dictionary
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json") #, mock=True)
-        print(CACHE["endpoints"])
+        # CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json")
+        CACHE["endpoints"] = await get_pipeline() # mock=True
     except Exception as e:
         print(e)
         raise ServerError("Failed to retrieve data from the repository")
