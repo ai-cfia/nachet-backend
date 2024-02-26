@@ -23,54 +23,69 @@ Nachet Interactive models' perform the following tasks:
 
 ## List of models
 
-|Model|Full name|Task|Active|Accuracy|
-|--|--|:--:|:--:|:--:|
-|Nachet-6seeds | m-14of15seeds-6seedsmag | Object Detection | Yes | - |
-|Seed-detector | seed-detector-1 |  Object Detection | Yes | - |
-|Swin | swinv1-base-dataaugv2-1 | Classification | Yes | - |
+|Model|Full name|Task|API Call Function|Inference Function|Active|Accuracy|
+|--|--|:--:|:--:|:--:|:--:|:--:|
+|Nachet-6seeds | m-14of15seeds-6seedsmag | Object Detection | nachet_6seeds | None | Yes | - |
+|Seed-detector | seed-detector-1 |  Object Detection | seed_detector | process_image_slicing | Yes | - |
+|Swin | swinv1-base-dataaugv2-1 | Classification | swin | process_swin_result | Yes | - |
+
+### Inference and API Call Function
+
+The inference and API call functions act as entry and exit points for the model. The API call explicitly requests a prediction from the specified model (such as Swin, Nachet-6seeds, etc.). The inference function processes the data before sending it to the frontend if the model requires it. For instance, the Seed-detector only returns "seed" as a label, and its inference needs to be processed and passed to the next model which assigns the correct label to the seeds.
 
 ## Return value of models
 
 ```json
-result_json = {
-    'filename': 'tmp/tmp_file_name', //depending on the model but should be standard
-    'boxes': [
-        {'box': {
-                'topX': 0.0,
-                'topY: 0.0,
-                'bottomX': 0.0,
-                'bottomY.: 0.0
-            }, // The data to draw the box around the seed.
-        'label': 'label_name', // Top label
-        'score': 0.999 // Top score
-        'topResult': [
+{
+    "filename": "tmp/tmp_file_name",
+    "boxes": [
+        {"box": {
+                "topX": 0.0,
+                "topY": 0.0,
+                "bottomX": 0.0,
+                "bottomY": 0.0
+            },
+        "label": "top_label_name",
+        "score": 0.912,
+        "topN": [
             {
-                'score': 0.999
-                'label': seed_name,
+                "score": 0.912,
+                "label": "top_label_name",
             },
             {
-                'score': 0.999
-                'label': seed_name,
+                "score": 0.053,
+                "label": "seed_name",
             },
             {
-                'score': 0.999
-                'label': seed_name,
+                "score": 0.0029,
+                "label": "seed_name",
             },
             {
-                'score': 0.999
-                'label': seed_name,
+                "score": 0.005,
+                "label": "seed_name",
             },
             {
-                'score': 0.999
-                'label': seed_name,
+                "score": 0.001,
+                "label": "seed_name",
             }
         ],
-        'overlapping': false //or true
-        'overlappingIndices': 0 // The index of the overlapping box
-        }
+        "overlapping": false,
+        "overlappingIndices": 0
+        },
     ],
+    "labelOccurrence": {
+        "seed_name": 1,
+    },
+    "totalBoxes": 1
 }
 ```
+### Why topN
+We decided to named the top results property top N because this value can return n predictions. Usually in AI, the top 5 result are use to measure the accuracy of a model. If the correct result is the top 5, then it is considered that the prediction was true.
+
+This is useful in case were the user have is attention on more then 1 result.
+
+ > "Top N accuracy — Top N accuracy is when you measure how often your predicted class falls in the top N values of your softmax distribution."
+ [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*. Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
 
 ## Different ways of calling models
 
@@ -126,29 +141,29 @@ A list of common error models returns to the backend.
 ## Pipeline and model data
 
 In order to dynamically build the pipeline in the backend from the model, the
-following data structure was designed.
+following data structure was designed. For now, the pipelines will have two keys for their names (`model_name`, `piepline_name`) to support the frontend code until it is changed to get the name of the pipeline with the correct key. 
 
 ```json
-// Pipelines
 {
+    "version": "0.1.0",
+    "date": "2024-02-26",
+    "pipelines":
     [
         {
-            "endpoint_name": ["seed-detector", "swin-endpoint"],
-            "piepline_name": "Swin transformer",
-            "created_by": "Amir Ardalan Kalantari Dehaghi",
-            "creation_date": "2023-12-01",
+            "models": ["model 1", "model 2"],
+            "model_name": "Model(Pipeline) 1",
+            "pipeline_name": "Pipeline 1",
+            "created_by": "creator name",
+            "creation_date": "2024-01-01",
             "version": "1",
             "description": "",
             "job_name": "",
             "dataset": "",
             "metrics": [],
             "identifiable": []
-        },
-    ]
-}
-
-// Models
-{
+        }
+    ],
+    "models":
     [
         {
             "task": "object-detection",
@@ -158,19 +173,17 @@ following data structure was designed.
             "infeference functions": "function_key",
             "content-type": "application/json",
             "deployment_platform": {"azure": "azureml-model-deployment"},
-            // To front-end
-            "endpoint_name": "nachet-6seeds",
-            "model_name": "14of15Seeds_6SEEDSMag",
-            "created_by": "Amir Ardalan Kalantari Dehaghi",
-            "creation_date": "2023-04-27",
+            "endpoint_name": "endpoint-name",
+            "model_name": "model name",
+            "created_by": "creator name",
+            "creation_date": "2024-01-01",
             "version": "1",
-            "description": "trained using 6 seed images per image of 14of15 tagarno",
-            "job_name": "neat_cartoon_k0y4m0vz",
+            "description": "",
+            "job_name": "",
             "dataset": "",
             "metrics": [],
             "identifiable": []
         }
-    //...
     ]
 }
 ```

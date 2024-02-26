@@ -89,7 +89,7 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
         result = response.read()
         result_json = json.loads(result.decode("utf8"))
 
-        return result_json,
+        return result_json[0],
 
     except Exception as e:
         raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
