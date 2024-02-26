@@ -14,17 +14,17 @@ async def request_factory(img_bytes: str | bytes, model: namedtuple) -> Request:
         Request: The request object for calling the AI model.
     """
 
-    # supported_deployment_platform = {"azure", "google", "huggingface", "aws"}
-    # deployment_platform = list(model.deployment_platform.keys())[0]
+    supported_deployment_platform = {"azure", "google", "huggingface", "aws"}
+    deployment_platform = list(model.deployment_platform.keys())[0]
 
     headers = {
         "Content-Type": model.content_type, #"application/json"
         "Authorization": ("Bearer " + model.api_key),
-        "azureml-model-deployment": model.name,
+        # "azureml-model-deployment": model.name,
     }
 
-    # if deployment_platform in supported_deployment_platform:
-    #     headers[model.deployment_platform[deployment_platform]] = model.name
+    if deployment_platform in supported_deployment_platform:
+        headers[model.deployment_platform[deployment_platform]] = model.name
 
     if isinstance(img_bytes, str): 
         data = {

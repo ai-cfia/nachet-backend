@@ -93,7 +93,6 @@ CACHE = {
     "seeds": None,
     "endpoints": None,
     "pipelines": {},
-    "inference_function": None
 }
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
@@ -331,15 +330,25 @@ async def fetch_json(repo_URL, key, file_path, mock=False):
     except Exception as e:
         raise ValueError(str(e))
 
-async def get_pipeline(mock:bool = False):
+async def get_pipelines(mock:bool = False):
+    """
+    Retrieves the pipelines from the Azure storage API.
+
+    Parameters:
+    - mock (bool): If True, retrieves the pipelines from a mock JSON file. If False, retrieves the pipelines from the Azure storage API.
+
+    Returns:
+    - list: A list of dictionaries representing the pipelines.
+    """
     if mock:
         with open("mock_pipeline_json.json", "r+") as f:
             result_json = json.load(f)
     else:
         result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
         cipher_suite = Fernet(FERNET_KEY)
-        
+    # Get all the api_call function and map them in a dictionary
     api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
+    # Get all the inference functions and map them in a dictionary 
     inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
 
     models = ()
@@ -354,11 +363,11 @@ async def get_pipeline(mock:bool = False):
             model.get("deployment_platform")
         )
         models += (m,)
-    
+    # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
-    return result_json.get("pipelines") 
+    return result_json.get("pipelines")
 
 async def data_factory(**kwargs):
     return {
@@ -368,10 +377,9 @@ async def data_factory(**kwargs):
 @app.before_serving
 async def before_serving():
     try:
-        # Get all the inference functions from the model_module and map them in a dictionary
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
         # CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json")
-        CACHE["endpoints"] = await get_pipeline() # mock=True
+        CACHE["endpoints"] = await get_pipelines() # mock=True
     except Exception as e:
         print(e)
         raise ServerError("Failed to retrieve data from the repository")
