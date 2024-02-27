@@ -93,7 +93,6 @@ CACHE = {
     "seeds": None,
     "endpoints": None,
     "pipelines": {},
-    "inference_function": None
 }
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])

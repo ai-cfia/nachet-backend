@@ -155,7 +155,7 @@ topN | 2 | Contains the top N scores for the seed
 overlapping | 2 | Contains a boolean to tell if the box overlap with another one
 overlappingIndices | 2 | Contains the index of the overlapping box
 
-*for more look at [nachet-model-documentation]("https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-model-documentation.md")*
+*for more look at nachet-model-documentation*
 
 **topN** contains the top 5 predictions of the models:
 ```json
