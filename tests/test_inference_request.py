@@ -1,8 +1,6 @@
 import unittest
-from unittest.mock import patch, Mock, MagicMock
-from custom_exceptions import (
-    InferenceRequestError,
-)
+from unittest.mock import patch, Mock #, MagicMock
+#from custom_exceptions import InferenceRequestError
 
 import json
 import asyncio
