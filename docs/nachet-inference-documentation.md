@@ -54,7 +54,7 @@ to a model and receive the result.
 
 *Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
-# Sequence Diagram for inference request 1.0.0
+# Sequence Diagram for inference request 1.1.0
 
 ```mermaid
 sequenceDiagram
@@ -86,9 +86,11 @@ sequenceDiagram
     Client-->>Frontend: client ask action from specific pipeline
     Frontend-)Backend: HTTP POST req.
     Backend-)Backend: inference_request(pipeline_name, folder_name, container_name, imageDims, image)
-    alt missing argument
+    alt missing argument and image and pipeline validation
         Backend--)Frontend: Error 400 missing arguments
-    else no missing argument
+        Backend--)Frontend: Error 400 Model not found
+        Backend--)Frontend: Error 400 Invalid image header
+    else no missing argument and validation pass
         Backend-)Backend: mount_container(connection_string(Environnement Variable, container_name))
         Backend-)Blob storage: HTTP POST req.
         Blob storage--)Backend: container_client
@@ -102,11 +104,15 @@ sequenceDiagram
         Blob storage--)Backend: blob
 
         loop for every model in pipeline
-            note over Backend, Blob storage: Header construction
-            Note over Backend,Blob storage: {"Content-Type": "application/json", <br>"Authorization": ("Bearer " + endpoint_api_key),}
+            Backend-)Backend: model.entry_function(model, previous_result)
+            note over Backend, Blob storage: Every model has is own entry_function
+            Backend-)Backend: request_factory(previous_result, model)
             Backend-)Backend: urllib.request.Request(endpoint_url, body, header)
             Backend-)Model: HTTP POST req.
             Model--)Backend: Result res.
+            alt if model has process_inference_function
+                Backend-) Backend: model.inference_function(previous_result, result_json)
+            end
             alt next model is not None
                 note over Backend, Blob storage: restart the loop process
                 Backend-)Backend: record_result(model, result)
@@ -129,6 +135,22 @@ sequenceDiagram
 
 ![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
 
+### Inference Request function
+The inference request function plays a crucial role in Nachet Interactive's backend.
+It requests actions from selected models or pipelines based on certain checks.
+These checks include verifying that all arguments required to find or initialize 
+the blob container and process the image have been transmitted to the function.
+It also checks if the selected pipeline is recognized by the system and if the image sent for analysis
+has a valid header.
+
+If all the above checks pass, the function initializes or finds the user blob container
+and uploads the image. Next, it requests an inference from every model in the pipeline.
+Each model specifies their `entry_function` (how to call and retrieve data) and whether
+they have a `process_inference` function. Based on these indications, the results are returned
+and stored in the cache.
+
+If no other model is called, the last result is then processed and sent to the frontend.
+
 ### Input and Output for inference request
 The inference request will process the following parameters:
 
@@ -145,17 +167,23 @@ an abstraction for a pipeline.
 
 The inference request will return a list with the following information:
 |key parameters | hierarchy Levels | Return Value |
---|--|--
-Boxes | 0 | Contains all the boxes returned by the inference request
-Box | 1 | Contains all the information of one seed in the image
-totalBoxes | 1 | Boxes total number
-label | 2 | Contains the top label for the seed
-score | 2 | Contains the top score for the seed
-topN | 2 | Contains the top N scores for the seed
-overlapping | 2 | Contains a boolean to tell if the box overlap with another one
-overlappingIndices | 2 | Contains the index of the overlapping box
+|--|--|--|
+|Filename| 0 | Contains the filename of the image|
+|Boxes | 0 | Contains all the boxes returned by the inference request|
+|labelOccurence | 0 | Contains the number of label occurence|
+|totalBoxes | 0 | Boxes total number|
+|Box | 1 | Contains all the information of one seed in the image|
+|label | 1 | Contains the top label for the seed|
+|score | 1 | Contains the top score for the seed|
+|topN | 1 | Contains the top N scores for the seed|
+|overlapping | 1 | Contains a boolean to tell if the box overlap with another one|
+|overlappingIndices | 1 | Contains the index of the overlapping box|
+|topX | 2 | The top x value of the box around a seed|
+|topY | 2 | The top y value of the box around a seed|
+|bottomX | 2 | The bottom x value of the box around a seed|
+|bottomY| 2 | The bottom y value of the box around a seed|
 
-*for more look at nachet-model-documentation*
+*for more look at [nachet-model-documentation](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-model-documentation.md#return-value-of-models)*
 
 **topN** contains the top 5 predictions of the models:
 ```json
@@ -184,18 +212,24 @@ overlappingIndices | 2 | Contains the index of the overlapping box
 ```
 
 ### Blob storage and Pipeline versioning
-To keep track of the various pipelines iterations and versions, JSON files are stored in the blob storage. Users can add the JSON to the blob storage using the `pipelines_version_insertion.py` script. This allows for easy management of model and pipeline history.
+To keep track of the various pipelines iterations and versions, JSON files are 
+stored in the blob storage. Users can add the JSON to the blob storage 
+using the `pipelines_version_insertion.py` script. This allows for easy 
+management of model and pipeline history.
 
-To use the script, 3 new environment variables are instore:
+To use the script, 3 environment variables are necessary:
 * NACHET_BLOB_PIPELINE_NAME
-  * Containing the blob name where the pipelines arestored
+  * Containing the blob name where the pipelines are stored
 * NACHET_BLOB_PIPELINE_VERSION
   * Containing the version the user wants to select
 * NACHET_BLOB_PIPELINE_DECRYPTION_KEY
   * The key to decrypt sensible data such as the API key and the endpoint of a model.
 
 #### In the code
-In the backend, the pipelines are retrieved using the `get_pipelines` function. This function retrieved the data from the blob storage and stored the pipeline in the `CACHE["endpoint"]` variable. This the variable that feed the frontend the `models` information and metadata.
+In the backend, the pipelines are retrieved using the `get_pipelines` function.
+This function retrieved the data from the blob storage and stored the pipeline in
+the `CACHE["endpoint"]` variable. This the variable that feed the frontend the `models`
+information and metadata.
 
 ```python
 async def get_pipeline(mock:bool = False):
@@ -241,6 +275,6 @@ async def get_pipeline(mock:bool = False):
 ```
 
 ### Available Version of the JSON file:
-|Version|Creation Date| Pipelines
---|--|--
-0.1.0 | 2024-02-26 | Swin Transformer and 6 Seeds Detector
+|Version|Creation Date| Pipelines|
+|--|--|--|
+|0.1.0 | 2024-02-26 | Swin Transformer and 6 Seeds Detector|
