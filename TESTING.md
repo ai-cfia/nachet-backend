@@ -77,7 +77,7 @@ expected.
 
 |:boom: Warning|
 |:--:|
-|Currently, displaying results from two different models will overlap and become unreadable.|
+|Displaying results from two different models will overlap and become unreadable.|
 
 **Expected Results:**
 
