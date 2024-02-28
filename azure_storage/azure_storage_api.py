@@ -257,16 +257,19 @@ async def get_pipeline_info(
                     print("WARNING a non JSON file is in the folder")
                 else:
                     json_blob = await get_blob(container_client, blob.name)
-                    if json_blob:
-                        pipeline = json.loads(json_blob)
-                        if not isinstance(pipeline, list):
-                            if pipeline.get("version") == pipeline_version:
-                                return pipeline
+                    pipeline = json.loads(json_blob)
+                    if not isinstance(pipeline, list) and pipeline.get("version") == pipeline_version:
+                        return pipeline
+
             else:
                 raise PipelineNotFoundError(
                     "This version of the pipeline was not found."
                 )
-
+        
+    except PipelineNotFoundError as error:
+        print(error)
+        return False
+    
     except FolderListError as error:
         print(error)
         return False

@@ -3,6 +3,7 @@ from unittest.mock import patch, Mock, MagicMock
 from azure_storage.azure_storage_api import (
     mount_container,
     get_blob,
+    get_pipeline_info
 )
 from custom_exceptions import (
     GetBlobError,
@@ -139,6 +140,65 @@ class TestGetBlob(unittest.TestCase):
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
             get_blob(mock_container_client, "nonexisting_blob")
+        )
+
+        print(result is False)
+
+        self.assertEqual(result, False)
+
+class testGetPipeline(unittest.TestCase):
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    def test_get_pipeline_info_successful(self, MockFromConnectionString):
+        mock_blob_name = "test_blob"
+        mock_blob_content = b"v1"
+
+        mock_blob = Mock()
+        mock_blob.readall.return_value = mock_blob_content
+
+        mock_blob_client = MagicMock()
+        mock_blob_client.download_blob.return_value = mock_blob
+
+        mock_container_client = MagicMock()
+        mock_container_client.exists.return_value = True
+        mock_container_client.list_blobs.return_value = [mock_blob_client]
+
+        mock_blob_service_client = MockFromConnectionString.return_value
+        mock_blob_service_client.get_container_client.return_value = (
+            mock_container_client
+        )
+
+        connection_string = "test_connection_string"
+        mock_blob_name = "test_blob"
+        mock_version = b"v1"
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(
+            get_pipeline_info(connection_string, mock_blob_name, mock_version)
+        )
+
+        print(result == mock_blob_content)
+
+        self.assertEqual(result, mock_blob_content)
+
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    def test_get_pipeline_info_unsuccessful(self, MockFromConnectionString):
+        mock_container_client = MagicMock()
+        mock_container_client.exists.return_value = True
+
+        mock_blob_service_client = MockFromConnectionString.return_value
+        mock_blob_service_client.get_container_client.return_value = (
+            mock_container_client
+        )
+
+        connection_string = "test_connection_string"
+        mock_blob_name = "test_blob"
+        mock_version = "v1"
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(
+            get_pipeline_info(connection_string, mock_blob_name, mock_version)
         )
 
         print(result is False)
