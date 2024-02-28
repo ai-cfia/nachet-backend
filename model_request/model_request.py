@@ -6,10 +6,8 @@ async def request_factory(img_bytes: str | bytes, model: namedtuple) -> Request:
     """
     Args:
         img_bytes (str | bytes): The image data as either a string or bytes.
-        endpoint_url (str): The URL of the AI model endpoint.
-        api_key (str): The API key for accessing the AI model.
-        model_name (str): The name of the AI model.
-
+         model: (namedtuple): A tuple containing all the information necessary
+         to get the model inference.
     Returns:
         Request: The request object for calling the AI model.
     """
