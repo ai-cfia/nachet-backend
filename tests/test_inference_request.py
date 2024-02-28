@@ -16,60 +16,6 @@ from quart.testing import QuartClient
 # missing one or more blob environment variable
 # Return value of the function (JSON) in the following format:
 
-result_json = {
-	'filename': 'tmp/tmp_file_name',
-	'boxes': [
-		{'box': {
-				'topX': 0.0,
-				'topY': 0.0,
-				'bottomX': 0.0,
-				'bottomY': 0.0	
-			},
-		'label': 'label_name',
-		'score': 0.999
-		}
-	],
-}
-
-# or
-
-result_json = {
-	'filename': 'tmp/tmp_file_name',
-	'boxes': [
-		{'box': {
-				'topX': 0.0,
-				'topY': 0.0,
-				'bottomX': 0.0,
-				'bottomY': 0.0	
-			},
-		'label': 'label_name',
-		'score': 0.999,
-        'all_result': [{
-                {
-                    'label': "seed_name",
-                    'score': 0.999
-                },
-                {
-                    'label': "seed_name",
-                    'score': 0.002
-                },
-                {
-                    'label': "seed_name",
-                    'score': 0.002
-                },
-                {
-                    'label': "seed_name",
-                    'score': 0.002
-                },
-                {
-                    'label': "seed_name",
-                    'score': 0.002
-                }
-            }]
-		}
-	],
-}
-
 class TestInferenceRequest(unittest.TestCase):
     def setUp(self):
         self.app = app.app

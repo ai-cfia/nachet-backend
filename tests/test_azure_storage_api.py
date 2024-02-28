@@ -1,4 +1,6 @@
+import json
 import unittest
+import asyncio
 from unittest.mock import patch, Mock, MagicMock
 from azure_storage.azure_storage_api import (
     mount_container,
@@ -8,8 +10,6 @@ from azure_storage.azure_storage_api import (
 from custom_exceptions import (
     GetBlobError,
 )
-
-import asyncio
 
 
 class TestMountContainerFunction(unittest.TestCase):
@@ -148,28 +148,32 @@ class TestGetBlob(unittest.TestCase):
 
 class testGetPipeline(unittest.TestCase):
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_get_pipeline_info_successful(self, MockFromConnectionString):
-        mock_blob_name = "test_blob"
-        mock_blob_content = b"v1"
+    def test_get_pipeline_info_successful(self, MockFromConnectionString,):
+
+        mock_blob_content = b'''{
+            "name": "test_blob.json",
+            "version": "v1"
+        }'''
 
         mock_blob = Mock()
         mock_blob.readall.return_value = mock_blob_content
 
-        mock_blob_client = MagicMock()
+        mock_blob_client = Mock()
+        mock_blob_client.configure_mock(name="test_blob.json")
         mock_blob_client.download_blob.return_value = mock_blob
 
         mock_container_client = MagicMock()
-        mock_container_client.exists.return_value = True
         mock_container_client.list_blobs.return_value = [mock_blob_client]
+        mock_container_client.get_blob_client.return_value = mock_blob_client
 
         mock_blob_service_client = MockFromConnectionString.return_value
         mock_blob_service_client.get_container_client.return_value = (
             mock_container_client
         )
-
+    
         connection_string = "test_connection_string"
         mock_blob_name = "test_blob"
-        mock_version = b"v1"
+        mock_version = "v1"
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -177,9 +181,9 @@ class testGetPipeline(unittest.TestCase):
             get_pipeline_info(connection_string, mock_blob_name, mock_version)
         )
 
-        print(result == mock_blob_content)
+        print(result == json.loads(mock_blob_content))
 
-        self.assertEqual(result, mock_blob_content)
+        self.assertEqual(result, json.loads(mock_blob_content))
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_pipeline_info_unsuccessful(self, MockFromConnectionString):
