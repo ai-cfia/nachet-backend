@@ -54,7 +54,7 @@ to a model and receive the result.
 
 *Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
-# Sequence Diagram for inference request 1.1.0
+# Sequence Diagram for inference request 1.1.1
 
 ```mermaid
 sequenceDiagram
@@ -67,18 +67,18 @@ sequenceDiagram
 
     Note over Backend,Blob storage: initialisation
     Backend-)Backend: before_serving()
-    Backend-)Backend: get_pipelines_models()
+    Backend-)Backend: get_pipelines()
     alt
     Backend-)Blob storage: HTTP POST req.
     Blob storage--)Backend: return pipelines_models.json
     else
-    Backend-)Frontend: error 400 No pipeline found
+    Backend-)Frontend: error 500 Failed to retrieve data from the repository
     end
     Note over Backend,Blob storage: end of initialisation
    
     Client->>Frontend: applicationStart()
     Frontend-)Backend: HTTP POST req.
-    Backend-)Backend: get_pipelines_names()
+    Backend-)Backend: get_model_endpoints_metadata()
     Backend--)Frontend: Pipelines names res.
     Note left of Backend: return pipelines names and metadata
 
@@ -86,7 +86,7 @@ sequenceDiagram
     Client-->>Frontend: client ask action from specific pipeline
     Frontend-)Backend: HTTP POST req.
     Backend-)Backend: inference_request(pipeline_name, folder_name, container_name, imageDims, image)
-    alt missing argument and image and pipeline validation
+    alt missing argument, image and pipeline validation
         Backend--)Frontend: Error 400 missing arguments
         Backend--)Frontend: Error 400 Model not found
         Backend--)Frontend: Error 400 Invalid image header
@@ -118,7 +118,6 @@ sequenceDiagram
                 Backend-)Backend: record_result(model, result)
                 Backend-)Blob storage: HTTP POST req.
                 note over Backend, Blob storage: record the result produced by the model
-
             end
         end
         
