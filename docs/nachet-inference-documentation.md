@@ -54,7 +54,7 @@ to a model and receive the result.
 
 *Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
-# Sequence Diagram for inference request 1.1.0
+# Sequence Diagram for inference request 1.2.1
 
 ```mermaid
 sequenceDiagram
@@ -65,20 +65,21 @@ sequenceDiagram
     participant Blob storage
     participant Model
 
+    Backend-)+Backend: run()
     Note over Backend,Blob storage: initialisation
     Backend-)Backend: before_serving()
-    Backend-)Backend: get_pipelines_models()
+    Backend-)Backend: get_pipelines()
     alt
-    Backend-)Blob storage: HTTP POST req.
-    Blob storage--)Backend: return pipelines_models.json
+    Backend-)+Blob storage: HTTP POST req.
+    Blob storage--)-Backend: return pipelines_models.json
     else
-    Backend-)Frontend: error 400 No pipeline found
+    Backend-)Frontend: error 500 Failed to retrieve data from the repository
     end
     Note over Backend,Blob storage: end of initialisation
    
-    Client->>Frontend: applicationStart()
+    Client->>+Frontend: applicationStart()
     Frontend-)Backend: HTTP POST req.
-    Backend-)Backend: get_pipelines_names()
+    Backend-)Backend: get_model_endpoints_metadata()
     Backend--)Frontend: Pipelines names res.
     Note left of Backend: return pipelines names and metadata
 
@@ -86,51 +87,51 @@ sequenceDiagram
     Client-->>Frontend: client ask action from specific pipeline
     Frontend-)Backend: HTTP POST req.
     Backend-)Backend: inference_request(pipeline_name, folder_name, container_name, imageDims, image)
-    alt missing argument and image and pipeline validation
-        Backend--)Frontend: Error 400 missing arguments
-        Backend--)Frontend: Error 400 Model not found
-        Backend--)Frontend: Error 400 Invalid image header
-    else no missing argument and validation pass
-        Backend-)Backend: mount_container(connection_string(Environnement Variable, container_name))
-        Backend-)Blob storage: HTTP POST req.
-        Blob storage--)Backend: container_client
-        
-        Backend-)Backend: upload_image(container_client, folder_name, image_bytes, hash_value)
-        Backend-)Blob storage: HTTP POST req.
-        Blob storage--)Backend: blob_name
+    alt missing arguments
+    Backend-)Frontend: Error 400 missing arguments
+    end
+    alt wrong pipeline name
+    Backend-)Frontend: Error 400 wrong pipeline name
+    end
+    alt wrong header
+    Backend-)Frontend: Error 400 wrong header on file
+    end
 
-        Backend-)Backend: get_blob(container_client, blob_name)
-        Backend-)Blob storage: HTTP POST req.
-        Blob storage--)Backend: blob
+    Backend-)Backend: mount_container(connection_string(Environnement Variable, container_name))
+    Backend-)+Blob storage: HTTP POST req.
+    Blob storage--)-Backend: container_client
+    
+    Backend-)Backend: Generate Hash(image_bytes)
 
-        loop for every model in pipeline
-            Backend-)Backend: model.entry_function(model, previous_result)
-            note over Backend, Blob storage: Every model has is own entry_function
-            Backend-)Backend: request_factory(previous_result, model)
-            Backend-)Backend: urllib.request.Request(endpoint_url, body, header)
-            Backend-)Model: HTTP POST req.
-            Model--)Backend: Result res.
-            alt if model has process_inference_function
-                Backend-) Backend: model.inference_function(previous_result, result_json)
-            end
-            alt next model is not None
-                note over Backend, Blob storage: restart the loop process
-                Backend-)Backend: record_result(model, result)
-                Backend-)Blob storage: HTTP POST req.
-                note over Backend, Blob storage: record the result produced by the model
+    Backend-)Backend: upload_image(container_client, folder_name, image_bytes, hash_value)
+    Backend-)+Blob storage: HTTP POST req.
+    Blob storage--)-Backend: blob_name
 
-            end
-        end
-        
-        par Backend to Frontend
-            Backend-)Backend: inference.process_inference_results(data, imageDims)
-            Backend--)Frontend: Processed result res.
-        and Backend to Blob storage
-            Backend-)Backend: upload_inference_result(container_client, folder_name, result_json_string, hash_value)
-            Backend-)Blob storage: HTTP POST req.
+    Backend-)Backend: get_blob(container_client, blob_name)
+    Backend-)+Blob storage: HTTP POST req.
+    Blob storage--)-Backend: blob
+
+    loop for every model in pipeline
+        Backend-)Backend: model.entry_function(model, previous_result)
+        note over Backend, Blob storage: Every model has is own entry_function
+        Backend-)Backend: request_factory(previous_result, model)
+        Backend-)Backend: urllib.request.Request(endpoint_url, body, header)
+        Backend-)+Model: HTTP POST req.
+        Model--)-Backend: Result res.
+        alt if model has process_inference_function
+            Backend-) Backend: model.inference_function(previous_result, result_json)
         end
     end
-    Frontend--)Client: display result
+    note over Backend, Blob storage: End of the loop
+    par Backend to Frontend
+        Backend-)Backend: inference.process_inference_results(result_json, imageDims)
+        Backend--)Frontend: Processed result res.
+        Frontend--)-Client: display result
+    and Backend to Blob storage
+        note over Backend, Blob storage: record the result produced by the model
+        Backend-)Backend: upload_inference_result(container_client, folder_name, result_json_string, hash_value)
+        Backend-)-Blob storage: HTTP POST req.
+    end
 ```
 
 ![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
