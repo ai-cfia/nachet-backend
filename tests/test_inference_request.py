@@ -1,54 +1,195 @@
 import unittest
-from unittest.mock import patch, Mock #, MagicMock
-#from custom_exceptions import InferenceRequestError
-
+import requests
 import json
-import asyncio
 import os
 import base64
-import app
-from quart.testing import QuartClient
 
-# To test inference_request from app we need to test the following:
-# 1 model pipeline
-# 2 models pipeline
-# pipeline name not matching
-# missing one or more blob environment variable
-# Return value of the function (JSON) in the following format:
+from subprocess import Popen
+
 
 class TestInferenceRequest(unittest.TestCase):
-    def setUp(self):
-        self.app = app.app
-        self.client = QuartClient(self.app)
-
-    def test_valid_inference_request(self):
-        asyncio.run(self.async_test_valid_inference_request())
-
-    async def async_test_valid_inference_request(self):
+    def setUp(self) -> None:
+        """
+        Set up the test environment before running each test case.
+        """
         current_dir = os.path.dirname(__file__)
         image_path = os.path.join(current_dir, '1310_1.png')
+        self.path = os.path.join(os.getcwd(), 'app.py')
+        self.url = "http://localhost:8080/"
+        self.endpoints = "model-endpoints-metadata"
+        self.inference = "inf"
+        self.container_name = "bab1da84-5937-4016-965e-67e1ea6e29c4"
+        self.folder_name = "43d43a71-5026-474b-af61-98b98d365db1"
+        self.image_header = "data:image/PNG;base64,"
+        
+        with open(image_path, 'rb') as image_file:
+            self.image_src = base64.b64encode(image_file.read()).decode('utf-8')
+        self.process = Popen(['python', self.path])
 
-        with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+    def tearDown(self) -> None:
+        """
+        Tear down the test environment at the end of each test case.
+        """
+        self.process.terminate()
+        self.image_src = None
 
-        with patch('urllib.request.urlopen') as mock_urlopen:
-            # Mock the response from the model endpoint
-            mock_response = Mock()
-            inference_result = {'result': 'inference_result'}
-            mock_response.read.return_value = json.dumps(inference_result).encode()
-            mock_urlopen.return_value = mock_response
+    def test_inference_request_successful(self):
+        url = self.url + self.inference
+        responses = set()
+        expected_keys = {
+            "filename",
+            "boxes",
+            "labelOccurrence",
+            "totalBoxes",
+            "box",
+            "label",
+            "score",
+            "topN",
+            "overlapping",
+            "overlappingIndices"
+        }
 
-            # Define a valid request payload with a properly formatted and valid base64 image string
-            valid_payload = {
-                'folder_name': 'test_folder',
-                'container_name': 'test_container',
-                'imageDims': [100, 100],
-                'image': 'data:image/png;base64,' + encoded_string
-            }
+        headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        }
 
-            # Send a POST request to the inference endpoint
-            response = await self.client.post('/inf', json=valid_payload)
-            response_json = await response.get_json()
-            self.assertEqual(response.status_code, 200)
-            self.assertIn('inference_result', response_json)
-            
+        data = {
+            "image": self.image_header + self.image_src,
+            "imageDims": [720,540],
+            "folder_name": self.folder_name,
+            "container_name": self.container_name
+        }
+
+        response = requests.get(self.url+self.endpoints)
+        pipelines = json.loads(response.content)
+
+        for pipeline in pipelines:
+            data["model_name"] = pipeline.get("pipeline_name")
+            response = requests.post(url, headers=headers, json=data)
+            result_json = json.loads(response.content)
+            keys = set(result_json[0].keys())
+            keys.update(result_json[0]["boxes"][0].keys())
+            responses.update(keys)
+
+        print(expected_keys == responses)
+        self.assertEqual(responses, expected_keys)
+
+    def test_inference_request_unsuccessfull(self):
+        url = self.url + self.inference
+        expected = 500
+
+        headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        }
+
+        data = {
+            "image": self.image_header,
+            "imageDims": [720,540],
+            "folder_name": self.folder_name,
+            "container_name": self.container_name
+        }
+
+        response = requests.get(self.url+self.endpoints)
+        pipelines = json.loads(response.content)
+
+        data["model_name"] = pipelines[0].get("pipeline_name")
+        response = requests.post(url, headers=headers, json=data)
+
+        print(expected == response.status_code)
+        self.assertEqual(response.status_code, expected)
+
+    def test_inference_request_missing_argument(self):
+        url = self.url + self.inference
+        responses = []
+        expected = ("missing request arguments")
+
+        headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        }
+
+        data = {
+            "image": self.image_header + self.image_src,
+            "imageDims": [720,540],
+            "folder_name": self.folder_name,
+            "container_name": self.container_name
+        }
+
+        response = requests.get(self.url+self.endpoints)
+        pipelines = json.loads(response.content)
+        data["model_name"] = pipelines[0].get("pipeline_name")
+
+        for k, v in data.items():
+            if k != "model_name":
+                data[k] = ""
+                response = requests.post(url, headers=headers, json=data)
+                result_json = json.loads(response.content)
+                if len(responses) == 0:
+                    responses.append(result_json[0])
+                if responses[0] != result_json[0]:
+                    responses.append(result_json[0])
+                data[k] = v
+
+        if len(responses) > 1:
+            raise ValueError(f"Different errors messages were given; expected only missing request arguments, {responses}")
+        
+        print(expected == result_json[0])
+        self.assertEqual(result_json[0], expected)
+
+    def test_inference_request_wrong_pipeline_name(self):
+
+        url = self.url + self.inference
+        expected = ("Model wrong_pipeline_name not found")
+
+        headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        }
+
+        data = {
+            "image": self.image_src,
+            "imageDims": [720,540],
+            "folder_name": self.folder_name,
+            "container_name": self.container_name
+        }
+
+        data["model_name"] = "wrong_pipeline_name"
+        response = requests.post(url, headers=headers, json=data)
+        result_json = json.loads(response.content)
+
+        print(expected == result_json[0])
+        self.assertEqual(result_json[0], expected)
+
+    def test_inference_request_wrong_header(self):
+         
+        url = self.url + self.inference
+        expected = ("Invalid image header")
+        self.image_header = "data:python/,"
+
+        headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        }
+
+        data = {
+            "image": self.image_header + self.image_src,
+            "imageDims": [720,540],
+            "folder_name": "43d43a71-5026-474b-af61-98b98d365db1",
+            "container_name": "bab1da84-5937-4016-965e-67e1ea6e29c4"
+        }
+
+        response = requests.get(self.url+self.endpoints)
+        pipelines = json.loads(response.content)
+
+        data["model_name"] = pipelines[0].get("pipeline_name")
+        response = requests.post(url, headers=headers, json=data)
+        result_json = json.loads(response.content)
+
+        print(expected == result_json[0])
+        self.assertEqual(result_json[0], expected)
+
+if __name__ == '__main__':
+    unittest.main()
+ 
