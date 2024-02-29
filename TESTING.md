@@ -1,6 +1,12 @@
 # Testing documentation
 
-To test the backend, you can either use the automatic test in run_test.py or
+To start the automatic test, you can use the following command:
+
+```bash
+python -m unittest discover -s tests
+```
+
+You also have the option to run automatic test in run_test.py or
 manually test the functionality with the frontend. [See frontend testing
 documentation](https://github.com/ai-cfia/nachet-frontend/blob/main/TESTING.md)
 
