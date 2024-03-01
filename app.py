@@ -53,8 +53,6 @@ CACHE = {
 }
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-# Turn off for deployment or model testing
-app.testing = True
 
 
 @app.post("/del")
@@ -177,17 +175,15 @@ async def inference_request():
             return jsonify(["Invalid image header"]), 400
         
         image_bytes = base64.b64decode(encoded_data)
-        if not app.testing:
-            # This sequence of code is already test in the azure_storage_api test
-            container_client = await azure_storage_api.mount_container(
-                connection_string, container_name, create_container=True
-            )
-            hash_value = await azure_storage_api.generate_hash(image_bytes)
-            blob_name = await azure_storage_api.upload_image(
-                container_client, folder_name, image_bytes, hash_value
-            )
-            blob = await azure_storage_api.get_blob(container_client, blob_name)
-            image_bytes = base64.b64encode(blob).decode("utf8")
+        container_client = await azure_storage_api.mount_container(
+            connection_string, container_name, create_container=True
+        )
+        hash_value = await azure_storage_api.generate_hash(image_bytes)
+        blob_name = await azure_storage_api.upload_image(
+            container_client, folder_name, image_bytes, hash_value
+        )
+        blob = await azure_storage_api.get_blob(container_client, blob_name)
+        image_bytes = base64.b64encode(blob).decode("utf8")
 
         try:
             # Keep track of every output given by the models
@@ -213,14 +209,13 @@ async def inference_request():
         # upload the inference results to the user's container as async task
         result_json_string = json.dumps(processed_result_json)
 
-        if not app.testing:
-            app.add_background_task(
-                azure_storage_api.upload_inference_result,
-                container_client,
-                folder_name,
-                result_json_string,
-                hash_value,
-            )
+        app.add_background_task(
+            azure_storage_api.upload_inference_result,
+            container_client,
+            folder_name,
+            result_json_string,
+            hash_value,
+        )
         # return the inference results to the client
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds")
         return jsonify(processed_result_json), 200 
@@ -271,6 +266,32 @@ async def get_model_endpoints_metadata():
 @app.get("/health")
 async def health():
     return "ok", 200
+
+
+@app.get("/test")
+async def test():
+    print("Entering test mode")
+    # Build test pipeline
+    CACHE["endpoints"] = [
+                {
+                    "pipeline_name": "test_pipeline",
+                    "models": ["test_model1"]
+                }
+            ]
+    # Built test model
+    m = Model(
+        model_module.request_inference_from_test,
+        "test_model1",
+        "http://localhost:8080/test_model1",
+        "test_api_key",
+        None,
+        "application/json",
+        "test_platform"
+    )
+
+    CACHE["pipelines"]["test_pipeline"] = (m,)
+
+    return CACHE["endpoints"], 200
 
 
 async def fetch_json(repo_URL, key, file_path, mock=False):
@@ -356,30 +377,8 @@ async def before_serving():
         CACHE["endpoints"] = await get_pipelines()
 
     except ServerError as e:
-        if app.testing:
-            print("Entering test mode")
-            # Build test pipeline
-            CACHE["endpoints"] = [
-                        {
-                            "pipeline_name": "test_pipeline",
-                            "models": ["test_model1"]
-                        }
-                    ]
-            # Built test model
-            m = Model(
-                model_module.request_inference_from_test,
-                "test_model1",
-                "http://localhost:8080/test_model1",
-                "test_api_key",
-                None,
-                "application/json",
-                "test_platform"
-            )
-
-            CACHE["pipelines"]["test_pipeline"] = (m,)
-        else:
-            print(e)
-            raise ServerError(str(e))
+        print(e)
+        raise ServerError(str(e))
 
     except Exception as e:
         print(e)

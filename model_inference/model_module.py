@@ -109,7 +109,7 @@ async def request_inference_from_test(model: namedtuple, previous_result: str):
         InferenceRequestError: If an error occurs while processing the request.
     """
     try:
-        if previous_result == b'':
+        if previous_result == '':
            raise Exception("Test error")
         print(f"processing test request for {model.name} with {type(previous_result)} arguments")
         return [
