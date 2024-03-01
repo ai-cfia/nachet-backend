@@ -12,10 +12,9 @@ class TestInferenceRequest(unittest.TestCase):
         """
         Set up the test environment before running each test case.
         """
-         # Start the test pipeline
-        self.loop = asyncio.get_event_loop()    
+         # Start the test pipeline  
         self.test = app.test_client()
-        response = self.loop.run_until_complete(
+        response = asyncio.run(
             self.test.get("/test")
         )
         self.pipeline = json.loads(asyncio.run(response.get_data()))[0]
@@ -73,7 +72,7 @@ class TestInferenceRequest(unittest.TestCase):
         }
 
         # Test the answers from inference_request
-        response = self.loop.run_until_complete(
+        response = asyncio.run(
             self.test.post(
                 '/inf',
                 headers={
@@ -121,7 +120,7 @@ class TestInferenceRequest(unittest.TestCase):
         expected = 500
 
         # Test the answers from inference_request
-        response = self.loop.run_until_complete(
+        response = asyncio.run(
             self.test.post(
                 '/inf',
                 headers={
@@ -158,7 +157,7 @@ class TestInferenceRequest(unittest.TestCase):
         for k, v in data.items():
             if k != "model_name":
                 data[k] = ""        
-                response = self.loop.run_until_complete(
+                response = asyncio.run(
                     self.test.post(
                         '/inf',
                         headers={
@@ -188,7 +187,7 @@ class TestInferenceRequest(unittest.TestCase):
         expected = ("Model wrong_pipeline_name not found")
 
         # Test the answers from inference_request
-        response = self.loop.run_until_complete(
+        response = asyncio.run(
             self.test.post(
                 '/inf',
                 headers={
@@ -217,7 +216,7 @@ class TestInferenceRequest(unittest.TestCase):
         expected = ("Invalid image header")
 
         # Test the answers from inference_request
-        response = self.loop.run_until_complete(
+        response = asyncio.run(
             self.test.post(
                 '/inf',
                 headers={
