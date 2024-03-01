@@ -30,52 +30,8 @@ FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
 PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
-endpoint_url_regex = r"^https://.*\/score$"
-endpoint_url = os.getenv("NACHET_MODEL_ENDPOINT_REST_URL")
-sd_endpoint = os.getenv("NACHET_SEED_DETECTOR_ENDPOINT")
-swin_endpoint = os.getenv("NACHET_SWIN_ENDPOINT")
-
-endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-sd_api_key = os.getenv("NACHET_SEED_DETECTOR_ACCESS_KEY")
-swin_api_key = os.getenv("NACHET_SWIN_ACCESS_KEY")
-
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
-
-# Check: do environment variables exist?
-if connection_string is None:
-    raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-if endpoint_url is None:
-    raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
-
-if sd_endpoint is None:
-    raise ServerError("Missing environment variable: NACHET_SEED_DETECTOR")
-
-if swin_endpoint is None:
-    raise ServerError("Missing environment variable: NACHET_SWIN_ENDPOINT")
-
-if endpoint_api_key is None:
-    raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-
-if sd_api_key is None:
-    raise ServerError("Missing environment variables: NACHET_SEED_DETECTOR_ACCESS_KEY")
-
-if swin_api_key is None:
-    raise ServerError("Missing environment variables: NACHET_SWIN_ACCESS_KEY")
-
-# Check: are environment variables correct? 
-if not bool(re.match(connection_string_regex, connection_string)):
-    raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-if not bool(re.match(endpoint_url_regex, endpoint_url)):
-    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-
-if not bool(re.match(endpoint_url_regex, sd_endpoint)):
-    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-
-if not bool(re.match(endpoint_url_regex, swin_endpoint)):
-    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 Model = namedtuple(
     'Model',
@@ -87,7 +43,8 @@ Model = namedtuple(
         'inference_function',
         'content_type',
         'deployment_platform',
-    ])
+    ]
+)
 
 CACHE = {
     "seeds": None,
@@ -216,7 +173,7 @@ async def inference_request():
         # Validate image header
         if not header.startswith("data:image/"):
             return jsonify(["Invalid image header"]), 400
-
+        
         image_bytes = base64.b64decode(encoded_data)
         container_client = await azure_storage_api.mount_container(
             connection_string, container_name, create_container=True
@@ -245,15 +202,13 @@ async def inference_request():
                 cache_json_result[-1], imageDims
             )
 
-            with open("inference_result.json", "w+") as f:
-                json.dump(processed_result_json, f, indent=4)
-
         except urllib.error.HTTPError as error:
             print(error)
             return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
         
         # upload the inference results to the user's container as async task
         result_json_string = json.dumps(processed_result_json)
+
         app.add_background_task(
             azure_storage_api.upload_inference_result,
             container_client,
@@ -313,6 +268,31 @@ async def health():
     return "ok", 200
 
 
+@app.get("/test")
+async def test():
+    # Build test pipeline
+    CACHE["endpoints"] = [
+                {
+                    "pipeline_name": "test_pipeline",
+                    "models": ["test_model1"]
+                }
+            ]
+    # Built test model
+    m = Model(
+        model_module.request_inference_from_test,
+        "test_model1",
+        "http://localhost:8080/test_model1",
+        "test_api_key",
+        None,
+        "application/json",
+        "test_platform"
+    )
+
+    CACHE["pipelines"]["test_pipeline"] = (m,)
+
+    return CACHE["endpoints"], 200
+
+
 async def fetch_json(repo_URL, key, file_path, mock=False):
     """
     Fetches JSON document from a GitHub repository and caches it
@@ -329,6 +309,7 @@ async def fetch_json(repo_URL, key, file_path, mock=False):
         raise ValueError(str(error))
     except Exception as e:
         raise ValueError(str(e))
+
 
 async def get_pipelines(mock:bool = False):
     """
@@ -369,17 +350,35 @@ async def get_pipelines(mock:bool = False):
 
     return result_json.get("pipelines")
 
+
 async def data_factory(**kwargs):
     return {
         "input_data": kwargs,
     }
 
+
 @app.before_serving
 async def before_serving():
     try:
+        # Check: do environment variables exist?
+        if connection_string is None:
+            raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+        
+        if FERNET_KEY is None:
+            raise ServerError("Missing environment variable: FERNET_KEY")
+
+        # Check: are environment variables correct? 
+        if not bool(re.match(connection_string_regex, connection_string)):
+            raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
         # CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json")
-        CACHE["endpoints"] = await get_pipelines() # mock=True
+        CACHE["endpoints"] = await get_pipelines()
+
+    except ServerError as e:
+        print(e)
+        raise ServerError(str(e))
+
     except Exception as e:
         print(e)
         raise ServerError("Failed to retrieve data from the repository")
