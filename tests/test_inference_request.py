@@ -19,7 +19,7 @@ class TestInferenceRequest(unittest.TestCase):
         self.endpoints = "model-endpoints-metadata"
         self.inference = "inf"
         self.container_name = "bab1da84-5937-4016-965e-67e1ea6e29c4"
-        self.folder_name = "43d43a71-5026-474b-af61-98b98d365db1"
+        self.folder_name = "test_folder"
         self.image_header = "data:image/PNG;base64,"
         
         with open(image_path, 'rb') as image_file:
@@ -133,7 +133,7 @@ class TestInferenceRequest(unittest.TestCase):
                 data[k] = v
 
         if len(responses) > 1:
-            raise ValueError(f"Different errors messages were given; expected only missing request arguments, {responses}")
+            raise ValueError(f"Different errors messages were given; expected only 'missing request arguments', {responses}")
         
         print(expected == result_json[0])
         self.assertEqual(result_json[0], expected)
