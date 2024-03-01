@@ -170,7 +170,7 @@ class testGetPipeline(unittest.TestCase):
         mock_blob_service_client.get_container_client.return_value = (
             mock_container_client
         )
-    
+
         connection_string = "test_connection_string"
         mock_blob_name = "test_blob"
         mock_version = "v1"

@@ -51,7 +51,7 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
 
     Returns:
         dict: A dictionary containing the result JSON and the images generated from the inference.
-    
+
     Raises:
         InferenceRequestError: If an error occurs while processing the request.
     """
@@ -67,7 +67,7 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
         }
     except Exception as e:
         raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
-    
+
 
 async def request_inference_from_nachet_6seeds(model: namedtuple, previous_result: str):
     """
@@ -93,7 +93,7 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
 
     except Exception as e:
         raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
-   
+
 async def request_inference_from_test(model: namedtuple, previous_result: str):
     """
     Requests a test case inference.

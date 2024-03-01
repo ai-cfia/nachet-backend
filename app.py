@@ -148,8 +148,8 @@ async def inference_request():
     """
     Performs inference on an image, and returns the results.
     The image and inference results are uploaded to a folder in the user's container.
-    """  
-     
+    """
+
     seconds = time.perf_counter() # transform into logging
     try:
         print("Entering inference request") # Transform into logging
@@ -164,16 +164,16 @@ async def inference_request():
 
         if not (folder_name and container_name and imageDims and image_base64):
             return jsonify(["missing request arguments"]), 400
-        
+
         if not pipelines_endpoints.get(pipeline_name):
             return jsonify([f"Model {pipeline_name} not found"]), 400
-        
+
         header, encoded_data = image_base64.split(",", 1)
 
         # Validate image header
         if not header.startswith("data:image/"):
             return jsonify(["Invalid image header"]), 400
-        
+
         image_bytes = base64.b64decode(encoded_data)
         container_client = await azure_storage_api.mount_container(
             connection_string, container_name, create_container=True
@@ -205,7 +205,7 @@ async def inference_request():
         except urllib.error.HTTPError as error:
             print(error)
             return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
-        
+
         # upload the inference results to the user's container as async task
         result_json_string = json.dumps(processed_result_json)
 
@@ -218,12 +218,12 @@ async def inference_request():
         )
         # return the inference results to the client
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds")
-        return jsonify(processed_result_json), 200 
+        return jsonify(processed_result_json), 200
 
     except InferenceRequestError as error:
         print(error)
         return jsonify(["InferenceRequestError: " + str(error)]), 400
-    
+
     except Exception as error:
         print(error)
         return jsonify(["Unexpected error occured"]), 500
@@ -234,11 +234,11 @@ async def get_seed_data(seed_name):
     """
     Returns JSON containing requested seed data
     """
-    if seed_name in CACHE['seeds']:  
+    if seed_name in CACHE['seeds']:
         return jsonify(CACHE['seeds'][seed_name]), 200
     else:
         return jsonify(f"No information found for {seed_name}."), 400
-    
+
 
 @app.get("/reload-seed-data")
 async def reload_seed_data():
@@ -257,7 +257,7 @@ async def get_model_endpoints_metadata():
     """
     Returns JSON containing the deployed endpoints' metadata
     """
-    if CACHE['endpoints']:  
+    if CACHE['endpoints']:
         return jsonify(CACHE['endpoints']), 200
     else:
         return jsonify("Error retrieving model endpoints metadata.", 400)
@@ -329,7 +329,7 @@ async def get_pipelines(mock:bool = False):
         cipher_suite = Fernet(FERNET_KEY)
     # Get all the api_call function and map them in a dictionary
     api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
-    # Get all the inference functions and map them in a dictionary 
+    # Get all the inference functions and map them in a dictionary
     inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
 
     models = ()
@@ -363,11 +363,11 @@ async def before_serving():
         # Check: do environment variables exist?
         if connection_string is None:
             raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-        
+
         if FERNET_KEY is None:
             raise ServerError("Missing environment variable: FERNET_KEY")
 
-        # Check: are environment variables correct? 
+        # Check: are environment variables correct?
         if not bool(re.match(connection_string_regex, connection_string)):
             raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
@@ -385,4 +385,3 @@ async def before_serving():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
-    

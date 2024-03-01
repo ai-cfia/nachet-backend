@@ -265,7 +265,7 @@ async def get_pipeline_info(
             container_client = blob_service_client.get_container_client(
                 pipeline_container_name
             )
-            
+
             blob_list = container_client.list_blobs()
             for blob in blob_list:
                 if blob.name.split(".")[-1] != "json":
@@ -280,11 +280,11 @@ async def get_pipeline_info(
                 raise PipelineNotFoundError(
                     "This version of the pipeline was not found."
                 )
-        
+
     except PipelineNotFoundError as error:
         print(error)
         return False
-    
+
     except FolderListError as error:
         print(error)
         return False
@@ -292,7 +292,7 @@ async def get_pipeline_info(
 def insert_new_version_pipeline(
         pipelines_json: dict,
         connection_string: str,
-        pipleine_container_name: str
+        pipeline_container_name: str
     ) -> bool:
     """
     Inserts a new version of a pipeline JSON into an Azure Blob Storage container.
@@ -312,7 +312,7 @@ def insert_new_version_pipeline(
 
         if blob_service_client:
             container_client = blob_service_client.get_container_client(
-                pipleine_container_name
+                pipeline_container_name
             )
 
             json_name = "{}/{}.json".format("pipelines", pipelines_json.get("version"))

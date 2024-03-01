@@ -79,7 +79,7 @@ sequenceDiagram
     Backend-)Frontend: error 500 Failed to retrieve data from the repository
     end
     Note over Backend,Blob storage: end of initialisation
-   
+
     Client->>+Frontend: applicationStart()
     Frontend-)Backend: HTTP POST req.
     Backend-)Backend: get_model_endpoints_metadata()
@@ -103,7 +103,7 @@ sequenceDiagram
     Backend-)Backend: mount_container(connection_string(Environnement Variable, container_name))
     Backend-)+Blob storage: HTTP POST req.
     Blob storage--)-Backend: container_client
-    
+
     Backend-)Backend: Generate Hash(image_bytes)
 
     Backend-)Backend: upload_image(container_client, folder_name, image_bytes, hash_value)
@@ -260,7 +260,7 @@ async def get_pipeline(mock:bool = False):
         cipher_suite = Fernet(FERNET_KEY)
     # Get all the api_call function and map them in a dictionary
     api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
-    # Get all the inference functions and map them in a dictionary 
+    # Get all the inference functions and map them in a dictionary
     inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
 
     models = ()
@@ -275,12 +275,12 @@ async def get_pipeline(mock:bool = False):
             model.get("deployment_platform")
         )
         models += (m,)
-    
+
     # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
-    return result_json.get("pipelines") 
+    return result_json.get("pipelines")
 
 ```
 
