@@ -241,6 +241,21 @@ async def get_pipeline_info(
         pipeline_container_name: str,
         pipeline_version: str
     ) -> json:
+    """
+    Retrieves the pipeline information from Azure Blob Storage based on the provided parameters.
+
+    Args:
+        connection_string (str): The connection string for the Azure Blob Storage.
+        pipeline_container_name (str): The name of the container where the pipeline files are stored.
+        pipeline_version (str): The version of the pipeline to retrieve.
+
+    Returns:
+        json: The pipeline information in JSON format.
+
+    Raises:
+        PipelineNotFoundError: If the specified version of the pipeline is not found.
+
+    """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
@@ -279,6 +294,17 @@ def insert_new_version_pipeline(
         connection_string: str,
         pipleine_container_name: str
     ) -> bool:
+    """
+    Inserts a new version of a pipeline JSON into an Azure Blob Storage container.
+
+    Args:
+        pipelines_json (dict): The JSON data of the pipeline.
+        connection_string (str): The connection string for the Azure Blob Storage account.
+        pipleine_container_name (str): The name of the container where the pipeline JSON will be uploaded.
+
+    Returns:
+        bool: True if the pipeline JSON was successfully uploaded, False otherwise.
+    """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
