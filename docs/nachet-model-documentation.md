@@ -79,7 +79,9 @@ The inference and API call functions act as entry and exit points for the model.
     "totalBoxes": 1
 }
 ```
+
 ### Why topN
+
 We decided to named the top results property top N because this value can return n predictions. Usually in AI, the top 5 result are use to measure the accuracy of a model. If the correct result is the top 5, then it is considered that the prediction was true.
 
 This is useful in case were the user have is attention on more then 1 result.
@@ -141,7 +143,7 @@ A list of common error models returns to the backend.
 ## Pipeline and model data
 
 In order to dynamically build the pipeline in the backend from the model, the
-following data structure was designed. For now, the pipelines will have two keys for their names (`model_name`, `piepline_name`) to support the frontend code until it is changed to get the name of the pipeline with the correct key. 
+following data structure was designed. For now, the pipelines will have two keys for their names (`model_name`, `piepline_name`) to support the frontend code until it is changed to get the name of the pipeline with the correct key.
 
 ```json
 {

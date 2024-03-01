@@ -19,11 +19,13 @@ selected by a parameter.
 ## Glossary
 
 ### Pipelines
+
 Pipelines are defined as a set of models that follow each other, where the output of
 one model is used as input for the next models, and so on. A pipeline contains from 1 to n
 models.
 
 #### Pipelines flowchart 1.0.0
+
 ```mermaid
 flowchart LR
 
@@ -41,20 +43,21 @@ end
 ```
 
 ### Models
+
 A model is an AI model that is a part of a pipeline. A model accepts images as
 input and returns JSON as output. Generally, this JSON contains the coordinates
 of objects in the source image, that the model may pass along to feed the next
 step of the pipeline.
 
-
 ### Model from Frontend
+
 On the frontend interface, a pipeline will be called a model, because the user
 will not be aware of the difference. From the user's perspective, they send data
 to a model and receive the result.
 
 *Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
-# Sequence Diagram for inference request 1.2.1
+## Sequence Diagram for inference request 1.2.1
 
 ```mermaid
 sequenceDiagram
@@ -137,9 +140,10 @@ sequenceDiagram
 ![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
 
 ### Inference Request function
+
 The inference request function plays a crucial role in Nachet Interactive's backend.
 It requests actions from selected models or pipelines based on certain checks.
-These checks include verifying that all arguments required to find or initialize 
+These checks include verifying that all arguments required to find or initialize
 the blob container and process the image have been transmitted to the function.
 It also checks if the selected pipeline is recognized by the system and if the image sent for analysis
 has a valid header.
@@ -153,15 +157,16 @@ and stored in the cache.
 If no other model is called, the last result is then processed and sent to the frontend.
 
 ### Input and Output for inference request
+
 The inference request will process the following parameters:
 
 |Key parameters | Expected Value|
---|--
-model_name | The name of the pipeline
-folder_name | The folder where the image is uploaded in the user's container
-container_name | The user's container
-imageDims | The dimension of the image
-image | The image encoded in b64 (ASCII)
+|--|--|
+|model_name | The name of the pipeline|
+|folder_name | The folder where the image is uploaded in the user's container|
+|container_name | The user's container|
+|imageDims | The dimension of the image|
+|image | The image encoded in b64 (ASCII)|
 
 Note that since the information is received from the frontend, the model_name is
 an abstraction for a pipeline.
@@ -187,6 +192,7 @@ The inference request will return a list with the following information:
 *for more look at [nachet-model-documentation](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-model-documentation.md#return-value-of-models)*
 
 **topN** contains the top 5 predictions of the models:
+
 ```json
 "topN": [
     {
@@ -213,12 +219,14 @@ The inference request will return a list with the following information:
 ```
 
 ### Blob storage and Pipeline versioning
-To keep track of the various pipelines iterations and versions, JSON files are 
-stored in the blob storage. Users can add the JSON to the blob storage 
-using the `pipelines_version_insertion.py` script. This allows for easy 
+
+To keep track of the various pipelines iterations and versions, JSON files are
+stored in the blob storage. Users can add the JSON to the blob storage
+using the `pipelines_version_insertion.py` script. This allows for easy
 management of model and pipeline history.
 
 To use the script, 3 environment variables are necessary:
+
 * NACHET_BLOB_PIPELINE_NAME
   * Containing the blob name where the pipelines are stored
 * NACHET_BLOB_PIPELINE_VERSION
@@ -227,6 +235,7 @@ To use the script, 3 environment variables are necessary:
   * The key to decrypt sensible data such as the API key and the endpoint of a model.
 
 #### In the code
+
 In the backend, the pipelines are retrieved using the `get_pipelines` function.
 This function retrieved the data from the blob storage and stored the pipeline in
 the `CACHE["endpoint"]` variable. This the variable that feed the frontend the `models`
@@ -275,7 +284,8 @@ async def get_pipeline(mock:bool = False):
 
 ```
 
-### Available Version of the JSON file:
+### Available Version of the JSON file
+
 |Version|Creation Date| Pipelines|
 |--|--|--|
 |0.1.0 | 2024-02-26 | Swin Transformer and 6 Seeds Detector|
