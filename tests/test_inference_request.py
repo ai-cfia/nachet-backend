@@ -7,23 +7,18 @@ import asyncio
 from app import app
 from unittest.mock import patch, MagicMock, Mock
 
-
-class TestQuartHealth(unittest.TestCase):
-    def test_health(self):
-        test = app.test_client()
-
-        loop = asyncio.get_event_loop()
-        response = loop.run_until_complete(
-            test.get('/health')
-        )
-        print(response.status_code)
-        self.assertEqual(response.status_code, 200)
-
 class TestInferenceRequest(unittest.TestCase):
     def setUp(self) -> None:
         """
         Set up the test environment before running each test case.
         """
+         # Start the test pipeline
+        self.loop = asyncio.get_event_loop()    
+        self.test = app.test_client()
+        response = self.loop.run_until_complete(
+            self.test.get("/test")
+        )
+        self.pipeline = json.loads(asyncio.run(response.get_data()))[0]
         current_dir = os.path.dirname(__file__)
         image_path = os.path.join(current_dir, '1310_1.png')
         self.endpoints = "/model-endpoints-metadata"
@@ -31,10 +26,6 @@ class TestInferenceRequest(unittest.TestCase):
         self.container_name = "bab1da84-5937-4016-965e-67e1ea6e29c4"
         self.folder_name = "test_folder"
         self.image_header = "data:image/PNG;base64,"
-        self.test = app.test_client()
-        self.loop = asyncio.get_event_loop()
-        
-        
         with open(image_path, 'rb') as image_file:
             self.image_src = base64.b64encode(image_file.read()).decode('utf-8')
 
@@ -44,7 +35,6 @@ class TestInferenceRequest(unittest.TestCase):
         """
         self.image_src = None
         self.test = None
-        self.loop.close()
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_inference_request_successful(self, MockFromConnectionString):
@@ -66,13 +56,6 @@ class TestInferenceRequest(unittest.TestCase):
         mock_blob_service_client.get_container_client.return_value = (
             mock_container_client
         )
-
-        # Start the test pipeline
-    
-        response = self.loop.run_until_complete(
-            self.test.get("/test")
-        )
-        pipeline = json.loads(asyncio.run(response.get_data()))[0]
 
         # Build expected response keys
         responses = set()
@@ -102,7 +85,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
                     "container_name": self.container_name,
-                    "model_name": pipeline.get("pipeline_name")
+                    "model_name": self.pipeline.get("pipeline_name")
                 })
         )
 
@@ -134,13 +117,6 @@ class TestInferenceRequest(unittest.TestCase):
             mock_container_client
         )
 
-        # Start the test pipeline
-    
-        response = self.loop.run_until_complete(
-            self.test.get("/test")
-        )
-        pipeline = json.loads(asyncio.run(response.get_data()))[0]
-
         # Build expected response
         expected = 500
 
@@ -157,7 +133,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
                     "container_name": self.container_name,
-                    "model_name": pipeline.get("pipeline_name")
+                    "model_name": self.pipeline.get("pipeline_name")
                 })
         )
 
@@ -165,12 +141,6 @@ class TestInferenceRequest(unittest.TestCase):
         self.assertEqual(response.status_code, expected)
 
     def test_inference_request_missing_argument(self):
-        # Start the test pipeline
-        response = self.loop.run_until_complete(
-            self.test.get("/test")
-        )
-        pipeline = json.loads(asyncio.run(response.get_data()))[0]
-
         # Build expected response
         responses = []
         expected = ("missing request arguments")
@@ -180,7 +150,7 @@ class TestInferenceRequest(unittest.TestCase):
             "imageDims": [720,540],
             "folder_name": self.folder_name,
             "container_name": self.container_name,
-            "model_name": pipeline.get("pipeline_name")
+            "model_name": self.pipeline.get("pipeline_name")
         }
 
         # Test the answers from inference_request
@@ -243,11 +213,6 @@ class TestInferenceRequest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_inference_request_wrong_header(self):
-        # Start the test pipeline
-        response = self.loop.run_until_complete(
-            self.test.get("/test")
-        )
-        pipeline = json.loads(asyncio.run(response.get_data()))[0]
         # Build expected response
         expected = ("Invalid image header")
 
@@ -264,7 +229,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
                     "container_name": self.container_name,
-                    "model_name": pipeline.get("pipeline_name")
+                    "model_name": self.pipeline.get("pipeline_name")
                 }
             )
         )

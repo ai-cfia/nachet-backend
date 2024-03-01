@@ -270,7 +270,6 @@ async def health():
 
 @app.get("/test")
 async def test():
-    print("Entering test mode")
     # Build test pipeline
     CACHE["endpoints"] = [
                 {
