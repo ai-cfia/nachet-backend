@@ -12,7 +12,7 @@ class TestInferenceRequest(unittest.TestCase):
         """
         Set up the test environment before running each test case.
         """
-         # Start the test pipeline  
+         # Start the test pipeline
         self.test = app.test_client()
         response = asyncio.run(
             self.test.get("/test")
@@ -37,7 +37,7 @@ class TestInferenceRequest(unittest.TestCase):
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_inference_request_successful(self, MockFromConnectionString):
-        
+
         # Mock azure client services
         mock_blob = Mock()
         mock_blob.readall.return_value = bytes(self.image_src, encoding="utf-8")
@@ -156,7 +156,7 @@ class TestInferenceRequest(unittest.TestCase):
 
         for k, v in data.items():
             if k != "model_name":
-                data[k] = ""        
+                data[k] = ""
                 response = asyncio.run(
                     self.test.post(
                         '/inf',
@@ -176,7 +176,7 @@ class TestInferenceRequest(unittest.TestCase):
 
         if len(responses) > 1:
             raise ValueError(f"Different errors messages were given; expected only 'missing request arguments', {responses}")
-        
+
         print(expected == result_json[0])
         print(response.status_code == 400)
         self.assertEqual(result_json[0], expected)
@@ -242,4 +242,3 @@ class TestInferenceRequest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
- 

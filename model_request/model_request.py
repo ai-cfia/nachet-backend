@@ -24,14 +24,14 @@ async def request_factory(img_bytes: str | bytes, model: namedtuple) -> Request:
     if deployment_platform in supported_deployment_platform:
         headers[model.deployment_platform[deployment_platform]] = model.name
 
-    if isinstance(img_bytes, str): 
+    if isinstance(img_bytes, str):
         data = {
             "input_data": {
                 "columns": ["image"],
                 "index": [0],
                 "data": [img_bytes],
             }
-        } 
+        }
         body = str.encode(json.dumps(data))
     elif isinstance(img_bytes, bytes):
         body = img_bytes

@@ -45,7 +45,7 @@ async def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:
         img.save(buffered, format)
 
         cropped_images[i] = base64.b64encode(buffered.getvalue()) #.decode("utf8")
-    
+
     return cropped_images
 
 async def process_swin_result(img_box:dict, results: dict) -> list:
@@ -61,7 +61,7 @@ async def process_swin_result(img_box:dict, results: dict) -> list:
         img_box[0]['boxes'][i]['label'] = result[0].get("label")
         img_box[0]['boxes'][i]['score'] = result[0].get("score")
         img_box[0]['boxes'][i]["topN"] = [d for d in result]
-    
+
     return img_box
 
 async def process_inference_results(data, imageDims):
