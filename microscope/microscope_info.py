@@ -3,6 +3,8 @@ import json
 import uuid
 import logging
 import requests
+import base64
+import io
 from PIL import Image, ExifTags
 from dotenv import load_dotenv
 from custom_exceptions import MicroscopeQueryError, ExifNonPresentError
@@ -81,19 +83,27 @@ def get_microscope_configuration(METHODS):
     return config
 
 
-def get_picture_details(path:str) -> dict:
+def get_picture_details(image:bytes) -> dict:
     # Source 1 : https://thepythoncode.com/article/extracting-image-metadata-in-python
     # Source 2 : https://www.geeksforgeeks.org/how-to-extract-image-metadata-in-python/
     '''
     Retrieve exif details from picture.
     '''
-    img = Image.open(path)
 
-    full_exif = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
-    return full_exif
+    io_byte_image = io.BytesIO(image)
+    io_byte_image.seek(0)
+
+    img = Image.open(io_byte_image)
+    file = ".".join(["picture_test", "png"])
+    img.save(file)
+
+
+
+    # img = Image.open(path)
+
+    # full_exif = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
+    # return full_exif
    
-
-
 if __name__ == "__main__":
     try:
         config = get_microscope_configuration(METHODS)
