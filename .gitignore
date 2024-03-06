@@ -4,4 +4,3 @@
 *.pyc
 .vscode/settings.json
 output.*
-mock_pipeline_json.json

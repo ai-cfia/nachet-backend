@@ -6,8 +6,8 @@ To start the automatic test, you can use the following command:
 python -m unittest discover -s tests
 ```
 
-You also have the option to run automatic test in run_test.py or
-manually test the functionality with the frontend. [See frontend testing
+You also have the option to run automatic test in run_test.py or manually test
+the functionality with the frontend. [See frontend testing
 documentation](https://github.com/ai-cfia/nachet-frontend/blob/main/TESTING.md)
 
 To perform the following test, you will need the frontend repository for the
@@ -39,8 +39,10 @@ pipeline information.
 
 **Expected Results:**
 
-- [ ] If a problem occurs while retrieving the data, an error should prevent the server from starting.
-- [ ] If a problem occurs while retrieving the data, but no error was raised, the model selection component should be empty.
+- [ ] If a problem occurs while retrieving the data, an error should prevent the
+  server from starting.
+- [ ] If a problem occurs while retrieving the data, but no error was raised,
+  the model selection component should be empty.
 - [ ] If everything went correctly while retrieving the data, the model
   selection component should display the pipeline metadata.
 
@@ -79,9 +81,8 @@ expected.
 1. Wait until the results populated on the canvas
 1. Repeat the process for every model (pipeline)
 
-|:boom: Warning|
-|:--:|
-|Displaying results from two different models will overlap and become unreadable.|
+|:boom: Warning| |:--:| |Displaying results from two different models will
+overlap and become unreadable.|
 
 **Expected Results:**
 
