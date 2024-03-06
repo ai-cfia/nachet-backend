@@ -6,8 +6,8 @@ To start the automatic test, you can use the following command:
 python -m unittest discover -s tests
 ```
 
-You also have the option to run automatic test in run_test.py or
-manually test the functionality with the frontend. [See frontend testing
+You also have the option to run automatic test in run_test.py or manually test
+the functionality with the frontend. [See frontend testing
 documentation](https://github.com/ai-cfia/nachet-frontend/blob/main/TESTING.md)
 
 To perform the following test, you will need the frontend repository for the
@@ -35,16 +35,16 @@ pipeline information.
 
 1. Start the frontend application
 1. Click on the model selection button
-1. Validate that the current pipeline are selectable.
+1. Validate that the current pipeline is selectable.
 
 **Expected Results:**
 
-- [ ] If a problem occur while retrieving the data, a error should have stop the
-  server to start.
-- [ ] If a problem occur while retrieving the data, but no error was raised, the
-  model selection component will be empty.
+- [ ] If a problem occurs while retrieving the data, an error should prevent the
+  server from starting.
+- [ ] If a problem occurs while retrieving the data, but no error was raised,
+  the model selection component should be empty.
 - [ ] If everything went correctly while retrieving the data, the model
-  selection component will display the pipeline metadata.
+  selection component should display the pipeline metadata.
 
 **Actual Results:**
 
@@ -52,42 +52,41 @@ pipeline information.
 
 **Pass/Fail Criteria:**
 
-- [ ] Pass if the metadata from the available pipeline is display.
-- [ ] Fail if the metadata from the available pipeline is not display and no
+- [ ] Pass if the metadata from the available pipeline is displayed.
+- [ ] Fail if the metadata from the available pipeline is not displayed and no
   error was raised.
 
 ---
 
 ## Test Case: Inference Request
 
-**Objective**: Verify that the inference request endpoint `/inf` function as
+**Objective**: Verify that the inference request endpoint `/inf` behaves as
 expected.
 
 **Preconditions:**
 
-- [ ] Nachet backend is sep up and running. Use the command `hypercorn -b :8080
+- [ ] Nachet backend is set up and running. Use the command `hypercorn -b :8080
   app:app` to start the quartz server.
-- [ ] The environment variable are all set.
+- [ ] The environment variables are all set.
 - [ ] The frontend is running.
 - [ ] Start the frontend application
 - [ ] Click on the model selection button
-- [ ] Validate that the current pipeline are selectable
+- [ ] Validate that the current pipeline is selectable
 
 **Test Steps:**
 
 1. Upload a seed image
 1. Select the first model (pipeline)
 1. Click on the classify button
-1. Wait until the result populate the canvas
+1. Wait until the results populated on the canvas
 1. Repeat the process for every model (pipeline)
 
-|:boom: Warning|
-|:--:|
-|Displaying results from two different models will overlap and become unreadable.|
+|:boom: Warning| |:--:| |Displaying results from two different models will
+overlap and become unreadable.|
 
 **Expected Results:**
 
-- [ ] The data populate both the canvas and the results components with the
+- [ ] The data populates both the canvas and the results components with the
   prediction data from the model (pipeline).
 - [ ] An alert with an error from port 3000 or 8080 is displayed.
 
@@ -97,8 +96,8 @@ expected.
 
 **Pass/Fail Criteria:**
 
-- [ ] Pass if the data populate both the canvas and the results components with
+- [ ] Pass if the data populates both the canvas and the results components with
   the prediction of the model (pipeline).
-- [ ] Fail if an alert is launch with an error message.
-- [ ] Fail if the data do not populate the canvas and the results components
-- [ ] Fail if the inference is stuck in an infinite loops
+- [ ] Fail if an alert is displayed with an error message.
+- [ ] Fail if the data does not populates the canvas and the results component
+- [ ] Fail if the inference is stuck in an infinite loop
