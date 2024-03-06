@@ -12,8 +12,9 @@ b.test_get_blob_successful()
 b.test_get_blob_unsuccessful()
 
 c = testGetPipeline()
-c.test_get_pipeline_info_unsuccessful()
 c.test_get_pipeline_info_successful()
+c.test_get_pipeline_info_wrong_connection_string()
+c.test_get_pipeline_info_unsuccessful()
 
 d = TestQuartHealth()
 d.test_health()
