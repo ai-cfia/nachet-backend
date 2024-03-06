@@ -12,7 +12,7 @@ class TestInferenceRequest(unittest.TestCase):
         """
         Set up the test environment before running each test case.
         """
-         # Start the test pipeline
+        # Start the test pipeline
         self.test = app.test_client()
         response = asyncio.run(
             self.test.get("/test")
@@ -117,7 +117,7 @@ class TestInferenceRequest(unittest.TestCase):
         )
 
         # Build expected response
-        expected = 500
+        expected = 400
 
         # Test the answers from inference_request
         response = asyncio.run(
@@ -142,7 +142,7 @@ class TestInferenceRequest(unittest.TestCase):
     def test_inference_request_missing_argument(self):
         # Build expected response
         responses = []
-        expected = ("missing request arguments")
+        expected = ("InferenceRequestError: missing request arguments: either folder_name, container_name, imageDims or image is missing")
 
         data = {
             "image": self.image_header,
@@ -184,7 +184,7 @@ class TestInferenceRequest(unittest.TestCase):
 
     def test_inference_request_wrong_pipeline_name(self):
         # Build expected response
-        expected = ("Model wrong_pipeline_name not found")
+        expected = ("InferenceRequestError: model wrong_pipeline_name not found")
 
         # Test the answers from inference_request
         response = asyncio.run(
@@ -213,7 +213,7 @@ class TestInferenceRequest(unittest.TestCase):
 
     def test_inference_request_wrong_header(self):
         # Build expected response
-        expected = ("Invalid image header")
+        expected = ("InferenceRequestError: invalid image header")
 
         # Test the answers from inference_request
         response = asyncio.run(

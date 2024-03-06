@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 
 import azure_storage.azure_storage_api as azure_storage_api
 
@@ -28,3 +29,6 @@ for model in pipelines_json["models"]:
     model["api_key"] = cipher_suite.encrypt(api_key).decode()
 
 print(azure_storage_api.insert_new_version_pipeline(pipelines_json, connection_string, blob_storage_account_name))
+
+if __name__ == "__main__":
+    blob = asyncio.run(azure_storage_api.get_pipeline_info("connection_string", blob_storage_account_name, "0.1.0"))

@@ -7,8 +7,12 @@ from azure_storage.azure_storage_api import (
     get_blob,
     get_pipeline_info
 )
+
+from azure.core.exceptions import ResourceNotFoundError
+
 from custom_exceptions import (
     GetBlobError,
+    PipelineNotFoundError
 )
 
 
@@ -123,28 +127,20 @@ class TestGetBlob(unittest.TestCase):
 
         self.assertEqual(result, mock_blob_content)
 
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_get_blob_unsuccessful(self, MockFromConnectionString):
-        mock_blob_content = b"blob content"
-
-        mock_blob = Mock()
-        mock_blob.readall.return_value = mock_blob_content
+    def test_get_blob_unsuccessful(self):
+        blob = "nonexisting_blob"
 
         mock_blob_client = Mock()
-        mock_blob_client.download_blob.side_effect = GetBlobError("Blob not found")
+        mock_blob_client.download_blob.side_effect = ResourceNotFoundError("Resource not found")
 
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            get_blob(mock_container_client, "nonexisting_blob")
-        )
+        with self.assertRaises(GetBlobError) as context:
+            asyncio.run(get_blob(mock_container_client, blob))
+        print(str(context.exception) == f"the specified blob: {blob} cannot be found")
 
-        print(result is False)
 
-        self.assertEqual(result, False)
 
 class testGetPipeline(unittest.TestCase):
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
@@ -171,43 +167,45 @@ class testGetPipeline(unittest.TestCase):
             mock_container_client
         )
 
-        connection_string = "test_connection_string"
-        mock_blob_name = "test_blob"
-        mock_version = "v1"
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            get_pipeline_info(connection_string, mock_blob_name, mock_version)
-        )
+        result = asyncio.run(get_pipeline_info("test_connection_string", "test_blob", "v1"))
 
         print(result == json.loads(mock_blob_content))
 
         self.assertEqual(result, json.loads(mock_blob_content))
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    def test_get_pipeline_info_wrong_connection_string(self, MockFromConnectionString):
+
+        pipeline_version = "v1"
+
+        MockFromConnectionString.side_effect = (
+            ValueError("connection string is empty or not conform")
+        )
+
+        with self.assertRaises(PipelineNotFoundError) as context:
+            asyncio.run(get_pipeline_info("wrong_connection_string", "test_blob", pipeline_version))
+
+        print(str(context.exception) == f"This version {pipeline_version} was not found")
+
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_pipeline_info_unsuccessful(self, MockFromConnectionString):
-        mock_container_client = MagicMock()
-        mock_container_client.exists.return_value = True
+        pipeline_version = "v1"
+
+        mock_blob_client = Mock()
+        mock_blob_client.download_blob.side_effect = ResourceNotFoundError("Resource not found")
+
+        mock_container_client = Mock()
+        mock_container_client.get_blob_client.return_value = mock_blob_client
 
         mock_blob_service_client = MockFromConnectionString.return_value
         mock_blob_service_client.get_container_client.return_value = (
             mock_container_client
         )
 
-        connection_string = "test_connection_string"
-        mock_blob_name = "test_blob"
-        mock_version = "v1"
+        with self.assertRaises(PipelineNotFoundError) as context:
+            asyncio.run(get_pipeline_info("test_connection_string", "test_blob", pipeline_version))
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            get_pipeline_info(connection_string, mock_blob_name, mock_version)
-        )
-
-        print(result is False)
-
-        self.assertEqual(result, False)
+        print(str(context.exception) == f"This version {pipeline_version} was not found")
 
 
 if __name__ == "__main__":

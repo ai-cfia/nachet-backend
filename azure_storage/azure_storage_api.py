@@ -2,7 +2,8 @@ import json
 import uuid
 import hashlib
 import datetime
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, ContainerClient
+from azure.core.exceptions import ResourceNotFoundError
 from custom_exceptions import (
     ConnectionStringError,
     MountContainerError,
@@ -72,7 +73,7 @@ async def mount_container(connection_string, container_uuid, create_container=Tr
         return False
 
 
-async def get_blob(container_client, blob_name):
+async def get_blob(container_client: ContainerClient, blob_name: str):
     """
     gets the contents of a specified blob in the user's container
     """
@@ -82,9 +83,9 @@ async def get_blob(container_client, blob_name):
         blob_content = blob.readall()
         return blob_content
 
-    except GetBlobError as error:
-        print(error)
-        return False
+    except ResourceNotFoundError as error:
+        raise GetBlobError(
+            f"the specified blob: {blob_name} cannot be found") from error
 
 
 async def upload_image(container_client, folder_name, image, hash_value):
@@ -254,40 +255,26 @@ async def get_pipeline_info(
 
     Raises:
         PipelineNotFoundError: If the specified version of the pipeline is not found.
-
     """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
 
-        if blob_service_client:
-            container_client = blob_service_client.get_container_client(
-                pipeline_container_name
-            )
+        if blob_service_client is None:
+            raise PipelineNotFoundError("No Blob Service Client found with the connection string.")
 
-            blob_list = container_client.list_blobs()
-            for blob in blob_list:
-                if blob.name.split(".")[-1] != "json":
-                    print("WARNING a non JSON file is in the folder")
-                else:
-                    json_blob = await get_blob(container_client, blob.name)
-                    pipeline = json.loads(json_blob)
-                    if not isinstance(pipeline, list) and pipeline.get("version") == pipeline_version:
-                        return pipeline
+        container_client = blob_service_client.get_container_client(
+            pipeline_container_name
+        )
 
-            else:
-                raise PipelineNotFoundError(
-                    "This version of the pipeline was not found."
-                )
+        blob = await get_blob(container_client, f"pipelines/{pipeline_version}.json")
+        pipeline = json.loads(blob)
+        return pipeline
 
-    except PipelineNotFoundError as error:
-        print(error)
-        return False
+    except (ValueError, GetBlobError, PipelineNotFoundError) as error:
+        raise PipelineNotFoundError(f"This version {pipeline_version} was not found") from error
 
-    except FolderListError as error:
-        print(error)
-        return False
 
 def insert_new_version_pipeline(
         pipelines_json: dict,

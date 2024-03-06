@@ -20,6 +20,7 @@ from custom_exceptions import (
     InferenceRequestError,
     CreateDirectoryRequestError,
     ServerError,
+    PipelineNotFoundError,
 )
 
 load_dotenv()
@@ -163,16 +164,17 @@ async def inference_request():
         pipelines_endpoints = CACHE.get("pipelines")
 
         if not (folder_name and container_name and imageDims and image_base64):
-            return jsonify(["missing request arguments"]), 400
+            raise InferenceRequestError(
+                "missing request arguments: either folder_name, container_name, imageDims or image is missing")
 
         if not pipelines_endpoints.get(pipeline_name):
-            return jsonify([f"Model {pipeline_name} not found"]), 400
+            raise InferenceRequestError(f"model {pipeline_name} not found")
 
         header, encoded_data = image_base64.split(",", 1)
 
         # Validate image header
         if not header.startswith("data:image/"):
-            return jsonify(["Invalid image header"]), 400
+            raise InferenceRequestError("invalid image header")
 
         image_bytes = base64.b64decode(encoded_data)
         container_client = await azure_storage_api.mount_container(
@@ -204,7 +206,7 @@ async def inference_request():
 
         except urllib.error.HTTPError as error:
             print(error)
-            return jsonify(["endpoint cannot be reached" + str(error.code)]), 400
+            raise InferenceRequestError(error.args[0]) from error
 
         # upload the inference results to the user's container as async task
         result_json_string = json.dumps(processed_result_json)
@@ -222,7 +224,7 @@ async def inference_request():
 
     except InferenceRequestError as error:
         print(error)
-        return jsonify(["InferenceRequestError: " + str(error)]), 400
+        return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 
     except Exception as error:
         print(error)
@@ -325,8 +327,12 @@ async def get_pipelines(mock:bool = False):
         with open("mock_pipeline_json.json", "r+") as f:
             result_json = json.load(f)
     else:
-        result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
-        cipher_suite = Fernet(FERNET_KEY)
+        try:
+            result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
+            cipher_suite = Fernet(FERNET_KEY)
+        except PipelineNotFoundError as error:
+            print(error)
+            raise ServerError("Server errror: Pipelines were not found") from error
     # Get all the api_call function and map them in a dictionary
     api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
     # Get all the inference functions and map them in a dictionary
@@ -377,7 +383,7 @@ async def before_serving():
 
     except ServerError as e:
         print(e)
-        raise ServerError(str(e))
+        raise
 
     except Exception as e:
         print(e)

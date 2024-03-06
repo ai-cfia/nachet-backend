@@ -13,7 +13,6 @@ from collections import namedtuple
 from custom_exceptions import InferenceRequestError
 
 
-
 async def request_inference_from_swin(model: namedtuple, previous_result: list[bytes]):
     """
     Perform inference using the SWIN model on a list of images.
@@ -29,14 +28,14 @@ async def request_inference_from_swin(model: namedtuple, previous_result: list[b
         InferenceRequestError: If an error occurs while processing the request.
     """
     try:
-        result_json = []
+        results = []
         for img in previous_result.get("images"):
             req = await reqt.request_factory(img, model)
             response = urllib.request.urlopen(req)
             result = response.read()
-            result_json.append(json.loads(result.decode("utf8")))
+            results.append(json.loads(result.decode("utf8")))
 
-        return await model.inference_function(previous_result.get("result_json"), result_json)
+        return await model.inference_function(previous_result.get("result_json"), results)
     except Exception as e:
        raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
 
@@ -59,11 +58,11 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
         req = await reqt.request_factory(previous_result, model)
         response = urllib.request.urlopen(req)
         result = response.read()
-        result_json = json.loads(result.decode("utf8"))
+        result_object = json.loads(result.decode("utf8"))
 
         return {
-            "result_json": result_json,
-            "images": await model.inference_function(previous_result, result_json)
+            "result_json": result_object,
+            "images": await model.inference_function(previous_result, result_object)
         }
     except Exception as e:
         raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
@@ -87,12 +86,13 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
         req = await reqt.request_factory(previous_result, model)
         response = urllib.request.urlopen(req)
         result = response.read()
-        result_json = json.loads(result.decode("utf8"))
+        result_object = json.loads(result.decode("utf8"))
 
-        return result_json
+        return result_object
 
     except Exception as e:
         raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
+
 
 async def request_inference_from_test(model: namedtuple, previous_result: str):
     """
@@ -110,7 +110,7 @@ async def request_inference_from_test(model: namedtuple, previous_result: str):
     """
     try:
         if previous_result == '':
-           raise Exception("Test error")
+           raise ValueError("The result send to the inference function is empty")
         print(f"processing test request for {model.name} with {type(previous_result)} arguments")
         return [
             {
@@ -136,5 +136,5 @@ async def request_inference_from_test(model: namedtuple, previous_result: str):
             }
         ]
 
-    except Exception as e:
-        raise Exception(f"An error occurred while processing the request:\n {str(e)}")
+    except ValueError as error:
+        raise InferenceRequestError("An error occurred while processing the request") from error
