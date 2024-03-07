@@ -208,9 +208,9 @@ async def inference_request():
             print(error)
             raise InferenceRequestError(error.args[0]) from error
 
-        # upload the inference results to the user's container as async task
         result_json_string = json.dumps(processed_result_json)
 
+        # upload the inference results to the user's container as async task
         app.add_background_task(
             azure_storage_api.upload_inference_result,
             container_client,
@@ -378,7 +378,6 @@ async def before_serving():
             raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        # CACHE["endpoints"] = await fetch_json(NACHET_MODEL, "endpoints", "model_endpoints_metadata.json")
         CACHE["endpoints"] = await get_pipelines()
 
     except ServerError as e:

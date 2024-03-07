@@ -35,6 +35,8 @@ async def request_inference_from_swin(model: namedtuple, previous_result: list[b
             result = response.read()
             results.append(json.loads(result.decode("utf8")))
 
+        print(json.dumps(results, indent=4)) # Transform into logging
+
         return await model.inference_function(previous_result.get("result_json"), results)
     except Exception as e:
        raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}")
@@ -59,6 +61,7 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
         response = urllib.request.urlopen(req)
         result = response.read()
         result_object = json.loads(result.decode("utf8"))
+        print(json.dumps(result_object[0].get("boxes"), indent=4)) # Transform into logging
 
         return {
             "result_json": result_object,
@@ -87,6 +90,7 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
         response = urllib.request.urlopen(req)
         result = response.read()
         result_object = json.loads(result.decode("utf8"))
+        print(json.dumps(result_object[0].get("boxes"), indent=4)) # Transform into logging
 
         return result_object
 
