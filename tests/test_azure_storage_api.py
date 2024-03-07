@@ -141,7 +141,6 @@ class TestGetBlob(unittest.TestCase):
         print(str(context.exception) == f"the specified blob: {blob} cannot be found")
 
 
-
 class testGetPipeline(unittest.TestCase):
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_pipeline_info_successful(self, MockFromConnectionString,):

@@ -16,9 +16,8 @@ async def request_factory(img_bytes: str | bytes, model: namedtuple) -> Request:
     deployment_platform = list(model.deployment_platform.keys())[0]
 
     headers = {
-        "Content-Type": model.content_type, #"application/json"
-        "Authorization": ("Bearer " + model.api_key),
-        # "azureml-model-deployment": model.name,
+        "Content-Type": model.content_type,
+        "Authorization": ("Bearer " + model.api_key)
     }
 
     if deployment_platform in supported_deployment_platform:
