@@ -15,7 +15,7 @@ jobs:
 
   deploy:
     uses:
-      ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-github-registry.yml@63-as-a-devops-i-would-like-to-create-a-workflow-to-push-images-to-this-organisation-docker-registry
+      ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-github-registry.yml@main
     with:
       container-name: ${{ github.event.repository.name }}
       tag: ${{ github.sha }}
@@ -34,5 +34,3 @@ jobs:
   yaml-check:
     uses:
       ai-cfia/github-workflows/.github/workflows/workflow-yaml-check.yml@main
-    with:
-      config-file-path: '.yamllint.yml'
