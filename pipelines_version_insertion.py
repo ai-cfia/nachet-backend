@@ -55,7 +55,7 @@ def pipeline_insertion(json_path:str):
 
 def main():
     try:
-        json_path = argv[1] if len(argv) > 1 else r"C:\Users\guindonmax\Documents\Nachet\blob_storage_test.json"
+        json_path = argv[1]
         print(pipeline_insertion(json_path))
     except (IndexError, PipelineInsertionError) as error:
         if isinstance(error, IndexError):
