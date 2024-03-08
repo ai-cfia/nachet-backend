@@ -3,7 +3,7 @@ import uuid
 import hashlib
 import datetime
 from azure.storage.blob import BlobServiceClient, ContainerClient
-from azure.core.exceptions import ResourceNotFoundError
+from azure.core.exceptions import ResourceNotFoundError, ResourceExistsError
 from custom_exceptions import (
     ConnectionStringError,
     MountContainerError,
@@ -308,8 +308,8 @@ def insert_new_version_pipeline(
 
         json_name = "{}/{}.json".format("pipelines", pipelines_json.get("version"))
         container_client.upload_blob(
-            json_name, json.dumps(pipelines_json, indent=4), overwrite=True)
+            json_name, json.dumps(pipelines_json, indent=4), overwrite=False)
         return "The pipeline was successfully uploaded to the blob storage"
 
-    except ValueError as error:
+    except (ValueError, ResourceExistsError) as error:
         raise ConnectionStringError(error.args[0]) from error
