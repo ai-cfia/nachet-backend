@@ -37,20 +37,27 @@ async def process_inference_results(data, imageDims):
                         and box["box"]["topX"] <= box2["box"]["bottomX"]
                         and box["box"]["topY"] <= box2["box"]["bottomY"]
                     ):
-                        if box["score"] >= box2["score"]:
+                        # box2 is the lower score box
+                        if box2["score"] < box["score"]:
                             data[0]["boxes"][j]["overlapping"] = True
                             data[0]["boxes"][i]["overlappingIndices"].append(j + 1)
                             box2["box"]["bottomX"] = box["box"]["bottomX"]
                             box2["box"]["bottomY"] = box["box"]["bottomY"]
                             box2["box"]["topX"] = box["box"]["topX"]
                             box2["box"]["topY"] = box["box"]["topY"]
-                        else:
+                        # box is the lower score box
+                        elif box["score"] < box2["score"]:
                             data[0]["boxes"][i]["overlapping"] = True
                             data[0]["boxes"][i]["overlappingIndices"].append(j + 1)
                             box["box"]["bottomX"] = box2["box"]["bottomX"]
                             box["box"]["bottomY"] = box2["box"]["bottomY"]
                             box["box"]["topX"] = box2["box"]["topX"]
                             box["box"]["topY"] = box2["box"]["topY"]
+                        # Unsure whether or not they should be marked as overlapping.
+                        # else:
+                        #     data[0]["boxes"][i]["overlapping"] = True
+                        #     data[0]["boxes"][j]["overlapping"] = True
+
         labelOccurrence = {}
         for i, box in enumerate(data[0]["boxes"]):
             if box["label"] not in labelOccurrence:
