@@ -64,3 +64,11 @@ class ValidateEnvVariablesError(Exception):
 
 class ServerError(Exception):
     pass
+
+
+class MicroscopeQueryError(Exception):
+    pass
+
+
+class ExifNonPresentError(Exception):
+    pass
