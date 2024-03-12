@@ -1,6 +1,4 @@
 
 .env
-.vscode/settings.json
 *.pyc
-.vscode/settings.json
 output.*
