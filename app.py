@@ -52,8 +52,10 @@ CACHE = {
     "endpoints": None,
     "pipelines": {},
 }
+
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
+app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200MB
 
 
 @app.post("/del")
