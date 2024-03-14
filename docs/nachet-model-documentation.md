@@ -174,10 +174,9 @@ models:
     endpoint:
     api_key:
     inference_function:
-    content-type:
+    content_type:
     deployment_platform:
-    # example of deployment_platform:
-    # - azure: name_of_endpoint
+      azure:
     # support azure, google, huggingface, aws
     endpoint_name:
     model_name:

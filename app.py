@@ -348,7 +348,7 @@ async def get_pipelines(mock:bool = False):
             cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
             cipher_suite.decrypt(model.get("api_key").encode()).decode(),
             inference_functions.get(model.get("inference_function")),
-            model.get("content-type"),
+            model.get("content_type"),
             model.get("deployment_platform")
         )
         models += (m,)
