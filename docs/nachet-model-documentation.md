@@ -95,7 +95,6 @@ The `box` key stores the value for a specific box around a seed. This helps the 
 
 ![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
 
-
 ## Different ways of calling models
 
 ### Header
