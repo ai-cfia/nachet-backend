@@ -93,6 +93,9 @@ This is useful in case were the user have is attention on more then 1 result.
 
 The `box` key stores the value for a specific box around a seed. This helps the frontend application build a red rectangle around every seed on the image.
 
+![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
+
+
 ## Different ways of calling models
 
 ### Header
