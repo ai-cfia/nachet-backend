@@ -89,6 +89,10 @@ This is useful in case were the user have is attention on more then 1 result.
  > "Top N accuracy — Top N accuracy is when you measure how often your predicted class falls in the top N values of your softmax distribution."
  [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*. Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
 
+### Box around seed
+
+The `box` key stores the value for a specific box around a seed. This helps the frontend application build a red rectangle around every seed on the image.
+
 ## Different ways of calling models
 
 ### Header
@@ -145,47 +149,41 @@ A list of common error models returns to the backend.
 In order to dynamically build the pipeline in the backend from the model, the
 following data structure was designed. For now, the pipelines will have two keys for their names (`model_name`, `piepline_name`) to support the frontend code until it is changed to get the name of the pipeline with the correct key.
 
-```json
-{
-    "version": "0.1.0",
-    "date": "2024-02-26",
-    "pipelines":
-    [
-        {
-            "models": ["model 1", "model 2"],
-            "model_name": "Model(Pipeline) 1",
-            "pipeline_name": "Pipeline 1",
-            "created_by": "creator name",
-            "creation_date": "2024-01-01",
-            "version": "1",
-            "description": "",
-            "job_name": "",
-            "dataset": "",
-            "metrics": [],
-            "identifiable": []
-        }
-    ],
-    "models":
-    [
-        {
-            "task": "object-detection",
-            "api_call_function": "function_key",
-            "endpoint": "endpoint",
-            "api_key": "key",
-            "infeference functions": "function_key",
-            "content-type": "application/json",
-            "deployment_platform": {"azure": "azureml-model-deployment"},
-            "endpoint_name": "endpoint-name",
-            "model_name": "model name",
-            "created_by": "creator name",
-            "creation_date": "2024-01-01",
-            "version": "1",
-            "description": "",
-            "job_name": "",
-            "dataset": "",
-            "metrics": [],
-            "identifiable": []
-        }
-    ]
-}
+```yaml
+version:
+date:
+pipelines:
+  - models:
+    model_name:
+    pipeline_name:
+    created_by:
+    creation_date:
+    version:
+    description:
+    job_name:
+    dataset:
+    metrics:
+    identifiable:
+
+models:
+  - task:
+    api_call_function:
+    endpoint:
+    api_key:
+    inference_function:
+    content-type:
+    deployment_platform:
+    # example of deployment_platform:
+    # - azure: name_of_endpoint
+    # support azure, google, huggingface, aws
+    endpoint_name:
+    model_name:
+    created_by:
+    creation_date:
+    version:
+    description:
+    job_name:
+    dataset:
+    metrics:
+    identifiable:
 ```
