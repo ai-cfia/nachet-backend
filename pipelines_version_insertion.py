@@ -42,13 +42,12 @@ import os
 import json
 import yaml
 import datetime
+import sys
 
 from pydantic import BaseModel, ValidationError, field_validator
 
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError
-
-from sys import argv
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 from custom_exceptions import ConnectionStringError
@@ -58,7 +57,6 @@ load_dotenv()
 KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 BLOB_STORAGE_ACCOUNT_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
 
 class PipelineInsertionError(Exception):
     pass
@@ -108,6 +106,9 @@ class Pipeline(BaseModel):
             return []
         return v
 
+    class Config:
+        protected_namespaces = ()
+
 class Model(BaseModel):
     task: str
     api_call_function: str
@@ -145,25 +146,8 @@ class Model(BaseModel):
             return {}
         return v
 
-
-def validate_data(data: dict):
-    """
-    Validates the data to ensure that it matches the expected structure.
-
-    Args:
-        data (dict): The data to be validated.
-
-    Returns:
-        Data: The validated data.
-
-    Raises:
-        PipelineInsertionError: If the data does not match the expected structure.
-    """
-
-    try:
-        return Data(**data)
-    except ValidationError as error:
-        raise PipelineInsertionError(error.errors()) from error
+    class Config:
+        protected_namespaces = ()
 
 
 def insert_new_version_pipeline(
@@ -254,37 +238,40 @@ def pipeline_insertion(file_path:str) -> str:
     """
     if not os.path.exists(file_path):
         raise PipelineInsertionError(
-            f"the file does not exist, please check the file path \
-                \n provided path{file_path}")
+            f"""
+            \nthe file does not exist, please check the file path
+            \nprovided path: {file_path}
+            """
+        )
 
     extension = file_path.split(".")[-1]
 
     if extension not in {"json", "JSON","yaml", "yml"}:
         raise PipelineInsertionError(
-            f"the file must be a json, a yaml or yml file, please check the file extension \
-                \n provided extension {extension}")
+            f"""\nthe file must be a json, a yaml or yml file,
+            \nplease check the file extension\nprovided extension: {extension}""")
 
+    if extension not in {"json", "JSON"}:
+        pipelines = yaml_to_json(file_path)
+
+    else:
+        with (open(file_path, "r")) as file:
+            data = file.read()
+            pipelines = json.loads(data)
+
+    if not isinstance(pipelines, dict):
+        raise PipelineInsertionError(
+            f"""\nthe file must contain a dictionary with the following keys:
+            \n version, date, pipelines, models \n instead provided a {type(pipelines)}
+            """
+        )
+    try:
+        Data(**pipelines)
+    except ValidationError as error:
+        raise PipelineInsertionError(error) from error
 
     try:
         cipher_suite = Fernet(KEY)
-
-        if extension not in {"json", "JSON"}:
-            pipelines = yaml_to_json(file_path)
-
-        else:
-            with (open(file_path, "r")) as file:
-                data = file.read()
-                pipelines = json.loads(data)
-
-
-        if not isinstance(pipelines, dict):
-            raise PipelineInsertionError(
-                f"the file must contain a dictionary with the following keys: \
-                    version, date, pipelines, models \n instead provided \
-                    a {type(pipelines)}")
-
-        validate_data(pipelines)
-
         for model in pipelines["models"]:
             # crypting endopoint
             endpoint = model["endpoint"].encode()
@@ -304,13 +291,14 @@ def pipeline_insertion(file_path:str) -> str:
 
 def main():
     try:
-        print(pipeline_insertion(argv[1]))
+        print(pipeline_insertion(sys.argv[1]))
     except (IndexError, PipelineInsertionError) as error:
         if isinstance(error, IndexError):
             print("please provide the path to the file as an argument")
 
         if isinstance(error, PipelineInsertionError):
             print(error.args[0])
+    return 0
 
 if __name__ == "__main__":
-    quit(main())
+    sys.exit(main())
