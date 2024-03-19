@@ -24,7 +24,7 @@ models:
     inference_function:
     content_type:
     deployment_platform:
-      platfrom:
+      platform:
     # example of deployment_platform:
     # azure: name_of_endpoint
     endpoint_name:
