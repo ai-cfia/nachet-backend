@@ -3,24 +3,26 @@ import model_inference.inference as inference
 
 import asyncio
 
-box1 = {
-    "topX": 1,
-    "topY": 1,
-    "bottomX": 40,
-    "bottomY": 40,
-}
-box2 = {
-    "topX": 20,
-    "topY": 20,
-    "bottomX":60,
-    "bottomY": 40,
-}
 
 class TestInferenceProcessFunction(unittest.TestCase):
+    def setUp(self):
+        self.box1 = {
+            "topX": 1,
+            "topY": 1,
+            "bottomX": 40,
+            "bottomY": 40,
+        }
+        self.box2 = {
+            "topX": 20,
+            "topY": 20,
+            "bottomX":60,
+            "bottomY": 40,
+        }
+
     def test_process_inference_overlap_results(self):
         boxes = [
-            {"box": box1, "score": 20, "label": "box1"},
-            {"box": box2, "score": 10, "label": "box2"}
+            {"box": self.box1, "score": 20, "label": "box1"},
+            {"box": self.box2, "score": 10, "label": "box2"}
         ]
         data = {
             "boxes": boxes,
@@ -33,11 +35,11 @@ class TestInferenceProcessFunction(unittest.TestCase):
         self.assertTrue(result[0]["boxes"][1]["overlapping"])
 
         print(result)
-        # self.assertEqual(result, None)
+
     def test_process_inference_overlap_score_results(self):
         boxes = [
-            {"box": box1, "score": 10, "label": "box1"},
-            {"box": box2, "score": 10, "label": "box2"}
+            {"box": self.box1, "score": 10, "label": "box1"},
+            {"box": self.box2, "score": 10, "label": "box2"}
         ]
         data = {
             "boxes": boxes,
@@ -48,8 +50,3 @@ class TestInferenceProcessFunction(unittest.TestCase):
 
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
         self.assertFalse(result[0]["boxes"][1]["overlapping"])
-
-        # self.assertEqual(result, None)
-        
-
-
