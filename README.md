@@ -41,7 +41,7 @@ Start by making a copy of `.env.template` and renaming it `.env`. For the backen
 * **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
 * **NACHET_DATA**: Url to access nachet-data repository
 * **NACHET_HEALTH_MESSAGE**: Health check message for the server.
-* **NACHET_MAX_CONTENT_LENGHT**: Set the maximum size of the file that can upload to the backend. Need to be the same size as DevSecOps.
+* **NACHET_MAX_CONTENT_LENGHT**: Set the maximum size of the file that can be upload to the backend. Need to be the same size as the `proxy body size` variable from DevSecOps.
 
 ****
 ### DEPLOYING NACHET
