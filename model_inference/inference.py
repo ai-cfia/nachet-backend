@@ -47,10 +47,10 @@ async def process_inference_results(data, imageDims):
                     width = max(0, intersection_bottomX - intersection_topX)
                     height = max(0, intersection_bottomY - intersection_topY)
 
-                    commune_area = width * height
+                    common_area = width * height
 
                     if (
-                       commune_area >= area_box/2 and commune_area >= area_candidate/2
+                       common_area >= area_box/2 and common_area >= area_candidate/2
                     ):
                         # box2 is the lower score box
                         if box2["score"] < box["score"]:
