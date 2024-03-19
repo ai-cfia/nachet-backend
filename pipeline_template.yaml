@@ -17,7 +17,7 @@ pipelines:
     identifiable:
 
 models:
-  - task:
+  - tasks:
     api_call_function:
     endpoint:
     api_key:
@@ -25,7 +25,7 @@ models:
     content_type:
     deployment_platform:
       platform:
-    # example of deployment_platform:
+    # example of deployment_platform
     # azure: name_of_endpoint
     endpoint_name:
     model_name:
