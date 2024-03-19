@@ -41,7 +41,7 @@ Start by making a copy of `.env.template` and renaming it `.env`. For the backen
 * **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
 * **NACHET_DATA**: Url to access nachet-data repository
 * **NACHET_HEALTH_MESSAGE**: Health check message for the server.
-* **NACHET_MAX_CONTENT_LENGHT**: Set the maximum size of the file that can be uploaded to the backend. Need to be the same size as the `proxy body size` variable from DevSecOps.
+* **NACHET_MAX_CONTENT_LENGTH**: Set the maximum size of the file that can be uploaded to the backend. Needs to be the same size as the `client_max_body_size` [value](https://github.com/ai-cfia/howard/blob/dedee069f051ba743122084fcb5d5c97c2499359/kubernetes/aks/apps/nachet/base/nachet-ingress.yaml#L13) set from the deployment in Howard.
 
 ****
 ### DEPLOYING NACHET
