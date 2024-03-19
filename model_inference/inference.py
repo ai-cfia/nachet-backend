@@ -31,11 +31,26 @@ async def process_inference_results(data, imageDims):
         for i, box in enumerate(data[0]["boxes"]):
             for j, box2 in enumerate(data[0]["boxes"]):
                 if j > i:
+
+                    # Calculate the common region of the two box to determine if they are ovelapping
+                    area_box = (
+                        box["box"]["bottomX"] - box["box"]["topX"]) *(box["box"]["bottomY"] - box["box"]["topY"])
+                    area_candidate = (
+                        box2["box"]["bottomX"] - box2["box"]["topX"]
+                        ) * (box2["box"]["bottomY"] - box2["box"]["topY"])
+
+                    intersection_topX = max(box["box"]["topX"], box2["box"]["topX"])
+                    intersection_topY = max(box["box"]["topY"], box2["box"]["topY"])
+                    intersection_bottomX = min(box["box"]["bottomX"], box2["box"]["bottomX"])
+                    intersection_bottomY = min(box["box"]["bottomY"], box2["box"]["bottomY"])
+
+                    width = max(0, intersection_bottomX - intersection_topX)
+                    height = max(0, intersection_bottomY - intersection_topY)
+
+                    common_area = width * height
+
                     if (
-                        box["box"]["bottomX"] >= box2["box"]["topX"]
-                        and box["box"]["bottomY"] >= box2["box"]["topY"]
-                        and box["box"]["topX"] <= box2["box"]["bottomX"]
-                        and box["box"]["topY"] <= box2["box"]["bottomY"]
+                       common_area >= area_box/2 and common_area >= area_candidate/2
                     ):
                         # box2 is the lower score box
                         if box2["score"] < box["score"]:
@@ -53,10 +68,6 @@ async def process_inference_results(data, imageDims):
                             box["box"]["bottomY"] = box2["box"]["bottomY"]
                             box["box"]["topX"] = box2["box"]["topX"]
                             box["box"]["topY"] = box2["box"]["topY"]
-                        # Unsure whether or not they should be marked as overlapping.
-                        # else:
-                        #     data[0]["boxes"][i]["overlapping"] = True
-                        #     data[0]["boxes"][j]["overlapping"] = True
 
         labelOccurrence = {}
         for i, box in enumerate(data[0]["boxes"]):
@@ -66,7 +77,7 @@ async def process_inference_results(data, imageDims):
                 labelOccurrence[box["label"]] += 1
         data[0]["labelOccurrence"] = labelOccurrence
         # add totalBoxes attribute to the inference results
-        data[0]["totalBoxes"] = sum(1 for box in data[0]["boxes"])
+        data[0]["totalBoxes"] = sum(1 for _ in data[0]["boxes"])
         return data
 
     except ProcessInferenceResultError as error:
