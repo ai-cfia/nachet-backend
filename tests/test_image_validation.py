@@ -1,11 +1,7 @@
 import unittest
-import base64
-import json
 import asyncio
 
-from app import app
-from io import BytesIO
-from PIL import Image
+from app import app, json, base64, Image, io
 from unittest.mock import patch, Mock
 
 
@@ -13,7 +9,7 @@ class TestImageValidation(unittest.TestCase):
     def setUp(self):
         self.test_client = app.test_client()
 
-        self.img_byte_array = BytesIO()
+        self.img_byte_array = io.BytesIO()
         image = Image.new('RGB', (150, 150), 'blue')
         self.image_header = "data:image/PNG;base64,"
         image.save(self.img_byte_array, 'PNG')

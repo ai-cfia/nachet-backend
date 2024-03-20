@@ -38,23 +38,6 @@ CACHE = {
     'validators': []
 }
 
-# Check: do environment variables exist?
-# if connection_string is None:
-#     raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-# if endpoint_url is None:
-#     raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
-
-# if endpoint_api_key is None:
-#     raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-
-# # Check: are environment variables correct?
-# if not bool(re.match(connection_string_regex, connection_string)):
-#     raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-# if not bool(re.match(endpoint_url_regex, endpoint_url)):
-#     raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 
@@ -342,6 +325,24 @@ async def fetch_json(repo_URL, key, file_path):
 
 @app.before_serving
 async def before_serving():
+    # Check: do environment variables exist?
+    if connection_string is None:
+        raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+    if endpoint_url is None:
+        raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
+
+    if endpoint_api_key is None:
+        raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+    # Check: are environment variables correct?
+    if not bool(re.match(connection_string_regex, connection_string)):
+        raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+    if not bool(re.match(endpoint_url_regex, endpoint_url)):
+        raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+
     await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
     await fetch_json(NACHET_MODEL, 'endpoints', 'model_endpoints_metadata.json')
 
