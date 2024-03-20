@@ -33,25 +33,26 @@ NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 CACHE = {
     'seeds': None,
-    'endpoints': None
+    'endpoints': None,
+    'validators': []
 }
 
 # Check: do environment variables exist?
-if connection_string is None:
-    raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+# if connection_string is None:
+#     raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
-if endpoint_url is None:
-    raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
+# if endpoint_url is None:
+#     raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
 
-if endpoint_api_key is None:
-    raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+# if endpoint_api_key is None:
+#     raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
-# Check: are environment variables correct? 
-if not bool(re.match(connection_string_regex, connection_string)):
-    raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+# # Check: are environment variables correct?
+# if not bool(re.match(connection_string_regex, connection_string)):
+#     raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
-if not bool(re.match(endpoint_url_regex, endpoint_url)):
-    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+# if not bool(re.match(endpoint_url_regex, endpoint_url)):
+#     raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
@@ -148,10 +149,10 @@ async def create_directory():
 async def image_validation():
     """
     Validates an image based on its extension, header, size, and resizability.
-    
+
     Returns:
         A JSON response containing a boolean indicating whether the image is valid and a validator hash.
-        
+
     Raises:
         ImageValidationError: If the image fails any of the validation checks.
     """
@@ -170,17 +171,17 @@ async def image_validation():
         # extension check
         if image_extension not in valide_extension:
            raise ImageValidationError("Invalid file extension")
-        
+
         expected_header = f"data:image/{image_extension};base64"
-        
+
         # header check
         if header.lower() != expected_header:
             raise ImageValidationError("Invalid file header")
-        
+
         # size check
         if image.size[0] > valide_dimension[0] and image.size[1] > valide_dimension[1]:
             raise ImageValidationError("Invalid file size")
-                
+
         # resizable check
         try:
             size = (100,150)
@@ -189,14 +190,16 @@ async def image_validation():
             raise ImageValidationError("Invalid file not resizable")
 
         validator = await azure_storage_api.generate_hash(base64.b64decode(encoded_image))
-        return jsonify([True, validator]), 200
-    
+        CACHE['validators'].append(validator)
+
+        return jsonify([validator]), 200
+
     except ImageValidationError as error:
         print(error)
-        return jsonify([False, error.message]), 400
+        return jsonify([error.args[0]]), 400
     except Exception as error:
         print(error)
-        return jsonify([False, "ImageValidationError: " + str(error)]), 400
+        return jsonify([f"ImageValidationError: {error.args[0]}"]), 400
 
 
 @app.post("/inf")
@@ -279,11 +282,11 @@ async def get_seed_data(seed_name):
     """
     Returns JSON containing requested seed data
     """
-    if seed_name in CACHE['seeds']:  
+    if seed_name in CACHE['seeds']:
         return jsonify(CACHE['seeds'][seed_name]), 200
     else:
         return jsonify(f"No information found for {seed_name}."), 400
-    
+
 
 @app.get("/reload-seed-data")
 async def reload_seed_data():
@@ -302,7 +305,7 @@ async def get_model_endpoints_metadata():
     """
     Returns JSON containing the deployed endpoints' metadata
     """
-    if CACHE['endpoints']:  
+    if CACHE['endpoints']:
         return jsonify(CACHE['endpoints']), 200
     else:
         return jsonify("Error retrieving model endpoints metadata.", 400)
@@ -312,7 +315,7 @@ async def get_model_endpoints_metadata():
 async def health():
     return "ok", 200
 
-    
+
 async def fetch_json(repo_URL, key, file_path):
     """
     Fetches JSON document from a GitHub repository and caches it
@@ -328,7 +331,7 @@ async def fetch_json(repo_URL, key, file_path):
                         HTTP Status Code: {error.code}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 
 @app.before_serving
 async def before_serving():
@@ -338,4 +341,3 @@ async def before_serving():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
-    
