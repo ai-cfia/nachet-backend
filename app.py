@@ -24,15 +24,17 @@ from custom_exceptions import (
 )
 
 load_dotenv()
+
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
-connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
+pipeline_version_regex = r"\d.\d.\d"
+
+CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
 PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
-NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 Model = namedtuple(
     'Model',
@@ -55,7 +57,6 @@ CACHE = {
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-app.config["MAX_CONTENT_LENGTH"] = eval(os.getenv("MAX_CONTENT_LENGHT"))
 
 @app.post("/del")
 async def delete_directory():
@@ -179,7 +180,7 @@ async def inference_request():
 
         image_bytes = base64.b64decode(encoded_data)
         container_client = await azure_storage_api.mount_container(
-            connection_string, container_name, create_container=True
+            CONNECTION_STRING, container_name, create_container=True
         )
         hash_value = await azure_storage_api.generate_hash(image_bytes)
         blob_name = await azure_storage_api.upload_image(
@@ -325,7 +326,7 @@ async def fetch_json(repo_URL, key, file_path):
         raise ValueError(str(e))
 
 
-async def get_pipelines(mock:bool = False):
+async def get_pipelines():
     """
     Retrieves the pipelines from the Azure storage API.
 
@@ -335,16 +336,12 @@ async def get_pipelines(mock:bool = False):
     Returns:
     - list: A list of dictionaries representing the pipelines.
     """
-    if mock:
-        with open("mock_pipeline_json.json", "r+") as f:
-            result_json = json.load(f)
-    else:
-        try:
-            result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
-            cipher_suite = Fernet(FERNET_KEY)
-        except PipelineNotFoundError as error:
-            print(error)
-            raise ServerError("Server errror: Pipelines were not found") from error
+    try:
+        result_json = await azure_storage_api.get_pipeline_info(CONNECTION_STRING, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
+        cipher_suite = Fernet(FERNET_KEY)
+    except PipelineNotFoundError as error:
+        print(error)
+        raise ServerError("Server errror: Pipelines were not found") from error
     # Get all the api_call function and map them in a dictionary
     api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
     # Get all the inference functions and map them in a dictionary
@@ -379,15 +376,27 @@ async def data_factory(**kwargs):
 async def before_serving():
     try:
         # Check: do environment variables exist?
-        if connection_string is None:
+        if CONNECTION_STRING is None:
             raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
         if FERNET_KEY is None:
             raise ServerError("Missing environment variable: FERNET_KEY")
 
+        if PIPELINE_VERSION is None:
+            raise ServerError("Missing environment variable: PIPELINE_VERSION")
+
+        if PIPELINE_BLOB_NAME is None:
+            raise ServerError("Missing environment variable: PIPELINE_BLOB_NAME")
+
+        if NACHET_DATA is None:
+            raise ServerError("Missing environment variable: NACHET_DATA")
+
         # Check: are environment variables correct?
-        if not bool(re.match(connection_string_regex, connection_string)):
+        if not bool(re.match(connection_string_regex, CONNECTION_STRING)):
             raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+        if not bool(re.match(pipeline_version_regex, PIPELINE_VERSION)):
+            raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
         CACHE["endpoints"] = await get_pipelines()
