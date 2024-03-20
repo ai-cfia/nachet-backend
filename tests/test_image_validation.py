@@ -53,7 +53,7 @@ class TestImageValidation(unittest.TestCase):
         data = json.loads(asyncio.run(response.get_data()))
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(data[0], 'Invalid file header')
+        self.assertEqual(data[0], 'invalid file header: data:image/')
 
     @patch("PIL.Image.open")
     def test_invalid_extension(self, mock_open):
@@ -78,7 +78,7 @@ class TestImageValidation(unittest.TestCase):
         data = json.loads(asyncio.run(response.get_data()))
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(data[0], 'Invalid file extension')
+        self.assertEqual(data[0], 'invalid file extension: md')
 
     @patch("PIL.Image.open")
     def test_invalid_size(self, mock_open):
@@ -103,7 +103,7 @@ class TestImageValidation(unittest.TestCase):
         data = json.loads(asyncio.run(response.get_data()))
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(data[0], 'Invalid file size')
+        self.assertEqual(data[0], 'invalid file size: 2000x2000')
 
     @patch("PIL.Image.open")
     def test_rezisable_error(self, mock_open):
@@ -129,7 +129,7 @@ class TestImageValidation(unittest.TestCase):
         data = json.loads(asyncio.run(response.get_data()))
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(data[0], 'Invalid file not resizable')
+        self.assertEqual(data[0], 'invalid file not resizable')
 
 if __name__ == '__main__':
     unittest.main()

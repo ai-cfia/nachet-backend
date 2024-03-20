@@ -6,3 +6,4 @@ quart-cors
 python-dotenv
 hypercorn
 Pillow
+python-magic

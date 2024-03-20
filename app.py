@@ -4,6 +4,7 @@ import os
 import base64
 import re
 import io
+import magic
 from PIL import Image
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
@@ -170,24 +171,30 @@ async def image_validation():
 
         # extension check
         if image_extension not in valide_extension:
-           raise ImageValidationError("Invalid file extension")
+           raise ImageValidationError(f"invalid file extension: {image_extension}")
 
         expected_header = f"data:image/{image_extension};base64"
+        expected_magic_header =f"image/{image_extension}"
+
+        # magic header check
+        magic_header = magic.from_buffer(base64.b64decode(encoded_image), mime=True)
+        if magic_header != expected_magic_header:
+            raise ImageValidationError(f"invalid file header: {magic_header}")
 
         # header check
         if header.lower() != expected_header:
-            raise ImageValidationError("Invalid file header")
+            raise ImageValidationError(f"invalid file header: {header}")
 
         # size check
         if image.size[0] > valide_dimension[0] and image.size[1] > valide_dimension[1]:
-            raise ImageValidationError("Invalid file size")
+            raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
 
         # resizable check
         try:
             size = (100,150)
             image.thumbnail(size)
         except IOError:
-            raise ImageValidationError("Invalid file not resizable")
+            raise ImageValidationError("invalid file not resizable")
 
         validator = await azure_storage_api.generate_hash(base64.b64decode(encoded_image))
         CACHE['validators'].append(validator)
