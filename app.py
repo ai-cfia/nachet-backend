@@ -55,8 +55,7 @@ CACHE = {
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200MB
-
+app.config["MAX_CONTENT_LENGTH"] = eval(os.getenv("MAX_CONTENT_LENGHT"))
 
 @app.post("/del")
 async def delete_directory():
@@ -297,9 +296,20 @@ async def test():
     return CACHE["endpoints"], 200
 
 
-async def fetch_json(repo_URL, key, file_path, mock=False):
+async def fetch_json(repo_URL, key, file_path):
     """
-    Fetches JSON document from a GitHub repository and caches it
+    Fetches JSON document from a GitHub repository.
+
+    Parameters:
+    - repo_URL (str): The URL of the GitHub repository.
+    - key (str): The key to identify the JSON document.
+    - file_path (str): The path to the JSON document in the repository.
+
+    Returns:
+    - dict: The JSON document as a Python dictionary.
+
+    Raises:
+    - ValueError: If there is an HTTP error or any other exception occurs during the fetch process.
     """
     try:
         if key != "endpoints":

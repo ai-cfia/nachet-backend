@@ -220,7 +220,7 @@ The inference request will return a list with the following information:
 
 ### Blob storage and Pipeline versioning
 
-To keep track of the various pipelines iterations and versions, JSON files are
+To keep track of the various pipeline iterations and versions, JSON files are
 stored in the blob storage. Users can add the JSON to the blob storage
 using the `pipelines_version_insertion.py` script. This allows for easy
 management of model and pipeline history.
@@ -237,8 +237,8 @@ To use the script, 3 environment variables are necessary:
 #### In the code
 
 In the backend, the pipelines are retrieved using the `get_pipelines` function.
-This function retrieved the data from the blob storage and stored the pipeline in
-the `CACHE["endpoint"]` variable. This the variable that feed the frontend the `models`
+This function retrieves the data from the blob storage and stores the pipeline in
+the `CACHE["endpoint"]` variable. This the variable that feeds the frontend the `models`
 information and metadata.
 
 ```python
