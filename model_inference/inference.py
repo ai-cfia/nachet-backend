@@ -1,4 +1,3 @@
-import sys
 import random
 import numpy as np
 from custom_exceptions import ProcessInferenceResultError
@@ -22,10 +21,9 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         ProcessInferenceResultError: If there is an error processing the
         inference results.
     """
-    colors = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in data[0]['boxes']]
-
     try:
         boxes = data[0]['boxes']
+        colors = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in boxes]
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
             # Set default overlapping attribute to false for each box
