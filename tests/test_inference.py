@@ -50,3 +50,32 @@ class TestInferenceProcessFunction(unittest.TestCase):
 
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
         self.assertFalse(result[0]["boxes"][1]["overlapping"])
+
+    def test_process_inference_error(self):
+        boxes = [
+            {"box": self.box1, "score": 10, "label": "box1"},
+            {"box": self.box2, "score": 10, "label": "box2"}
+        ]
+
+        data = {
+            "totalBoxes": 2
+        }
+
+        with self.assertRaises(inference.ProcessInferenceResultError):
+            asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
+
+        data ={
+            "boxes": boxes,
+            "totalBoxes": 2
+        }
+
+        with self.assertRaises(inference.ProcessInferenceResultError):
+            asyncio.run(inference.process_inference_results(data=[data], imageDims=100))
+
+        data ={
+            "boxes": None,
+            "totalBoxes": 2
+        }
+
+        with self.assertRaises(inference.ProcessInferenceResultError):
+            asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
