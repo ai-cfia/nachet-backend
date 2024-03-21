@@ -32,6 +32,9 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
+VALIDE_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
+VALIDE_DIMENSION = [1920, 1080]
+
 CACHE = {
     'seeds': None,
     'endpoints': None,
@@ -40,6 +43,7 @@ CACHE = {
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
+
 
 @app.post("/del")
 async def delete_directory():
@@ -140,9 +144,6 @@ async def image_validation():
     Raises:
         ImageValidationError: If the image fails any of the validation checks.
     """
-    VALIDE_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
-    VALIDE_DIMENSION = [1920, 1080]
-
     try:
 
         data = await request.get_json()
@@ -187,7 +188,7 @@ async def image_validation():
 
     except (FileNotFoundError, ValueError, TypeError, UnidentifiedImageError) as error:
         print(error)
-        return jsonify([error]), 400
+        return jsonify([error.args[0]]), 400
 
     except ImageValidationError as error:
         print(error)
