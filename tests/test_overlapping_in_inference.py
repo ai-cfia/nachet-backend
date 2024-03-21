@@ -34,8 +34,6 @@ class TestInferenceProcessFunction(unittest.TestCase):
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
         self.assertTrue(result[0]["boxes"][1]["overlapping"])
 
-        print(result)
-
     def test_process_inference_overlap_score_results(self):
         boxes = [
             {"box": self.box1, "score": 10, "label": "box1"},
@@ -52,8 +50,18 @@ class TestInferenceProcessFunction(unittest.TestCase):
         self.assertFalse(result[0]["boxes"][1]["overlapping"])
 
     def test_generate_color(self):
-        pass
+        boxes = [
+            {"box": self.box1, "score": 10, "label": "box1"},
+        ]
 
+        data = {
+            "boxes": boxes,
+            "totalBoxes": 1
+        }
+
+        result = asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
+
+        self.assertIsInstance(result[0]["boxes"][0]["color"], tuple)
 
     def test_process_inference_error(self):
         boxes = [
