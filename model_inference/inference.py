@@ -1,6 +1,7 @@
+import sys
+import random
 import numpy as np
 from custom_exceptions import ProcessInferenceResultError
-
 
 async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5) -> dict:
     """
@@ -21,6 +22,8 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         ProcessInferenceResultError: If there is an error processing the
         inference results.
     """
+    colors = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in data[0]['boxes']]
+
     try:
         boxes = data[0]['boxes']
         # Perform operations on each box in the data
@@ -84,11 +87,16 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
 
         # Calculate label occurrence
         labelOccurrence = {}
+        label_colors = {}
         for i, box in enumerate(data[0]["boxes"]):
             if box["label"] not in labelOccurrence:
                 labelOccurrence[box["label"]] = 1
+                label_colors[box["label"]] = colors[i]
+                box["color"] = colors[i]
+
             else:
                 labelOccurrence[box["label"]] += 1
+                box["color"] = label_colors[box["label"]]
         data[0]["labelOccurrence"] = labelOccurrence
 
         # Add totalBoxes attribute to the inference results

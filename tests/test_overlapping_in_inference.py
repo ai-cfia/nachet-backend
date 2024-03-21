@@ -51,6 +51,10 @@ class TestInferenceProcessFunction(unittest.TestCase):
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
         self.assertFalse(result[0]["boxes"][1]["overlapping"])
 
+    def test_generate_color(self):
+        pass
+
+
     def test_process_inference_error(self):
         boxes = [
             {"box": self.box1, "score": 10, "label": "box1"},
