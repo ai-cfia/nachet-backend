@@ -49,17 +49,20 @@ backend to function, you will need to add the missing values:
 
 - **NACHET_AZURE_STORAGE_CONNECTION_STRING**: Connection string to access
   external storage (Azure Blob Storage).
+- **NACHET_DATA**: Url to access nachet-data repository
+- **NACHET_BLOB_PIPELINE_NAME**: The name of the blob containing the pipeline.
+- **NACHET_BLOB_PIPELINE_VERSION**: The version of the file containing the pipeline used.
+- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**: The key to decrypt sensible data from the models.
+
+#### DEPRECATED
+
 - **NACHET_MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed
   model for inferencing.
 - **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
-- **NACHET_DATA**: Url to access nachet-data repository
-- **NACHET_SUBSCRIPTION_ID**
-- **NACHET_RESOURCE_GROUP**
-- **NACHET_WORKSPACE**
-- **NACHET_MODEL**
-- **NACHET_BLOB_PIPELINE_NAME**
-- **NACHET_BLOB_PIPELINE_VERSION**
-- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**
+- **NACHET_SUBSCRIPTION_ID**: Was used to retrieve models metadata
+- **NACHET_WORKSPACE**: Was used to retrieve models metadata
+- **NACHET_RESOURCE_GROUP**: Was used to retrieve models metadata
+- **NACHET_MODEL**: Was used to retrieve models metadata
 
 ****
 
