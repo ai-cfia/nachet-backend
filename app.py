@@ -140,9 +140,9 @@ async def image_validation():
     Raises:
         ImageValidationError: If the image fails any of the validation checks.
     """
+    VALIDE_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
+    VALIDE_DIMENSION = [1920, 1080]
     try:
-        valide_extension = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
-        valide_dimension = [1920, 1080]
 
         data = await request.get_json()
         image_base64 = data["image"]
