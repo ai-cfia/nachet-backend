@@ -1,4 +1,3 @@
-import sys
 import random
 import numpy as np
 from custom_exceptions import ProcessInferenceResultError
