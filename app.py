@@ -5,7 +5,7 @@ import base64
 import re
 import io
 import magic
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
@@ -135,13 +135,14 @@ async def image_validation():
     Validates an image based on its extension, header, size, and resizability.
 
     Returns:
-        A JSON response containing a boolean indicating whether the image is valid and a validator hash.
+        A JSON response containing a validator hash.
 
     Raises:
         ImageValidationError: If the image fails any of the validation checks.
     """
     VALIDE_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
     VALIDE_DIMENSION = [1920, 1080]
+
     try:
 
         data = await request.get_json()
@@ -153,7 +154,7 @@ async def image_validation():
         image_extension = image.format.lower()
 
         # extension check
-        if image_extension not in valide_extension:
+        if image_extension not in VALIDE_EXTENSION:
            raise ImageValidationError(f"invalid file extension: {image_extension}")
 
         expected_header = f"data:image/{image_extension};base64"
@@ -169,7 +170,7 @@ async def image_validation():
             raise ImageValidationError(f"invalid file header: {header}")
 
         # size check
-        if image.size[0] > valide_dimension[0] and image.size[1] > valide_dimension[1]:
+        if image.size[0] > VALIDE_DIMENSION[0] and image.size[1] > VALIDE_DIMENSION[1]:
             raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
 
         # resizable check
@@ -184,12 +185,13 @@ async def image_validation():
 
         return jsonify([validator]), 200
 
+    except (FileNotFoundError, ValueError, TypeError, UnidentifiedImageError) as error:
+        print(error)
+        return jsonify([error]), 400
+
     except ImageValidationError as error:
         print(error)
         return jsonify([error.args[0]]), 400
-    except Exception as error:
-        print(error)
-        return jsonify([f"ImageValidationError: {error.args[0]}"]), 400
 
 
 @app.post("/inf")
