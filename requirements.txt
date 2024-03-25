@@ -5,3 +5,7 @@ quart
 quart-cors
 python-dotenv
 hypercorn
+Pillow
+cryptography
+pyyaml
+pydantic
