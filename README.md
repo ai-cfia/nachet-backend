@@ -51,8 +51,10 @@ backend to function, you will need to add the missing values:
   external storage (Azure Blob Storage).
 - **NACHET_DATA**: Url to access nachet-data repository
 - **NACHET_BLOB_PIPELINE_NAME**: The name of the blob containing the pipeline.
-- **NACHET_BLOB_PIPELINE_VERSION**: The version of the file containing the pipeline used.
-- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**: The key to decrypt sensible data from the models.
+- **NACHET_BLOB_PIPELINE_VERSION**: The version of the file containing the
+  pipeline used.
+- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**: The key to decrypt sensible data from
+  the models.
 
 #### DEPRECATED
 
