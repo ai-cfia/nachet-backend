@@ -5,9 +5,10 @@ import base64
 import re
 import time
 import azure_storage.azure_storage_api as azure_storage_api
-import model_inference.inference as inference
-import model_inference.model_module as model_module
+import model.inference as inference
+from model import request_function
 
+from datetime import date
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
@@ -41,7 +42,6 @@ Model = namedtuple(
         'name',
         'endpoint',
         'api_key',
-        'inference_function',
         'content_type',
         'deployment_platform',
     ]
@@ -55,7 +55,7 @@ CACHE = {
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200MB
+app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB
 
 
 @app.post("/del")
@@ -155,7 +155,7 @@ async def inference_request():
 
     seconds = time.perf_counter() # transform into logging
     try:
-        print("Entering inference request") # Transform into logging
+        print(f"{date.today()} Entering inference request") # Transform into logging
         data = await request.get_json()
         pipeline_name = data.get("model_name")
         folder_name = data["folder_name"]
@@ -179,6 +179,7 @@ async def inference_request():
             raise InferenceRequestError("invalid image header")
 
         image_bytes = base64.b64decode(encoded_data)
+
         container_client = await azure_storage_api.mount_container(
             connection_string, container_name, create_container=True
         )
@@ -189,26 +190,21 @@ async def inference_request():
         blob = await azure_storage_api.get_blob(container_client, blob_name)
         image_bytes = base64.b64encode(blob).decode("utf8")
 
-        try:
-            # Keep track of every output given by the models
-            # TO DO add it to CACHE variable
-            cache_json_result = [image_bytes]
+        # Keep track of every output given by the models
+        # TO DO add it to CACHE variable
+        cache_json_result = [image_bytes]
 
-            for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
-                print(f"Entering {model.name.upper()} model") # Transform into logging
-                result_json = await model.entry_function(model, cache_json_result[idx])
-                cache_json_result.append(result_json)
+        for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
+            print(f"Entering {model.name.upper()} model") # Transform into logging
+            result_json = await model.entry_function(model, cache_json_result[idx])
+            cache_json_result.append(result_json)
 
-            print("End of inference request") # Transform into logging
-            print("Process results") # Transform into logging
+        print("End of inference request") # Transform into logging
+        print("Process results") # Transform into logging
 
-            processed_result_json = await inference.process_inference_results(
-                cache_json_result[-1], imageDims
-            )
-
-        except urllib.error.HTTPError as error:
-            print(error)
-            raise InferenceRequestError(error.args[0]) from error
+        processed_result_json = await inference.process_inference_results(
+            cache_json_result[-1], imageDims
+        )
 
         result_json_string = json.dumps(processed_result_json)
 
@@ -283,11 +279,10 @@ async def test():
             ]
     # Built test model
     m = Model(
-        model_module.request_inference_from_test,
+        request_function["test"],
         "test_model1",
         "http://localhost:8080/test_model1",
         "test_api_key",
-        None,
         "application/json",
         "test_platform"
     )
@@ -315,40 +310,34 @@ async def fetch_json(repo_URL, key, file_path, mock=False):
         raise ValueError(str(e))
 
 
-async def get_pipelines(mock:bool = False):
+async def get_pipelines():
     """
     Retrieves the pipelines from the Azure storage API.
-
-    Parameters:
-    - mock (bool): If True, retrieves the pipelines from a mock JSON file. If False, retrieves the pipelines from the Azure storage API.
 
     Returns:
     - list: A list of dictionaries representing the pipelines.
     """
-    if mock:
-        with open("mock_pipeline_json.json", "r+") as f:
-            result_json = json.load(f)
-    else:
-        try:
-            result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
-            cipher_suite = Fernet(FERNET_KEY)
-        except PipelineNotFoundError as error:
-            print(error)
-            raise ServerError("Server errror: Pipelines were not found") from error
-    # Get all the api_call function and map them in a dictionary
-    api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
-    # Get all the inference functions and map them in a dictionary
-    inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
+    try:
+        # TO DO instantiate Blob Service Client
+        result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
+        cipher_suite = Fernet(FERNET_KEY)
+    except PipelineNotFoundError as error:
+        print(error)
+        raise ServerError("Server errror: Pipelines were not found") from error
+
 
     models = ()
     for model in result_json.get("models"):
         m = Model(
-            api_call_function.get(model.get("api_call_function")),
+            request_function.get(model.get("api_call_function")),
             model.get("model_name"),
+            # To protect sensible data (API key and model endpoint), we crypt them when
+            # they are pushed into the blob storage. Once we retrieve the data here in the
+            # backend, we need to decrypt the byte format to recover the original
+            # data.
             cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
             cipher_suite.decrypt(model.get("api_key").encode()).decode(),
-            inference_functions.get(model.get("inference_function")),
-            model.get("content-type"),
+            model.get("content_type"),
             model.get("deployment_platform")
         )
         models += (m,)
