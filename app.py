@@ -8,6 +8,7 @@ import azure_storage.azure_storage_api as azure_storage_api
 import model_inference.inference as inference
 import model_inference.model_module as model_module
 
+from datetime import date
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
@@ -55,7 +56,7 @@ CACHE = {
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200MB
+app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB
 
 
 @app.post("/del")
@@ -155,7 +156,7 @@ async def inference_request():
 
     seconds = time.perf_counter() # transform into logging
     try:
-        print("Entering inference request") # Transform into logging
+        print(f"{date.today()} Entering inference request") # Transform into logging
         data = await request.get_json()
         pipeline_name = data.get("model_name")
         folder_name = data["folder_name"]
@@ -179,6 +180,7 @@ async def inference_request():
             raise InferenceRequestError("invalid image header")
 
         image_bytes = base64.b64decode(encoded_data)
+
         container_client = await azure_storage_api.mount_container(
             connection_string, container_name, create_container=True
         )
@@ -348,7 +350,7 @@ async def get_pipelines(mock:bool = False):
             cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
             cipher_suite.decrypt(model.get("api_key").encode()).decode(),
             inference_functions.get(model.get("inference_function")),
-            model.get("content-type"),
+            model.get("content_type"),
             model.get("deployment_platform")
         )
         models += (m,)
