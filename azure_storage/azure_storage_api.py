@@ -39,37 +39,49 @@ async def generate_hash(image):
     except GenerateHashError as error:
         print(error)
 
-
-async def mount_container(connection_string, container_uuid, create_container=True):
+async def get_blob_client(connection_string: str):
     """
-    given a connection string and a container name, mounts the container and
-    returns the container client as an object that can be used in other
-    functions. if a specified container doesnt exist, it creates one with the
-    provided uuid, if create_container is True
+    given a connection string, returns the blob client object
     """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
-        if blob_service_client:
-            container_name = "user-{}".format(container_uuid)
-            container_client = blob_service_client.get_container_client(container_name)
-            if container_client.exists():
-                return container_client
-            elif create_container and not container_client.exists():
-                container_client = blob_service_client.create_container(container_name)
-                # create general directory for new user container
-                response = await create_folder(container_client, "General")
-                if response:
-                    return container_client
-                else:
-                    return False
-        else:
-            raise ConnectionStringError("Invalid connection string")
+        if blob_service_client is None:
+            raise ValueError(f"the given connection string is invalid: {connection_string}")
+        return blob_service_client
 
+    except ValueError as error:
+        print(error)
+        raise ConnectionStringError(error.args[0]) from error
+
+
+async def mount_container(
+        blob_service_client: BlobServiceClient,
+        container_uuid: str,
+        create_container: bool =True):
+    """
+    given a connection string and a container uuid, mounts the container and
+    returns the container client as an object that can be used in other
+    functions. if a specified container doesnt exist, it creates one with the
+    provided uuid, if create_container is True
+    """
+    try:
+        container_name = "user-{}".format(container_uuid)
+        container_client = blob_service_client.get_container_client(container_name)
+        if container_client.exists():
+            return container_client
+        elif create_container and not container_client.exists():
+            container_client = blob_service_client.create_container(container_name)
+            # create general directory for new user container
+            response = await create_folder(container_client, "General")
+            if response:
+                return container_client
+            else:
+                raise MountContainerError(f"could not create general directory: {container_name}")
     except MountContainerError as error:
         print(error)
-        return False
+        raise
 
 
 async def get_blob(container_client: ContainerClient, blob_name: str):
@@ -237,7 +249,7 @@ async def get_directories(container_client):
         return []
 
 async def get_pipeline_info(
-        connection_string: str,
+        blob_service_client: BlobServiceClient,
         pipeline_container_name: str,
         pipeline_version: str
     ) -> json:
@@ -246,10 +258,10 @@ async def get_pipeline_info(
     provided parameters.
 
     Args:
-        connection_string (str): The connection string for the Azure Blob
-        Storage. pipeline_container_name (str): The name of the container where
-        the pipeline files are stored. pipeline_version (str): The version of
-        the pipeline to retrieve.
+        blob_service_client (BlobServiceClient): The BlobServiceClient object
+        pipeline_container_name (str): The name of the container where
+        the pipeline files are stored.
+        pipeline_version (str): The version of the pipeline to retrieve.
 
     Returns:
         json: The pipeline information in JSON format.
@@ -259,13 +271,6 @@ async def get_pipeline_info(
         found.
     """
     try:
-        blob_service_client = BlobServiceClient.from_connection_string(
-            connection_string
-        )
-
-        if blob_service_client is None:
-            raise PipelineNotFoundError("No Blob Service Client found with the connection string.")
-
         container_client = blob_service_client.get_container_client(
             pipeline_container_name
         )
@@ -274,5 +279,5 @@ async def get_pipeline_info(
         pipeline = json.loads(blob)
         return pipeline
 
-    except (ValueError, GetBlobError, PipelineNotFoundError) as error:
+    except GetBlobError as error:
         raise PipelineNotFoundError(f"This version {pipeline_version} was not found") from error

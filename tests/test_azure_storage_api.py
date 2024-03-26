@@ -5,16 +5,39 @@ from unittest.mock import patch, Mock, MagicMock
 from azure_storage.azure_storage_api import (
     mount_container,
     get_blob,
-    get_pipeline_info
+    get_pipeline_info,
+    get_blob_client
 )
 
 from azure.core.exceptions import ResourceNotFoundError
 
 from custom_exceptions import (
     GetBlobError,
-    PipelineNotFoundError
+    PipelineNotFoundError,
+    ConnectionStringError
 )
 
+class TestGetBlobServiceClient(unittest.TestCase):
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    def test_get_blob_service_successful(self, MockFromConnectionString):
+        mock_blob_service_client = MockFromConnectionString.return_value
+
+        result = asyncio.run(
+            get_blob_client("connection_string")
+        )
+
+        print(result == mock_blob_service_client)
+
+        self.assertEqual(result, mock_blob_service_client)
+
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    def test_get_blob_service_unsuccessful(self, MockFromConnectionString):
+        MockFromConnectionString.return_value = None
+
+        with self.assertRaises(ConnectionStringError) as context:
+            asyncio.run(get_blob_client("invalid_connection_string"))
+
+        print(context.exception == "the given connection string is invalid: invalid_connection_string")
 
 class TestMountContainerFunction(unittest.TestCase):
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
@@ -27,14 +50,10 @@ class TestMountContainerFunction(unittest.TestCase):
         mock_blob_service_client.get_container_client.return_value = (
             mock_container_client
         )
-
-        connection_string = "test_connection_string"
         container_name = "testcontainer"
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            mount_container(connection_string, container_name)
+        result = asyncio.run(
+            mount_container(mock_blob_service_client, container_name)
         )
 
         print(result == mock_container_client)
@@ -62,14 +81,11 @@ class TestMountContainerFunction(unittest.TestCase):
             mock_new_container_client
         )
 
-        connection_string = "test_connection_string"
         container_name = "testcontainer"
         expected_container_name = "user-{}".format(container_name)
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            mount_container(connection_string, container_name, create_container=True)
+        result = asyncio.run(
+            mount_container(mock_blob_service_client, container_name, create_container=True)
         )
 
         mock_blob_service_client.create_container.assert_called_once_with(
@@ -88,13 +104,10 @@ class TestMountContainerFunction(unittest.TestCase):
             mock_container_client
         )
 
-        connection_string = "test_connection_string"
         container_name = "testcontainer"
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            mount_container(connection_string, container_name, create_container=False)
+        result = asyncio.run(
+            mount_container(mock_blob_service_client, container_name, create_container=False)
         )
 
         mock_blob_service_client.create_container.assert_not_called()
@@ -103,8 +116,7 @@ class TestMountContainerFunction(unittest.TestCase):
 
 
 class TestGetBlob(unittest.TestCase):
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_get_blob_successful(self, MockFromConnectionString):
+    def test_get_blob_successful(self):
         mock_blob_name = "test_blob"
         mock_blob_content = b"blob content"
 
@@ -117,9 +129,7 @@ class TestGetBlob(unittest.TestCase):
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
+        result = asyncio.run(
             get_blob(mock_container_client, mock_blob_name)
         )
 
@@ -166,25 +176,11 @@ class testGetPipeline(unittest.TestCase):
             mock_container_client
         )
 
-        result = asyncio.run(get_pipeline_info("test_connection_string", "test_blob", "v1"))
+        result = asyncio.run(get_pipeline_info(mock_blob_service_client, "test_blob", "v1"))
 
         print(result == json.loads(mock_blob_content))
 
         self.assertEqual(result, json.loads(mock_blob_content))
-
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_get_pipeline_info_wrong_connection_string(self, MockFromConnectionString):
-
-        pipeline_version = "v1"
-
-        MockFromConnectionString.side_effect = (
-            ValueError("connection string is empty or not conform")
-        )
-
-        with self.assertRaises(PipelineNotFoundError) as context:
-            asyncio.run(get_pipeline_info("wrong_connection_string", "test_blob", pipeline_version))
-
-        print(str(context.exception) == f"This version {pipeline_version} was not found")
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_pipeline_info_unsuccessful(self, MockFromConnectionString):
@@ -202,7 +198,7 @@ class testGetPipeline(unittest.TestCase):
         )
 
         with self.assertRaises(PipelineNotFoundError) as context:
-            asyncio.run(get_pipeline_info("test_connection_string", "test_blob", pipeline_version))
+            asyncio.run(get_pipeline_info(mock_blob_service_client, "test_blob", pipeline_version))
 
         print(str(context.exception) == f"This version {pipeline_version} was not found")
 
