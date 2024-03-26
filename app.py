@@ -3,6 +3,9 @@ import json
 import os
 import base64
 import re
+import io
+import magic
+from PIL import Image, UnidentifiedImageError
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
@@ -14,6 +17,7 @@ from custom_exceptions import (
     InferenceRequestError,
     CreateDirectoryRequestError,
     ServerError,
+    ImageValidationError,
 )
 
 load_dotenv()
@@ -28,30 +32,18 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
+VALIDE_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
+VALIDE_DIMENSION = [1920, 1080]
+
 CACHE = {
     'seeds': None,
-    'endpoints': None
+    'endpoints': None,
+    'validators': []
 }
-
-# Check: do environment variables exist?
-if connection_string is None:
-    raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-if endpoint_url is None:
-    raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
-
-if endpoint_api_key is None:
-    raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
-
-# Check: are environment variables correct? 
-if not bool(re.match(connection_string_regex, connection_string)):
-    raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-if not bool(re.match(endpoint_url_regex, endpoint_url)):
-    raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
+
 
 @app.post("/del")
 async def delete_directory():
@@ -141,6 +133,66 @@ async def create_directory():
         return jsonify(["CreateDirectoryRequestError: " + str(error)]), 400
 
 
+@app.post("/image-validation")
+async def image_validation():
+    """
+    Validates an image based on its extension, header, size, and resizability.
+
+    Returns:
+        A JSON response containing a validator hash.
+
+    Raises:
+        ImageValidationError: If the image fails any of the validation checks.
+    """
+    try:
+
+        data = await request.get_json()
+        image_base64 = data["image"]
+
+        header, encoded_image = image_base64.split(",", 1)
+
+        image_bytes = base64.b64decode(encoded_image)
+
+        image = Image.open(io.BytesIO(image_bytes))
+        image_extension = image.format.lower()
+
+        # extension check
+        if image_extension not in VALIDE_EXTENSION:
+           raise ImageValidationError(f"invalid file extension: {image_extension}")
+
+        expected_header = f"data:image/{image_extension};base64"
+        expected_magic_header =f"image/{image_extension}"
+
+        # magic header check
+        magic_header = magic.from_buffer(image_bytes, mime=True)
+        if magic_header != expected_magic_header:
+            raise ImageValidationError(f"invalid file header: {magic_header}")
+
+        # header check
+        if header.lower() != expected_header:
+            raise ImageValidationError(f"invalid file header: {header}")
+
+        # size check
+        if image.size[0] > VALIDE_DIMENSION[0] and image.size[1] > VALIDE_DIMENSION[1]:
+            raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
+
+        # resizable check
+        try:
+            size = (100,150)
+            image.thumbnail(size)
+        except IOError:
+            raise ImageValidationError("invalid file not resizable")
+
+        validator = await azure_storage_api.generate_hash(image_bytes)
+        CACHE['validators'].append(validator)
+
+        return jsonify([validator]), 200
+
+    except (FileNotFoundError, ValueError, TypeError, UnidentifiedImageError, ImageValidationError) as error:
+        print(error)
+        return jsonify([error.args[0]]), 400
+
+
 @app.post("/inf")
 async def inference_request():
     """
@@ -154,6 +206,7 @@ async def inference_request():
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
+
         if folder_name and container_name and imageDims and image_base64:
             header, encoded_data = image_base64.split(",", 1)
             image_bytes = base64.b64decode(encoded_data)
@@ -220,11 +273,11 @@ async def get_seed_data(seed_name):
     """
     Returns JSON containing requested seed data
     """
-    if seed_name in CACHE['seeds']:  
+    if seed_name in CACHE['seeds']:
         return jsonify(CACHE['seeds'][seed_name]), 200
     else:
         return jsonify(f"No information found for {seed_name}."), 400
-    
+
 
 @app.get("/reload-seed-data")
 async def reload_seed_data():
@@ -243,7 +296,7 @@ async def get_model_endpoints_metadata():
     """
     Returns JSON containing the deployed endpoints' metadata
     """
-    if CACHE['endpoints']:  
+    if CACHE['endpoints']:
         return jsonify(CACHE['endpoints']), 200
     else:
         return jsonify("Error retrieving model endpoints metadata.", 400)
@@ -253,7 +306,7 @@ async def get_model_endpoints_metadata():
 async def health():
     return "ok", 200
 
-    
+
 async def fetch_json(repo_URL, key, file_path):
     """
     Fetches JSON document from a GitHub repository and caches it
@@ -269,14 +322,31 @@ async def fetch_json(repo_URL, key, file_path):
                         HTTP Status Code: {error.code}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 
 @app.before_serving
 async def before_serving():
+    # Check: do environment variables exist?
+    if connection_string is None:
+        raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+    if endpoint_url is None:
+        raise ServerError("Missing environment variable: NACHET_MODEL_ENDPOINT_REST_URL")
+
+    if endpoint_api_key is None:
+        raise ServerError("Missing environment variables: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+    # Check: are environment variables correct?
+    if not bool(re.match(connection_string_regex, connection_string)):
+        raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+    if not bool(re.match(endpoint_url_regex, endpoint_url)):
+        raise ServerError("Incorrect environment variable: NACHET_MODEL_ENDPOINT_ACCESS_KEY")
+
+
     await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
     await fetch_json(NACHET_MODEL, 'endpoints', 'model_endpoints_metadata.json')
 
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
-    
