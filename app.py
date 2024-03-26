@@ -151,7 +151,9 @@ async def image_validation():
 
         header, encoded_image = image_base64.split(",", 1)
 
-        image = Image.open(io.BytesIO(base64.b64decode(encoded_image)))
+        image_bytes = base64.b64decode(encoded_image)
+
+        image = Image.open(io.BytesIO(image_bytes))
         image_extension = image.format.lower()
 
         # extension check
@@ -162,7 +164,7 @@ async def image_validation():
         expected_magic_header =f"image/{image_extension}"
 
         # magic header check
-        magic_header = magic.from_buffer(base64.b64decode(encoded_image), mime=True)
+        magic_header = magic.from_buffer(image_bytes, mime=True)
         if magic_header != expected_magic_header:
             raise ImageValidationError(f"invalid file header: {magic_header}")
 
@@ -181,16 +183,12 @@ async def image_validation():
         except IOError:
             raise ImageValidationError("invalid file not resizable")
 
-        validator = await azure_storage_api.generate_hash(base64.b64decode(encoded_image))
+        validator = await azure_storage_api.generate_hash(image_bytes)
         CACHE['validators'].append(validator)
 
         return jsonify([validator]), 200
 
-    except (FileNotFoundError, ValueError, TypeError, UnidentifiedImageError) as error:
-        print(error)
-        return jsonify([error.args[0]]), 400
-
-    except ImageValidationError as error:
+    except (FileNotFoundError, ValueError, TypeError, UnidentifiedImageError, ImageValidationError) as error:
         print(error)
         return jsonify([error.args[0]]), 400
 
