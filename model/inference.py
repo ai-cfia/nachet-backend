@@ -1,10 +1,16 @@
+
+"""
+This file contain the generic inference function that process the data at the end
+of a given pipeline.
+"""
+
 import numpy as np
 from custom_exceptions import ProcessInferenceResultError
 
 
 async def process_inference_results(data, imageDims):
     """
-    processes the inference results to add additional attributes
+    processes the pipeline (last output) inference results to add additional attributes
     to the inference results that are used in the frontend
     """
     try:
