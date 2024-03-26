@@ -1,6 +1,6 @@
 
 """
-This file contain the generic inference function that process the data at the end
+This file contains the generic inference function that processes the data at the end
 of a given pipeline.
 """
 

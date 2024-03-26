@@ -1,5 +1,5 @@
 """
-This file contain the function to request the inference and process the data from
+This file contains the function that requests the inference and processes the data from
 the nachet-6seeds model.
 """
 

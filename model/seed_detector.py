@@ -1,5 +1,5 @@
 """
-This file contain the function to request the inference and process the data from
+This file contains the function that requests the inference and processes the data from
 the seed detector model.
 """
 
@@ -59,7 +59,7 @@ def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:
 
 async def request_inference_from_seed_detector(model: namedtuple, previous_result: str):
     """
-    Requests inference from the seed detector model using the provided previous result.
+    Requests inference from the seed detector model using the previously provided result.
 
     Args:
         model (namedtuple): The seed detector model.

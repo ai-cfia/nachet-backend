@@ -22,6 +22,7 @@ from custom_exceptions import (
     CreateDirectoryRequestError,
     ServerError,
     PipelineNotFoundError,
+    ConnectionStringError
 )
 
 load_dotenv()
@@ -65,12 +66,11 @@ async def delete_directory():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
             container_client = await azure_storage_api.mount_container(
-                connection_string, container_name, create_container=False
+                app.config["BLOB_CLIENT"], container_name, create_container=False
             )
             if container_client:
                 folder_uuid = await azure_storage_api.get_folder_uuid(
@@ -101,11 +101,10 @@ async def list_directories():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         if container_name:
             container_client = await azure_storage_api.mount_container(
-                connection_string, container_name, create_container=True
+                app.config["BLOB_CLIENT"], container_name, create_container=True
             )
             response = await azure_storage_api.get_directories(container_client)
             return jsonify(response), 200
@@ -124,12 +123,11 @@ async def create_directory():
     """
     try:
         data = await request.get_json()
-        connection_string: str = os.environ["NACHET_AZURE_STORAGE_CONNECTION_STRING"]
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
             container_client = await azure_storage_api.mount_container(
-                connection_string, container_name, create_container=False
+                app.config["BLOB_CLIENT"], container_name, create_container=False
             )
             response = await azure_storage_api.create_folder(
                 container_client, folder_name
@@ -164,6 +162,7 @@ async def inference_request():
         image_base64 = data["image"]
 
         pipelines_endpoints = CACHE.get("pipelines")
+        blob_service_client = app.config.get("BLOB_CLIENT")
 
         if not (folder_name and container_name and imageDims and image_base64):
             raise InferenceRequestError(
@@ -181,7 +180,7 @@ async def inference_request():
         image_bytes = base64.b64decode(encoded_data)
 
         container_client = await azure_storage_api.mount_container(
-            connection_string, container_name, create_container=True
+            blob_service_client, container_name, create_container=True
         )
         hash_value = await azure_storage_api.generate_hash(image_bytes)
         blob_name = await azure_storage_api.upload_image(
@@ -220,13 +219,9 @@ async def inference_request():
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds")
         return jsonify(processed_result_json), 200
 
-    except InferenceRequestError as error:
+    except (KeyError, InferenceRequestError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
-
-    except Exception as error:
-        print(error)
-        return jsonify(["Unexpected error occured"]), 500
 
 
 @app.get("/seed-data/<seed_name>")
@@ -318,12 +313,12 @@ async def get_pipelines():
     - list: A list of dictionaries representing the pipelines.
     """
     try:
-        # TO DO instantiate Blob Service Client
-        result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
+        app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
+        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], PIPELINE_BLOB_NAME, PIPELINE_VERSION)
         cipher_suite = Fernet(FERNET_KEY)
-    except PipelineNotFoundError as error:
+    except (ConnectionStringError, PipelineNotFoundError) as error:
         print(error)
-        raise ServerError("Server errror: Pipelines were not found") from error
+        raise ServerError("server errror: could not retrieve the pipelines") from error
 
 
     models = ()
@@ -331,8 +326,8 @@ async def get_pipelines():
         m = Model(
             request_function.get(model.get("api_call_function")),
             model.get("model_name"),
-            # To protect sensible data (API key and model endpoint), we crypt them when
-            # they are pushed into the blob storage. Once we retrieve the data here in the
+            # To protect sensible data (API key and model endpoint), we encrypt it when
+            # it's pushed into the blob storage. Once we retrieve the data here in the
             # backend, we need to decrypt the byte format to recover the original
             # data.
             cipher_suite.decrypt(model.get("endpoint").encode()).decode(),

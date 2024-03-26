@@ -35,9 +35,8 @@ class TestInferenceRequest(unittest.TestCase):
         self.image_src = None
         self.test = None
 
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_inference_request_successful(self, MockFromConnectionString):
-
+    @patch("azure_storage.azure_storage_api.mount_container")
+    def test_inference_request_successful(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
         mock_blob.readall.return_value = bytes(self.image_src, encoding="utf-8")
@@ -51,11 +50,7 @@ class TestInferenceRequest(unittest.TestCase):
         mock_container_client.get_blob_client.return_value = mock_blob_client
         mock_container_client.exists.return_value = True
 
-        mock_blob_service_client = MockFromConnectionString.return_value
-        mock_blob_service_client.get_container_client.return_value = (
-            mock_container_client
-        )
-
+        mock_container.return_value = mock_container_client
         # Build expected response keys
         responses = set()
         expected_keys = {
@@ -96,8 +91,8 @@ class TestInferenceRequest(unittest.TestCase):
         print(expected_keys == responses)
         self.assertEqual(responses, expected_keys)
 
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_inference_request_unsuccessfull(self, MockFromConnectionString):
+    @patch("azure_storage.azure_storage_api.mount_container")
+    def test_inference_request_unsuccessfull(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
         mock_blob.readall.return_value = b""
@@ -111,10 +106,7 @@ class TestInferenceRequest(unittest.TestCase):
         mock_container_client.get_blob_client.return_value = mock_blob_client
         mock_container_client.exists.return_value = True
 
-        mock_blob_service_client = MockFromConnectionString.return_value
-        mock_blob_service_client.get_container_client.return_value = (
-            mock_container_client
-        )
+        mock_container.return_value = mock_container_client
 
         # Build expected response
         expected = 400
