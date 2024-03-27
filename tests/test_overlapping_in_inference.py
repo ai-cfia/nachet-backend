@@ -1,5 +1,5 @@
 import unittest
-import model_inference.inference as inference
+import model_inference.inference as inference, random
 
 import asyncio
 
@@ -52,6 +52,8 @@ class TestInferenceProcessFunction(unittest.TestCase):
     def test_generate_color(self):
         boxes = [
             {"box": self.box1, "score": 10, "label": "box1"},
+            {"box": self.box2, "score": 30, "label": "box2"},
+            {"box": self.box1, "score": 10, "label": "box2"},
         ]
 
         data = {
@@ -59,9 +61,26 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "totalBoxes": 1
         }
 
+        random.seed(3)
+
+        test_result = []
+        label_occurences = {}
+
+        for box in boxes:
+            rgb = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            if box["label"] not in label_occurences:
+                label_occurences[box["label"]] = rgb
+                test_result.append(rgb)
+            else:
+                test_result.append(label_occurences[box["label"]])
+        colors = []
+
         result = asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
 
-        self.assertIsInstance(result[0]["boxes"][0]["color"], tuple)
+        for box in result[0]["boxes"]:
+            colors.append(box["color"])
+
+        self.assertEqual(test_result, colors)
 
     def test_process_inference_error(self):
         boxes = [
