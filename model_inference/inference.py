@@ -2,7 +2,7 @@ import random
 import numpy as np
 from custom_exceptions import ProcessInferenceResultError
 
-async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5) -> dict:
+async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5, seed: int = 3) -> dict:
     """
     Process the inference results by performing various operations on the data.
       Indicate if there are overlapping boxes and calculate the label
@@ -13,6 +13,7 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         data (dict): The inference results data.
         imageDims (tuple): The dimensions of the image.
         area_ratio (float): The area ratio of a box to consider the overlapping
+        seed (int): The seed for the random number generator.
 
     Returns:
         dict: The processed inference results data.
@@ -23,7 +24,6 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
     """
     try:
         boxes = data[0]['boxes']
-        colors = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in boxes]
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
             # Set default overlapping attribute to false for each box
@@ -84,20 +84,21 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
                             box["box"]["topY"] = box2["box"]["topY"]
 
         # Calculate label occurrence
-        labelOccurrence = {}
+        label_occurrence = {}
         label_colors = {}
+        random.seed(seed)
         for i, box in enumerate(data[0]["boxes"]):
-            if box["label"] not in labelOccurrence:
-                labelOccurrence[box["label"]] = 1
-                label_colors[box["label"]] = colors[i]
-                box["color"] = colors[i]
-
+            rgb = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            if box["label"] not in label_occurrence:
+                label_occurrence[box["label"]] = 1
+                label_colors[box["label"]] = rgb
+                box["color"] = rgb
             else:
-                labelOccurrence[box["label"]] += 1
-                box["color"] = label_colors[box["label"]]
-        data[0]["labelOccurrence"] = labelOccurrence
+                label_occurrence[box["label"]] += 1
+                color = label_colors[box["label"]]
+                box["color"] = color
 
-        # Add totalBoxes attribute to the inference results
+        data[0]["labelOccurrence"] = label_occurrence
         data[0]["totalBoxes"] = sum(1 for _ in data[0]["boxes"])
 
         return data
