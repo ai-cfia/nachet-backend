@@ -2,7 +2,7 @@ import random
 import numpy as np
 from custom_exceptions import ProcessInferenceResultError
 
-async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5) -> dict:
+async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5, seed: int = 3) -> dict:
     """
     Process the inference results by performing various operations on the data.
       Indicate if there are overlapping boxes and calculate the label
@@ -13,6 +13,7 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         data (dict): The inference results data.
         imageDims (tuple): The dimensions of the image.
         area_ratio (float): The area ratio of a box to consider the overlapping
+        seed (int): The seed for the random number generator.
 
     Returns:
         dict: The processed inference results data.
@@ -23,11 +24,6 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
     """
     try:
         boxes = data[0]['boxes']
-        # set the seed for reproducibility (sequence of random will be the same)
-        # Test the value returned by the random function
-        # Color palette that we can get (encoded in pyhon!)
-        # Pick from the palette then determinist result be able to test
-
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
             # Set default overlapping attribute to false for each box
@@ -90,7 +86,7 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         # Calculate label occurrence
         label_occurrence = {}
         label_colors = {}
-        random.seed(3)
+        random.seed(seed)
         for i, box in enumerate(data[0]["boxes"]):
             rgb = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
             if box["label"] not in label_occurrence:

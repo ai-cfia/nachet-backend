@@ -75,7 +75,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
                 test_result.append(label_occurences[box["label"]])
         colors = []
 
-        result = asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
+        result = asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100], seed=3))
 
         for box in result[0]["boxes"]:
             colors.append(box["color"])
