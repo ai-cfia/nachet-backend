@@ -5,18 +5,19 @@ from custom_exceptions import ProcessInferenceResultError
 async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5, seed: int = 3) -> dict:
     """
     Process the inference results by performing various operations on the data.
-      Indicate if there are overlapping boxes and calculate the label
-      occurrence. The overlapping is determined if the common area of two boxes
-      is greater than the area_ratio (default = 0.5) of the area of each box.
+      Indicate if there are overlapping boxes and calculates the label
+      occurrence. Boxes can overlap if their common area is greater than the
+      area_ratio (default = 0.5) of the area of each box.
 
     Args:
-        data (dict): The inference results data.
+        data (dict): The inference result data.
         imageDims (tuple): The dimensions of the image.
-        area_ratio (float): The area ratio of a box to consider the overlapping
+        area_ratio (float): The area ratio of a box to consider in the box
+        overlap claculation.
         seed (int): The seed for the random number generator.
 
     Returns:
-        dict: The processed inference results data.
+        dict: The processed inference result data.
 
     Raises:
         ProcessInferenceResultError: If there is an error processing the

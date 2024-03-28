@@ -1,7 +1,8 @@
 import unittest
-import model_inference.inference as inference, random
-
 import asyncio
+import random
+
+from model_inference.inference import process_inference_results, ProcessInferenceResultError
 
 
 class TestInferenceProcessFunction(unittest.TestCase):
@@ -28,7 +29,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "boxes": boxes,
             "totalBoxes": 2
         }
-        result = asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
+        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
 
 
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
@@ -43,7 +44,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "boxes": boxes,
             "totalBoxes": 2
         }
-        result = asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
+        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
 
 
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
@@ -75,7 +76,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
                 test_result.append(label_occurences[box["label"]])
         colors = []
 
-        result = asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100], seed=3))
+        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], seed=3))
 
         for box in result[0]["boxes"]:
             colors.append(box["color"])
@@ -92,21 +93,21 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "totalBoxes": 2
         }
 
-        with self.assertRaises(inference.ProcessInferenceResultError):
-            asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
+        with self.assertRaises(ProcessInferenceResultError):
+            asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
 
         data ={
             "boxes": boxes,
             "totalBoxes": 2
         }
 
-        with self.assertRaises(inference.ProcessInferenceResultError):
-            asyncio.run(inference.process_inference_results(data=[data], imageDims=100))
+        with self.assertRaises(ProcessInferenceResultError):
+            asyncio.run(process_inference_results(data=[data], imageDims=100))
 
         data ={
             "boxes": None,
             "totalBoxes": 2
         }
 
-        with self.assertRaises(inference.ProcessInferenceResultError):
-            asyncio.run(inference.process_inference_results(data=[data], imageDims=[100, 100]))
+        with self.assertRaises(ProcessInferenceResultError):
+            asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
