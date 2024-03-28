@@ -32,8 +32,8 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
-VALIDE_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
-VALIDE_DIMENSION = [1920, 1080]
+VALID_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
+VALID_DIMENSION = [1920, 1080]
 
 CACHE = {
     'seeds': None,
