@@ -157,7 +157,7 @@ async def image_validation():
         image_extension = image.format.lower()
 
         # extension check
-        if image_extension not in VALIDE_EXTENSION:
+        if image_extension not in VALID_EXTENSION:
            raise ImageValidationError(f"invalid file extension: {image_extension}")
 
         expected_header = f"data:image/{image_extension};base64"
@@ -173,7 +173,7 @@ async def image_validation():
             raise ImageValidationError(f"invalid file header: {header}")
 
         # size check
-        if image.size[0] > VALIDE_DIMENSION[0] and image.size[1] > VALIDE_DIMENSION[1]:
+        if image.size[0] > VALID_DIMENSION[0] and image.size[1] > VALID_DIMENSION[1]:
             raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
 
         # resizable check
