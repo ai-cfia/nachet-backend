@@ -52,8 +52,9 @@ if not bool(re.match(endpoint_url_regex, endpoint_url)):
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-# Using eval as the env variable will likely be 200 * 1024 * 1024
-app.config["MAX_CONTENT_LENGTH"] = eval(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
+mb = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
+
+app.config["MAX_CONTENT_LENGTH"] = mb * 1024 * 1024
 
 @app.post("/del")
 async def delete_directory():
