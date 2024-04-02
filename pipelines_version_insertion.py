@@ -23,6 +23,7 @@ Note:
 - The file must be a dictionary with the following keys: version, date,
     pipelines, models.
 - Supported formats are json, yaml and yml.
+- At least one of the pipelines must be set as default (default: True).
 - Refer to pipeline_template.yaml to see the expected structure of the file.
 - The endpoint and API key in each model will be encrypted using the provided
     decryption key.
@@ -57,6 +58,8 @@ load_dotenv()
 KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 BLOB_STORAGE_ACCOUNT_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+NO_DEFAULT_MSG = "no pipeline was set as default, please set one as default by setting the default value as True"
 
 class PipelineInsertionError(Exception):
     pass
@@ -93,6 +96,7 @@ class Pipeline(BaseModel):
     dataset: str
     metrics: list
     identifiable: list
+    default: bool
 
     @field_validator ("*", mode="before", check_fields=True)
     def validate_data(cls, v):
@@ -116,7 +120,7 @@ class Model(BaseModel):
     api_key: str
     inference_function: str
     content_type: str
-    deployment_platform: dict
+    deployment_platform: str
     endpoint_name: str
     model_name: str
     created_by: str
@@ -267,6 +271,12 @@ def pipeline_insertion(file_path:str) -> str:
         )
     try:
         Data(**pipelines)
+        for pipeline in pipelines["pipelines"]:
+            if pipeline.get("default"):
+                print(f"pipeline {pipeline.get('pipeline_name')} is set as default")
+                break
+        else:
+            raise PipelineInsertionError(NO_DEFAULT_MSG)
     except ValidationError as error:
         raise PipelineInsertionError(error) from error
 

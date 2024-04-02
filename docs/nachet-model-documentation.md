@@ -149,7 +149,7 @@ A list of common error models returns to the backend.
 ## Pipeline and model data
 
 In order to dynamically build the pipeline in the backend from the model, the
-following data structure was designed. For now, the pipelines will have two keys for their names (`model_name`, `piepline_name`) to support the frontend code until it is changed to get the name of the pipeline with the correct key.
+following data structure was designed. For now, the pipelines will have two keys for their names (`model_name`, `pipeline_name`) to support the frontend code until it is changed to get the name of the pipeline with the correct key.
 
 ```yaml
 version:
@@ -166,6 +166,7 @@ pipelines:
     dataset:
     metrics:
     identifiable:
+    default:
 
 models:
   - task:
@@ -175,8 +176,6 @@ models:
     inference_function:
     content_type:
     deployment_platform:
-      azure:
-    # support azure, google, huggingface, aws
     endpoint_name:
     model_name:
     created_by:

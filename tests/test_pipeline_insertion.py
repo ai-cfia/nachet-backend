@@ -117,5 +117,58 @@ class TestPipelineInsertion(unittest.TestCase):
         with self.assertRaises(PipelineInsertionError):
             pipeline_insertion("test_file.yaml")
 
+    @patch("pipelines_version_insertion.yaml_to_json")
+    @patch("os.path.exists")
+    def test_pipeline_insertion_fail_no_default(self, mock_os_path_exists, mock_yaml_to_json):
+        mock_os_path_exists.return_value = True
+        mock_yaml_to_json.return_value = {
+            "version": "0.0.0",
+            "date": "2021-01-01",
+            "pipelines": [
+                    {
+                        "models": ["test_model"],
+                        "model_name": "p_test",
+                        "pipeline_name": "p_test",
+                        "created_by": "test",
+                        "creation_date": "test",
+                        "version": 1,
+                        "description": "test",
+                        "job_name": "test",
+                        "dataset": "test",
+                        "metrics": [],
+                        "identifiable": [],
+                        "default": False
+                    }
+                ],
+            "models": [
+                {
+                    "task": "test",
+                    "api_call_function": "test",
+                    "endpoint": "test",
+                    "api_key": "test",
+                    "inference_function": "test",
+                    "content_type": "test",
+                    "deployment_platform": "test",
+                    "endpoint_name": "test",
+                    "model_name": "test_model",
+                    "created_by": "test",
+                    "creation_date": "test",
+                    "version": 1,
+                    "description": "test",
+                    "job_name": "test",
+                    "dataset": "test",
+                    "metrics": ["test"],
+                    "identifiable": ["test"]
+                }
+            ],
+        }
+
+        expected = "no pipeline was set as default, please set one as default by setting the default value as True"
+        with self.assertRaises(PipelineInsertionError) as context:
+            pipeline_insertion("test_file.yaml")
+
+        self.assertEqual(str(context.exception), expected)
+        print(str(context.exception) == expected)
+
 if __name__ == "__main__":
     unittest.main()

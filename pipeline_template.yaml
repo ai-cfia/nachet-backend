@@ -15,6 +15,7 @@ pipelines:
     dataset:
     metrics:
     identifiable:
+    default:
 
 models:
   - tasks:
@@ -24,9 +25,6 @@ models:
     inference_function:
     content_type:
     deployment_platform:
-      platform:
-    # example of deployment_platform
-    # azure: name_of_endpoint
     endpoint_name:
     model_name:
     created_by:
