@@ -5,4 +5,4 @@ quart
 quart-cors
 python-dotenv
 hypercorn
-colour
+matplotlib

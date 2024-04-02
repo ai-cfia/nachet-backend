@@ -1,7 +1,9 @@
 import unittest
 import asyncio
 
-from model_inference.inference import process_inference_results, ProcessInferenceResultError, Color
+from matplotlib import colormaps
+
+from model_inference.inference import process_inference_results, hex_format, rgb_format, ProcessInferenceResultError
 
 
 class TestInferenceProcessFunction(unittest.TestCase):
@@ -49,7 +51,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
         self.assertFalse(result[0]["boxes"][1]["overlapping"])
 
-    def test_generate_color(self):
+    def test_generate_color_hex(self):
         boxes = [
             {"box": self.box1, "score": 10, "label": "box1"},
             {"box": self.box2, "score": 30, "label": "box2"},
@@ -62,10 +64,31 @@ class TestInferenceProcessFunction(unittest.TestCase):
         }
 
         color_res = set()
-        colors = list(Color("yellow").range_to(Color("green"), len(boxes)))
 
-        expected_result = set([c.get_hex() for i, c in enumerate(colors) if boxes[i]["label"] != boxes[i - 1]["label"]])
-        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], colors=("yellow", "green")))
+        expected_result = set([hex_format(c) for i, c in enumerate(colormaps["Set1"].colors[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
+        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
+
+        for box in result[0]["boxes"]:
+            color_res.add(box["color"])
+
+        self.assertEqual(color_res, expected_result)
+
+    def test_generate_color_rgb(self):
+        boxes = [
+            {"box": self.box1, "score": 10, "label": "box1"},
+            {"box": self.box2, "score": 30, "label": "box2"},
+            {"box": self.box1, "score": 10, "label": "box2"},
+        ]
+
+        data = {
+            "boxes": boxes,
+            "totalBoxes": 1
+        }
+
+        color_res = set()
+
+        expected_result = set([rgb_format(c) for i, c in enumerate(colormaps["Set1"].colors[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
+        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], color_format="rgb"))
 
         for box in result[0]["boxes"]:
             color_res.add(box["color"])
