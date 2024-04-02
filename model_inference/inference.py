@@ -1,8 +1,40 @@
-import random
+"""
+This module provides functions to process the inference results from a given
+pipelines.
+
+It returns the processed inference results with additional information such as
+overlapping boxes, label occurrence, and colors for each species found.
+
+The colors can be returned in HEX or RGB format depending on the frontend preference.
+The colors are based on the colormaps from matplotlib.
+"""
+
 import numpy as np
+
 from custom_exceptions import ProcessInferenceResultError
 
-async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5, seed: int = 3) -> dict:
+from model_inference.color_palette import SET1, SET2
+
+
+def hex_format(color: tuple):
+    hex = ""
+    for v in color:
+        hex += "{:02X}".format(int(v * 255))
+
+    return f"#{hex}"
+
+
+def rgb_format(color: tuple):
+    r, g, b = color
+    return (r*255, g*255, b*255)
+
+
+async def process_inference_results(
+        data: dict,
+        imageDims: list[int, int],
+        area_ratio: float = 0.5,
+        color_format: str = "hex"
+) -> dict:
     """
     Process the inference results by performing various operations on the data.
       Indicate if there are overlapping boxes and calculates the label
@@ -14,7 +46,9 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         imageDims (tuple): The dimensions of the image.
         area_ratio (float): The area ratio of a box to consider in the box
         overlap claculation.
-        seed (int): The seed for the random number generator.
+        color_set (str): The color set to use.
+        color_format (str): Specified the format representation of the color.
+        Support hex and rgb.
 
     Returns:
         dict: The processed inference result data.
@@ -25,6 +59,15 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
     """
     try:
         boxes = data[0]['boxes']
+
+        if color_format == "hex":
+            colors = [hex_format(c) for c in SET1]
+            over_colors = [hex_format(c) for c in SET2]
+        elif color_format == "rgb":
+            colors = [rgb_format(c) for c in SET1]
+            over_colors = [rgb_format(c) for c in SET2]
+
+
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
             # Set default overlapping attribute to false for each box
@@ -87,13 +130,16 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         # Calculate label occurrence
         label_occurrence = {}
         label_colors = {}
-        random.seed(seed)
-        for i, box in enumerate(data[0]["boxes"]):
-            rgb = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        for i, box in enumerate(boxes):
             if box["label"] not in label_occurrence:
                 label_occurrence[box["label"]] = 1
-                label_colors[box["label"]] = rgb
-                box["color"] = rgb
+                if i < len(colors):
+                    label_colors[box["label"]] = colors[i]
+                    box["color"] = colors[i]
+                else:
+                    diff = len(over_colors) + 1
+                    label_colors[box["label"]] = over_colors[i - diff]
+                    box["color"] = over_colors[i - diff]
             else:
                 label_occurrence[box["label"]] += 1
                 color = label_colors[box["label"]]
