@@ -1,8 +1,11 @@
-import random
 import numpy as np
+
+from colour import Color
+
 from custom_exceptions import ProcessInferenceResultError
 
-async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5, seed: int = 3) -> dict:
+
+async def process_inference_results(data: dict, imageDims: list[int, int], area_ratio: float = 0.5, colors: tuple = ("red", "blue")) -> dict:
     """
     Process the inference results by performing various operations on the data.
       Indicate if there are overlapping boxes and calculates the label
@@ -14,7 +17,7 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         imageDims (tuple): The dimensions of the image.
         area_ratio (float): The area ratio of a box to consider in the box
         overlap claculation.
-        seed (int): The seed for the random number generator.
+        colors (tuple): A tuple of two color to generate a range of colors to draw the boxes.
 
     Returns:
         dict: The processed inference result data.
@@ -25,6 +28,7 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
     """
     try:
         boxes = data[0]['boxes']
+        color_range = list(Color(colors[0]).range_to(Color(colors[1]), len(boxes)))
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
             # Set default overlapping attribute to false for each box
@@ -87,13 +91,11 @@ async def process_inference_results(data: dict, imageDims: list[int, int], area_
         # Calculate label occurrence
         label_occurrence = {}
         label_colors = {}
-        random.seed(seed)
         for i, box in enumerate(data[0]["boxes"]):
-            rgb = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
             if box["label"] not in label_occurrence:
                 label_occurrence[box["label"]] = 1
-                label_colors[box["label"]] = rgb
-                box["color"] = rgb
+                label_colors[box["label"]] = color_range[i].get_hex()
+                box["color"] = color_range[i].get_hex()
             else:
                 label_occurrence[box["label"]] += 1
                 color = label_colors[box["label"]]

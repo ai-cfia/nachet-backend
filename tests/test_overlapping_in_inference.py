@@ -1,8 +1,7 @@
 import unittest
 import asyncio
-import random
 
-from model_inference.inference import process_inference_results, ProcessInferenceResultError
+from model_inference.inference import process_inference_results, ProcessInferenceResultError, Color
 
 
 class TestInferenceProcessFunction(unittest.TestCase):
@@ -62,26 +61,16 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "totalBoxes": 1
         }
 
-        random.seed(3)
+        color_res = set()
+        colors = list(Color("yellow").range_to(Color("green"), len(boxes)))
 
-        test_result = []
-        label_occurences = {}
-
-        for box in boxes:
-            rgb = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-            if box["label"] not in label_occurences:
-                label_occurences[box["label"]] = rgb
-                test_result.append(rgb)
-            else:
-                test_result.append(label_occurences[box["label"]])
-        colors = []
-
-        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], seed=3))
+        expected_result = set([c.get_hex() for i, c in enumerate(colors) if boxes[i]["label"] != boxes[i - 1]["label"]])
+        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], colors=("yellow", "green")))
 
         for box in result[0]["boxes"]:
-            colors.append(box["color"])
+            color_res.add(box["color"])
 
-        self.assertEqual(test_result, colors)
+        self.assertEqual(color_res, expected_result)
 
     def test_process_inference_error(self):
         boxes = [
