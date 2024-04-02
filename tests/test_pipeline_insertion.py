@@ -57,7 +57,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         with self.assertRaises(ConnectionStringError) as context:
             insert_new_version_pipeline(self.mock_pipeline, "test_connection_string", self.account_name)
-        print(str(context.exception) == "Resource not found")
+        self.assertEqual(str(context.exception), "Resource not found")
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_insert_new_version_pipeline_value_error(self, mock_connection_string):
@@ -66,7 +66,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         with self.assertRaises(ConnectionStringError) as context:
             insert_new_version_pipeline(self.mock_pipeline, "test_connection_string", self.account_name)
-        print(str(context.exception) == "Connection string is either blank or malformed.")
+        self.assertEqual(str(context.exception), "Connection string is either blank or malformed.")
 
     def test_pipeline_insertion_file_not_exist(self):
         expected = """
@@ -76,7 +76,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         with self.assertRaises(PipelineInsertionError) as context:
             pipeline_insertion("test_file.yaml")
-        print(str(context.exception) == expected)
+        self.assertEqual(str(context.exception), expected)
 
     @patch("os.path.exists")
     def test_pipeline_insertion_file_extension_not_supported(self, mock_os_path_exists):
@@ -87,7 +87,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         with self.assertRaises(PipelineInsertionError) as context:
             pipeline_insertion("test_file.md")
-        print(str(context.exception) == expected)
+        self.assertEqual(str(context.exception), expected)
 
     @patch("pipelines_version_insertion.yaml_to_json")
     @patch("os.path.exists")
@@ -100,7 +100,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         with self.assertRaises(PipelineInsertionError) as context:
             pipeline_insertion("test_file.yaml")
-        print(str(context.exception) == expected)
+        self.assertEqual(str(context.exception), expected)
 
     @patch("pipelines_version_insertion.yaml_to_json")
     @patch("os.path.exists")
@@ -114,8 +114,10 @@ class TestPipelineInsertion(unittest.TestCase):
         }
 
         # Missing argument and Wrong Type
-        with self.assertRaises(PipelineInsertionError):
+        with self.assertRaises(PipelineInsertionError) as context:
             pipeline_insertion("test_file.yaml")
+
+        self.assertIn("validation errors", str(context.exception))
 
     @patch("pipelines_version_insertion.yaml_to_json")
     @patch("os.path.exists")
@@ -168,7 +170,6 @@ class TestPipelineInsertion(unittest.TestCase):
             pipeline_insertion("test_file.yaml")
 
         self.assertEqual(str(context.exception), expected)
-        print(str(context.exception) == expected)
 
 if __name__ == "__main__":
     unittest.main()
