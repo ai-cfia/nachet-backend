@@ -121,7 +121,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
             if i < len(colormaps["Set1"].colors):
                 expected_result.append(rgb_format(colormaps["Set1"].colors[i]))
             else:
-                expected_result.append(rgb_format(colormaps["Set1"].colors[i-len(colormaps["Set1"].colors)]))
+                expected_result.append(rgb_format(colormaps["Set2"].colors[i-len(colormaps["Set1"].colors)]))
 
         result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], color_format="rgb"))
 

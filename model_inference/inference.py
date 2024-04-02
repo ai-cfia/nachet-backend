@@ -7,8 +7,6 @@ overlapping boxes, label occurrence, and colors for each species found.
 
 The colors can be returned in HEX or RGB format depending on the frontend preference.
 The colors are based on the colormaps from matplotlib.
-
-
 """
 from matplotlib import colormaps
 
@@ -34,6 +32,7 @@ async def process_inference_results(
         imageDims: list[int, int],
         area_ratio: float = 0.5,
         color_set: str = "Set1",
+        over_color_set: str = "Set2",
         color_format: str = "hex") -> dict:
     """
     Process the inference results by performing various operations on the data.
@@ -61,9 +60,12 @@ async def process_inference_results(
         boxes = data[0]['boxes']
 
         if color_format == "hex":
-            colors = [hex_format(c) for c in colormaps[color_set].colors[:len(boxes)]]
+            colors = [hex_format(c) for c in colormaps[color_set].colors]
+            over_colors = [hex_format(c) for c in colormaps[over_color_set].colors]
         elif color_format == "rgb":
-            colors = [rgb_format(c) for c in colormaps[color_set].colors[:len(boxes)]]
+            colors = [rgb_format(c) for c in colormaps[color_set].colors]
+            over_colors = [rgb_format(c) for c in colormaps[over_color_set].colors]
+
 
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
@@ -134,8 +136,9 @@ async def process_inference_results(
                     label_colors[box["label"]] = colors[i]
                     box["color"] = colors[i]
                 else:
-                    label_colors[box["label"]] = colors[i - len(colors)]
-                    box["color"] = colors[i - len(colors)]
+                    diff = len(over_colors) + 1
+                    label_colors[box["label"]] = over_colors[i - diff]
+                    box["color"] = over_colors[i - diff]
             else:
                 label_occurrence[box["label"]] += 1
                 color = label_colors[box["label"]]
