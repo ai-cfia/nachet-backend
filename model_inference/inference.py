@@ -127,11 +127,15 @@ async def process_inference_results(
         # Calculate label occurrence
         label_occurrence = {}
         label_colors = {}
-        for i, box in enumerate(data[0]["boxes"]):
+        for i, box in enumerate(boxes):
             if box["label"] not in label_occurrence:
                 label_occurrence[box["label"]] = 1
-                label_colors[box["label"]] = colors[i]
-                box["color"] = colors[i]
+                if i < len(colors):
+                    label_colors[box["label"]] = colors[i]
+                    box["color"] = colors[i]
+                else:
+                    label_colors[box["label"]] = colors[i - len(colors)]
+                    box["color"] = colors[i - len(colors)]
             else:
                 label_occurrence[box["label"]] += 1
                 color = label_colors[box["label"]]
