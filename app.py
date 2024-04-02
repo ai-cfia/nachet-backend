@@ -32,8 +32,8 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
-VALID_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
-VALID_DIMENSION = [1920, 1080]
+VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
+VALID_DIMENSION = json.loads(os.getenv("NACHET_VALID_DIMENSION"))
 
 CACHE = {
     'seeds': None,
@@ -152,28 +152,23 @@ async def image_validation():
         header, encoded_image = image_base64.split(",", 1)
 
         image_bytes = base64.b64decode(encoded_image)
-
         image = Image.open(io.BytesIO(image_bytes))
-        image_extension = image.format.lower()
+
+        magic_header = magic.from_buffer(image_bytes, mime=True)
+        image_extension = magic_header.split("/")[1]
 
         # extension check
         if image_extension not in VALID_EXTENSION:
            raise ImageValidationError(f"invalid file extension: {image_extension}")
 
         expected_header = f"data:image/{image_extension};base64"
-        expected_magic_header =f"image/{image_extension}"
-
-        # magic header check
-        magic_header = magic.from_buffer(image_bytes, mime=True)
-        if magic_header != expected_magic_header:
-            raise ImageValidationError(f"invalid file header: {magic_header}")
 
         # header check
         if header.lower() != expected_header:
             raise ImageValidationError(f"invalid file header: {header}")
 
         # size check
-        if image.size[0] > VALID_DIMENSION[0] and image.size[1] > VALID_DIMENSION[1]:
+        if image.size[0] > VALID_DIMENSION["width"] and image.size[1] > VALID_DIMENSION["height"]:
             raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
 
         # resizable check

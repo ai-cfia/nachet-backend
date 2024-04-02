@@ -52,7 +52,7 @@ class TestImageValidation(unittest.TestCase):
         self.assertEqual(data[0], 'invalid file header: data:image/')
 
     @patch("magic.Magic.from_buffer")
-    def test_invalid_magic_header(self, mock_magic_from_buffer):
+    def test_invalid_extension(self, mock_magic_from_buffer):
 
         mock_magic_from_buffer.return_value = "text/plain"
 
@@ -71,32 +71,7 @@ class TestImageValidation(unittest.TestCase):
         data = json.loads(asyncio.run(response.get_data()))
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(data[0], 'invalid file header: text/plain')
-
-    @patch("PIL.Image.open")
-    def test_invalid_extension(self, mock_open):
-
-        mock_image = Mock()
-        mock_image.format = "md"
-
-        mock_open.return_value = mock_image
-
-        data = base64.b64encode(self.img_byte_array.getvalue()).decode('utf-8')
-
-        response = asyncio.run(
-            self.test_client.post(
-                '/image-validation',
-                headers={
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-                },
-                data= str.encode(json.dumps({'image': self.image_header + data})),
-            ))
-
-        data = json.loads(asyncio.run(response.get_data()))
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(data[0], 'invalid file extension: md')
+        self.assertEqual(data[0], 'invalid file extension: plain')
 
     @patch("PIL.Image.open")
     def test_invalid_size(self, mock_open):
