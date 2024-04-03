@@ -8,10 +8,12 @@ overlapping boxes, label occurrence, and colors for each species found.
 The colors can be returned in HEX or RGB format depending on the frontend preference.
 The colors are based on the colormaps from matplotlib.
 """
-import colormaps as cmaps
+
 import numpy as np
 
 from custom_exceptions import ProcessInferenceResultError
+
+from model_inference.color_palette import SET1, SET2
 
 
 def hex_format(color: tuple):
@@ -31,7 +33,8 @@ async def process_inference_results(
         data: dict,
         imageDims: list[int, int],
         area_ratio: float = 0.5,
-        color_format: str = "hex") -> dict:
+        color_format: str = "hex"
+) -> dict:
     """
     Process the inference results by performing various operations on the data.
       Indicate if there are overlapping boxes and calculates the label
@@ -58,11 +61,11 @@ async def process_inference_results(
         boxes = data[0]['boxes']
 
         if color_format == "hex":
-            colors = [hex_format(c) for c in cmaps.set1.colors]
-            over_colors = [hex_format(c) for c in cmaps.set2.colors]
+            colors = [hex_format(c) for c in SET1]
+            over_colors = [hex_format(c) for c in SET2]
         elif color_format == "rgb":
-            colors = [rgb_format(c) for c in cmaps.set1.colors]
-            over_colors = [rgb_format(c) for c in cmaps.set2.colors]
+            colors = [rgb_format(c) for c in SET1]
+            over_colors = [rgb_format(c) for c in SET2]
 
 
         # Perform operations on each box in the data
