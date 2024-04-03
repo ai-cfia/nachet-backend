@@ -53,6 +53,12 @@ backend to function, you will need to add the missing values:
   model for inferencing.
 - **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
 - **NACHET_DATA**: Url to access nachet-data repository
+- **NACHET_HEALTH_MESSAGE**: Health check message for the server.
+- **NACHET_MAX_CONTENT_LENGTH**: Set the maximum size of the file that can be
+  uploaded to the backend. Needs to be the same size as the
+  `client_max_body_size`
+  [value](https://github.com/ai-cfia/howard/blob/dedee069f051ba743122084fcb5d5c97c2499359/kubernetes/aks/apps/nachet/base/nachet-ingress.yaml#L13)
+  set from the deployment in Howard.
 - **NACHET_SUBSCRIPTION_ID**
 - **NACHET_RESOURCE_GROUP**
 - **NACHET_WORKSPACE**

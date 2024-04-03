@@ -4,7 +4,6 @@ import os
 import base64
 import re
 import time
-import azure_storage.azure_storage_api as azure_storage_api
 import model.inference as inference
 from model import request_function
 
@@ -14,7 +13,7 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
-
+import azure_storage.azure_storage_api as azure_storage_api
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
@@ -53,10 +52,10 @@ CACHE = {
     "endpoints": None,
     "pipelines": {},
 }
-
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB
+
 
 
 @app.post("/del")
@@ -223,6 +222,10 @@ async def inference_request():
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 
+    except Exception as error:
+        print(error)
+        return jsonify(["Unexpected error occured"]), 500
+
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -287,7 +290,7 @@ async def test():
     return CACHE["endpoints"], 200
 
 
-async def fetch_json(repo_URL, key, file_path, mock=False):
+async def fetch_json(repo_URL, key, file_path):
     """
     Fetches JSON document from a GitHub repository and caches it
     """
@@ -342,11 +345,6 @@ async def get_pipelines():
 
     return result_json.get("pipelines")
 
-
-async def data_factory(**kwargs):
-    return {
-        "input_data": kwargs,
-    }
 
 
 @app.before_serving

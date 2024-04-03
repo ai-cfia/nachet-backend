@@ -168,7 +168,6 @@ class TestInferenceRequest(unittest.TestCase):
 
         if len(responses) > 1:
             raise ValueError(f"Different errors messages were given; expected only 'missing request arguments', {responses}")
-
         print(expected == result_json[0])
         print(response.status_code == 400)
         self.assertEqual(result_json[0], expected)

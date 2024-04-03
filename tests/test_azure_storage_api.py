@@ -183,6 +183,20 @@ class testGetPipeline(unittest.TestCase):
         self.assertEqual(result, json.loads(mock_blob_content))
 
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    def test_get_pipeline_info_wrong_connection_string(self, MockFromConnectionString):
+
+        pipeline_version = "v1"
+
+        MockFromConnectionString.side_effect = (
+            ValueError("connection string is empty or not conform")
+        )
+
+        with self.assertRaises(PipelineNotFoundError) as context:
+            asyncio.run(get_pipeline_info("wrong_connection_string", "test_blob", pipeline_version))
+
+        print(str(context.exception) == f"This version {pipeline_version} was not found")
+
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_get_pipeline_info_unsuccessful(self, MockFromConnectionString):
         pipeline_version = "v1"
 
