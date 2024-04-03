@@ -13,7 +13,7 @@ import numpy as np
 
 from custom_exceptions import ProcessInferenceResultError
 
-from model_inference.color_palette import SET1, SET2, hex_format, rgb_format
+from model_inference.color_palette import get_color_palettes
 
 
 async def process_inference_results(
@@ -48,12 +48,11 @@ async def process_inference_results(
         boxes = data[0]['boxes']
 
         if color_format == "hex":
-            colors = [hex_format(c) for c in SET1]
-            over_colors = [hex_format(c) for c in SET2]
+            colors = get_color_palettes()
+            over_colors = get_color_palettes(set_="set2")
         elif color_format == "rgb":
-            colors = [rgb_format(c) for c in SET1]
-            over_colors = [rgb_format(c) for c in SET2]
-
+            colors = get_color_palettes(format_=color_format)
+            over_colors = get_color_palettes(set_="set2", format_=color_format)
 
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
