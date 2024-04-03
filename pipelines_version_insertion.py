@@ -289,8 +289,8 @@ def pipeline_insertion(
 
     except ResourceExistsError as error:
         raise PipelineInsertionError(
-            f"an error occurred while uploading the file to the blob storage: \
-            \n {error.args[0]}") from error
+            f"""an error occurred while uploading the file to the blob storage:
+            \n {error.args[0]}""") from error
 
 
 def main():

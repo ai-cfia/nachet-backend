@@ -46,15 +46,30 @@ class TestPipelineInsertion(unittest.TestCase):
         self.assertEqual(result, expected_message)
         print(result == expected_message)
 
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_insert_new_version_pipeline_resouce_exists_error(self, mock_connection_string):
+    @patch("pipelines_version_insertion.Data")
+    @patch("pipelines_version_insertion.yaml_to_json")
+    @patch("os.path.exists")
+    def test_pipeline_insertion_resouce_exists_error(self, mock_os_path_exists, mock_yaml_to_json, mock_data):
 
-        mock_blob_client = mock_connection_string.return_value
+        mock_yaml_to_json.return_value = {
+            "version": "0.0.0",
+            "date": "2021-01-01",
+            "pipelines": [{"models":1, "default": True}],
+            "models": [],
+        }
+        mock_os_path_exists.return_value = True
+        mock_data.return_value = Mock()
+
+        mock_blob_client = Mock()
         mock_blob_client.get_container_client.side_effect = ResourceExistsError("Resource not found")
 
-        with self.assertRaises(ResourceExistsError) as context:
-            insert_new_version_pipeline(self.mock_pipeline, mock_blob_client, self.account_name)
-        self.assertEqual(str(context.exception), "Resource not found")
+        with self.assertRaises(PipelineInsertionError) as context:
+            pipeline_insertion("test_file.yaml", mock_blob_client, Mock())
+        self.assertEqual(
+            str(context.exception),
+            """an error occurred while uploading the file to the blob storage:
+            \n Resource not found"""
+        )
 
     def test_pipeline_insertion_file_not_exist(self):
         expected = """
