@@ -13,20 +13,7 @@ import numpy as np
 
 from custom_exceptions import ProcessInferenceResultError
 
-from model_inference.color_palette import SET1, SET2
-
-
-def hex_format(color: tuple):
-    hex = ""
-    for v in color:
-        hex += "{:02X}".format(int(v * 255))
-
-    return f"#{hex}"
-
-
-def rgb_format(color: tuple):
-    r, g, b = color
-    return (r*255, g*255, b*255)
+from model_inference.color_palette import SET1, SET2, hex_format, rgb_format
 
 
 async def process_inference_results(
@@ -96,20 +83,27 @@ async def process_inference_results(
                 if j > i:
                     # Calculate the common region of the two boxes to determine
                     # if they are overlapping
-                    area_box = (box["box"]["bottomX"] - box["box"]["topX"]) * (box["box"]["bottomY"] - box["box"]["topY"])
-                    area_candidate = (box2["box"]["bottomX"] - box2["box"]["topX"]) * (box2["box"]["bottomY"] - box2["box"]["topY"])
+                    area_box = (box["box"]["bottomX"] - box["box"]["topX"]) \
+                                * (box["box"]["bottomY"] - box["box"]["topY"])
+                    area_candidate = (box2["box"]["bottomX"] - box2["box"]["topX"]) \
+                                    * (box2["box"]["bottomY"] - box2["box"]["topY"])
 
-                    intersection_topX = max(box["box"]["topX"], box2["box"]["topX"])
-                    intersection_topY = max(box["box"]["topY"], box2["box"]["topY"])
-                    intersection_bottomX = min(box["box"]["bottomX"], box2["box"]["bottomX"])
-                    intersection_bottomY = min(box["box"]["bottomY"], box2["box"]["bottomY"])
+                    intersection_topX = max(
+                        box["box"]["topX"], box2["box"]["topX"])
+                    intersection_topY = max(
+                        box["box"]["topY"], box2["box"]["topY"])
+                    intersection_bottomX = min(
+                        box["box"]["bottomX"], box2["box"]["bottomX"])
+                    intersection_bottomY = min(
+                        box["box"]["bottomY"], box2["box"]["bottomY"])
 
                     width = max(0, intersection_bottomX - intersection_topX)
                     height = max(0, intersection_bottomY - intersection_topY)
 
                     common_area = width * height
 
-                    if common_area >= area_box * area_ratio and common_area >= area_candidate * area_ratio:
+                    if common_area >= area_box * area_ratio \
+                        and common_area >= area_candidate * area_ratio:
                         # box2 is the lower score box
                         if box2["score"] < box["score"]:
                             boxes[j]["overlapping"] = True

@@ -1,9 +1,14 @@
 import unittest
 import asyncio
 
-from model_inference.inference import process_inference_results, hex_format, rgb_format, ProcessInferenceResultError
-from model_inference.color_palette import SET1, SET2
-
+from model_inference.inference import (
+    process_inference_results,
+    hex_format,
+    rgb_format,
+    SET1,
+    SET2,
+    ProcessInferenceResultError
+)
 
 class TestInferenceProcessFunction(unittest.TestCase):
     def setUp(self):
