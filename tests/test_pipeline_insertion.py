@@ -6,7 +6,6 @@ from pipelines_version_insertion import (
     insert_new_version_pipeline,
     pipeline_insertion,
     PipelineInsertionError,
-    ConnectionStringError,
 )
 
 class TestPipelineInsertion(unittest.TestCase):
@@ -30,21 +29,19 @@ class TestPipelineInsertion(unittest.TestCase):
             "version": "0.0.1",
         }
 
-
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_insert_new_version_pipeline_success(self, mock_connection_string):
+    def test_insert_new_version_pipeline_success(self):
         expected_message = "The pipeline was successfully uploaded to the blob storage"
 
         mock_container_client = Mock()
         mock_container_client.upload_blob.return_value = True
 
-        mock_blob_service_client = mock_connection_string.return_value
+        mock_blob_service_client = Mock()
         mock_blob_service_client.get_container_client.return_value = (
             mock_container_client
         )
 
         result = insert_new_version_pipeline(
-            self.mock_pipeline, "test_connection_string", self.account_name)
+            self.mock_pipeline, mock_blob_service_client, self.account_name)
 
         self.assertEqual(result, expected_message)
         print(result == expected_message)
@@ -55,18 +52,9 @@ class TestPipelineInsertion(unittest.TestCase):
         mock_blob_client = mock_connection_string.return_value
         mock_blob_client.get_container_client.side_effect = ResourceExistsError("Resource not found")
 
-        with self.assertRaises(ConnectionStringError) as context:
-            insert_new_version_pipeline(self.mock_pipeline, "test_connection_string", self.account_name)
+        with self.assertRaises(ResourceExistsError) as context:
+            insert_new_version_pipeline(self.mock_pipeline, mock_blob_client, self.account_name)
         self.assertEqual(str(context.exception), "Resource not found")
-
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_insert_new_version_pipeline_value_error(self, mock_connection_string):
-
-        mock_connection_string.side_effect = ValueError("Connection string is either blank or malformed.")
-
-        with self.assertRaises(ConnectionStringError) as context:
-            insert_new_version_pipeline(self.mock_pipeline, "test_connection_string", self.account_name)
-        self.assertEqual(str(context.exception), "Connection string is either blank or malformed.")
 
     def test_pipeline_insertion_file_not_exist(self):
         expected = """
@@ -75,7 +63,7 @@ class TestPipelineInsertion(unittest.TestCase):
             """
 
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml")
+            pipeline_insertion("test_file.yaml", Mock(), Mock())
         self.assertEqual(str(context.exception), expected)
 
     @patch("os.path.exists")
@@ -86,7 +74,7 @@ class TestPipelineInsertion(unittest.TestCase):
         mock_os_path_exists.return_value = True
 
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.md")
+            pipeline_insertion("test_file.md", Mock(), Mock())
         self.assertEqual(str(context.exception), expected)
 
     @patch("pipelines_version_insertion.yaml_to_json")
@@ -99,7 +87,7 @@ class TestPipelineInsertion(unittest.TestCase):
         mock_yaml_to_json.return_value = []
 
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml")
+            pipeline_insertion("test_file.yaml", Mock(), Mock())
         self.assertEqual(str(context.exception), expected)
 
     @patch("pipelines_version_insertion.yaml_to_json")
@@ -115,7 +103,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         # Missing argument and Wrong Type
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml")
+            pipeline_insertion("test_file.yaml", Mock(), Mock())
 
         self.assertIn("validation errors", str(context.exception))
 
@@ -167,7 +155,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         expected = "no pipeline was set as default, please set one as default by setting the default value as True"
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml")
+            pipeline_insertion("test_file.yaml", Mock(), Mock())
 
         self.assertEqual(str(context.exception), expected)
 

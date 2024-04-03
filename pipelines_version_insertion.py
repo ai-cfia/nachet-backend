@@ -46,12 +46,10 @@ import datetime
 import sys
 
 from pydantic import BaseModel, ValidationError, field_validator
-
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
-from custom_exceptions import ConnectionStringError
 
 load_dotenv()
 
@@ -156,7 +154,7 @@ class Model(BaseModel):
 
 def insert_new_version_pipeline(
         pipeline: dict,
-        connection_string: str,
+        blob_service_client: BlobServiceClient,
         pipeline_container_name: str
     ) -> str:
     """
@@ -165,33 +163,21 @@ def insert_new_version_pipeline(
 
     Args:
         pipeline (dict): The data of the pipeline.
-        connection_string (str): The connection string for the Azure
-            Blob Storage account.
+        blob_service_client (BlobServiceClient): The blob service client
+            to insert the new pipelines.
         pipeline_container_name (str): The name of the container where the
             pipeline will be uploaded.
-
-    Raises:
-        ConnectionStringError: If there is an error with the connection string.
-
     Returns:
         str: A message indicating whether the pipeline was successfully uploaded.
     """
-    try:
-        blob_service_client = BlobServiceClient.from_connection_string(
-            connection_string
-        )
+    container_client = blob_service_client.get_container_client(
+        pipeline_container_name
+    )
 
-        container_client = blob_service_client.get_container_client(
-            pipeline_container_name
-        )
-
-        name = "{}/{}.json".format("pipelines", pipeline.get("version"))
-        container_client.upload_blob(
-            name, json.dumps(pipeline, indent=4), overwrite=False)
-        return "The pipeline was successfully uploaded to the blob storage"
-
-    except (ValueError, ResourceExistsError) as error:
-        raise ConnectionStringError(error.args[0]) from error
+    name = "{}/{}.json".format("pipelines", pipeline.get("version"))
+    container_client.upload_blob(
+        name, json.dumps(pipeline, indent=4), overwrite=False)
+    return "The pipeline was successfully uploaded to the blob storage"
 
 
 def yaml_to_json(yaml_file:str) -> str:
@@ -230,15 +216,24 @@ def yaml_to_json(yaml_file:str) -> str:
     return data
 
 
-def pipeline_insertion(file_path:str) -> str:
+def pipeline_insertion(
+        file_path: str,
+        blob_service_client: BlobServiceClient,
+        cipher_suite: Fernet
+) -> str:
     """
     Inserts a new version of a pipeline into an Azure Blob Storage container.
 
     Args:
         file_path (str): The path to the file containing the pipeline data.
+        blob_service_client (BlobServiceClient): The BlobServiceClient object for accessing Azure Blob Storage.
+        cipher_suite (Fernet): The Fernet cipher suite for encrypting sensitive data.
 
     Returns:
         str: A message indicating the success or failure of the pipeline insertion.
+
+    Raises:
+        PipelineInsertionError: If the file does not exist, has an invalid extension, or contains invalid data.
     """
     if not os.path.exists(file_path):
         raise PipelineInsertionError(
@@ -281,7 +276,6 @@ def pipeline_insertion(file_path:str) -> str:
         raise PipelineInsertionError(error) from error
 
     try:
-        cipher_suite = Fernet(KEY)
         for model in pipelines["models"]:
             # crypting endopoint
             endpoint = model["endpoint"].encode()
@@ -291,18 +285,27 @@ def pipeline_insertion(file_path:str) -> str:
             model["api_key"] = cipher_suite.encrypt(api_key).decode()
 
         return insert_new_version_pipeline(
-            pipelines, CONNECTION_STRING, BLOB_STORAGE_ACCOUNT_NAME)
+            pipelines, blob_service_client, BLOB_STORAGE_ACCOUNT_NAME)
 
-    except (ConnectionStringError) as error:
+    except ResourceExistsError as error:
         raise PipelineInsertionError(
             f"an error occurred while uploading the file to the blob storage: \
             \n {error.args[0]}") from error
 
 
 def main():
+    if CONNECTION_STRING == "" or KEY == "" or BLOB_STORAGE_ACCOUNT_NAME == "":
+        raise ValueError(
+            "please set the environment variables NACHET_BLOB_PIPELINE_DECRYPTION_KEY, \
+            NACHET_BLOB_PIPELINE_NAME and NACHET_AZURE_STORAGE_CONNECTION_STRING"
+        )
+
     try:
-        print(pipeline_insertion(sys.argv[1]))
-    except (IndexError, PipelineInsertionError) as error:
+        blob_service_client = BlobServiceClient.from_connection_string(
+            CONNECTION_STRING
+        )
+        print(pipeline_insertion(sys.argv[1], blob_service_client, Fernet(KEY)))
+    except (ValueError, IndexError, PipelineInsertionError) as error:
         if isinstance(error, IndexError):
             print("please provide the path to the file as an argument")
 
