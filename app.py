@@ -28,12 +28,19 @@ load_dotenv()
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
 connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
+
 FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
 PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
+
+try:
+    MAX_CONTENT_LENGTH = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
+except TypeError:
+    MAX_CONTENT_LENGTH = 16
+
 
 Model = namedtuple(
     'Model',
@@ -54,8 +61,7 @@ CACHE = {
 }
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB
-
+app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH * 1024 * 1024
 
 
 @app.post("/del")
