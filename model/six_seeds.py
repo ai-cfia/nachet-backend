@@ -43,7 +43,7 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
         result = response.read()
         result_object = json.loads(result.decode("utf8"))
 
-        print(json.dumps(result_object[0].get("boxes"), indent=4)) # Transform into logging
+        print(json.dumps(result_object[0].get("boxes"), indent=4)) #TODO Transform into logging
 
         return result_object
 

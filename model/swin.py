@@ -55,7 +55,7 @@ async def request_inference_from_swin(model: namedtuple, previous_result: list[b
             result = response.read()
             results.append(json.loads(result.decode("utf8")))
 
-        print(json.dumps(results, indent=4)) # Transform into logging
+        print(json.dumps(results, indent=4)) #TODO Transform into logging
 
         return process_swin_result(previous_result.get("result_json"), results)
     except HTTPError as e:
