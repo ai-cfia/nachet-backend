@@ -32,8 +32,13 @@ endpoint_api_key = os.getenv("NACHET_MODEL_ENDPOINT_ACCESS_KEY")
 NACHET_DATA = os.getenv("NACHET_DATA")
 NACHET_MODEL = os.getenv("NACHET_MODEL")
 
-VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
-VALID_DIMENSION = json.loads(os.getenv("NACHET_VALID_DIMENSION"))
+try:
+    VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
+    VALID_DIMENSION = json.loads(os.getenv("NACHET_VALID_DIMENSION"))
+except TypeError:
+    # For testing
+    VALID_DIMENSION = {"width": 1920, "height": 1080}
+    VALID_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
 
 CACHE = {
     'seeds': None,
