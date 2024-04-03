@@ -1,9 +1,7 @@
 import unittest
 import asyncio
 
-from matplotlib import colormaps
-
-from model_inference.inference import process_inference_results, hex_format, rgb_format, ProcessInferenceResultError
+from model_inference.inference import process_inference_results, hex_format, rgb_format, ProcessInferenceResultError, cmaps
 
 
 class TestInferenceProcessFunction(unittest.TestCase):
@@ -65,7 +63,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
 
         color_res = set()
 
-        expected_result = set([hex_format(c) for i, c in enumerate(colormaps["Set1"].colors[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
+        expected_result = set([hex_format(c) for i, c in enumerate(cmaps.set1.colors[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
         result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
 
         for box in result[0]["boxes"]:
@@ -87,7 +85,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
 
         color_res = set()
 
-        expected_result = set([rgb_format(c) for i, c in enumerate(colormaps["Set1"].colors[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
+        expected_result = set([rgb_format(c) for i, c in enumerate(cmaps.set1.colors[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
         result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], color_format="rgb"))
 
         for box in result[0]["boxes"]:
@@ -118,10 +116,10 @@ class TestInferenceProcessFunction(unittest.TestCase):
         expected_result = []
 
         for i, _ in enumerate(boxes):
-            if i < len(colormaps["Set1"].colors):
-                expected_result.append(rgb_format(colormaps["Set1"].colors[i]))
+            if i < len(cmaps.set1.colors):
+                expected_result.append(rgb_format(cmaps.set1.colors[i]))
             else:
-                expected_result.append(rgb_format(colormaps["Set2"].colors[i-len(colormaps["Set1"].colors)]))
+                expected_result.append(rgb_format(cmaps.set2.colors[i-len(cmaps.set1.colors)]))
 
         result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], color_format="rgb"))
 
