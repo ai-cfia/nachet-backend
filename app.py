@@ -151,9 +151,9 @@ async def inference_request():
     The image and inference results are uploaded to a folder in the user's container.
     """
 
-    seconds = time.perf_counter() # transform into logging
+    seconds = time.perf_counter() # TODO: transform into logging
     try:
-        print(f"{date.today()} Entering inference request") # Transform into logging
+        print(f"{date.today()} Entering inference request") # TODO: Transform into logging
         data = await request.get_json()
         pipeline_name = data.get("model_name")
         folder_name = data["folder_name"]
@@ -190,16 +190,16 @@ async def inference_request():
         image_bytes = base64.b64encode(blob).decode("utf8")
 
         # Keep track of every output given by the models
-        # TO DO add it to CACHE variable
+        # TODO: add it to CACHE variable
         cache_json_result = [image_bytes]
 
         for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
-            print(f"Entering {model.name.upper()} model") # Transform into logging
+            print(f"Entering {model.name.upper()} model") # TODO: Transform into logging
             result_json = await model.entry_function(model, cache_json_result[idx])
             cache_json_result.append(result_json)
 
-        print("End of inference request") # Transform into logging
-        print("Process results") # Transform into logging
+        print("End of inference request") # TODO: Transform into logging
+        print("Process results") # TODO: Transform into logging
 
         processed_result_json = await inference.process_inference_results(
             cache_json_result[-1], imageDims
@@ -216,7 +216,7 @@ async def inference_request():
             hash_value,
         )
         # return the inference results to the client
-        print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds")
+        print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
         return jsonify(processed_result_json), 200
 
     except (KeyError, InferenceRequestError) as error:

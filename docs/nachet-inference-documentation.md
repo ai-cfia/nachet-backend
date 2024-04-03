@@ -57,11 +57,9 @@ to a model and receive the result.
 
 *Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
-## Sequence Diagram for inference request 1.2.1
-
 ```mermaid
 sequenceDiagram
-
+  title: Sequence Diagram for inference request 1.2.1
     actor Client
     participant Frontend
     participant Backend
