@@ -3,10 +3,7 @@ import asyncio
 
 from model_inference.inference import (
     process_inference_results,
-    hex_format,
-    rgb_format,
-    SET1,
-    SET2,
+    get_color_palettes,
     ProcessInferenceResultError
 )
 
@@ -34,7 +31,8 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "boxes": boxes,
             "totalBoxes": 2
         }
-        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
+        result = asyncio.run(
+            process_inference_results(data=[data], imageDims=[100, 100]))
 
 
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
@@ -49,7 +47,8 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "boxes": boxes,
             "totalBoxes": 2
         }
-        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
+        result = asyncio.run(
+            process_inference_results(data=[data], imageDims=[100, 100]))
 
 
         self.assertFalse(result[0]["boxes"][0]["overlapping"])
@@ -69,8 +68,13 @@ class TestInferenceProcessFunction(unittest.TestCase):
 
         color_res = set()
 
-        expected_result = set([hex_format(c) for i, c in enumerate(SET1[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
-        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
+        expected_result = set()
+        for i, c in enumerate(get_color_palettes()[:len(boxes)]):
+            if boxes[i]["label"] != boxes[i - 1]["label"]:
+                expected_result.add(c)
+
+        result = asyncio.run(
+            process_inference_results(data=[data], imageDims=[100, 100]))
 
         for box in result[0]["boxes"]:
             color_res.add(box["color"])
@@ -91,8 +95,15 @@ class TestInferenceProcessFunction(unittest.TestCase):
 
         color_res = set()
 
-        expected_result = set([rgb_format(c) for i, c in enumerate(SET1[:len(boxes)]) if boxes[i]["label"] != boxes[i - 1]["label"]])
-        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], color_format="rgb"))
+        expected_result = set()
+
+        for i, c in enumerate(get_color_palettes(format_="rgb")[:len(boxes)]):
+            if boxes[i]["label"] != boxes[i - 1]["label"]:
+                expected_result.add(c)
+
+        result = asyncio.run(
+            process_inference_results(
+                data=[data], imageDims=[100, 100], color_format="rgb"))
 
         for box in result[0]["boxes"]:
             color_res.add(box["color"])
@@ -121,13 +132,18 @@ class TestInferenceProcessFunction(unittest.TestCase):
         color_res = []
         expected_result = []
 
-        for i, _ in enumerate(boxes):
-            if i < len(SET1):
-                expected_result.append(rgb_format(SET1[i]))
-            else:
-                expected_result.append(rgb_format(SET2[i-len(SET1)]))
+        set1 = get_color_palettes(format_="rgb")
+        set2 = get_color_palettes(set_="set2", format_="rgb")
 
-        result = asyncio.run(process_inference_results(data=[data], imageDims=[100, 100], color_format="rgb"))
+        for i, _ in enumerate(boxes):
+            if i < len(set1):
+                expected_result.append(set1[i])
+            else:
+                expected_result.append(set2[i-len(set1)])
+
+        result = asyncio.run(
+            process_inference_results(
+                data=[data], imageDims=[100, 100], color_format="rgb"))
 
         for box in result[0]["boxes"]:
             color_res.append(box["color"])
@@ -145,7 +161,8 @@ class TestInferenceProcessFunction(unittest.TestCase):
         }
 
         with self.assertRaises(ProcessInferenceResultError):
-            asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
+            asyncio.run(
+                process_inference_results(data=[data], imageDims=[100, 100]))
 
         data ={
             "boxes": boxes,
@@ -161,4 +178,5 @@ class TestInferenceProcessFunction(unittest.TestCase):
         }
 
         with self.assertRaises(ProcessInferenceResultError):
-            asyncio.run(process_inference_results(data=[data], imageDims=[100, 100]))
+            asyncio.run(
+                process_inference_results(data=[data], imageDims=[100, 100]))

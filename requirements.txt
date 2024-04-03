@@ -5,4 +5,3 @@ quart
 quart-cors
 python-dotenv
 hypercorn
-colormaps
