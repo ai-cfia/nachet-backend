@@ -29,9 +29,9 @@ Nachet Interactive models' perform the following tasks:
 |Seed-detector | seed-detector-1 |  Object Detection | seed_detector | process_image_slicing | Yes | - |
 |Swin | swinv1-base-dataaugv2-1 | Classification | swin | process_swin_result | Yes | - |
 
-### Inference and API Call Function
+### Request Inference Function
 
-The inference and API call functions act as entry and exit points for the model. The API call explicitly requests a prediction from the specified model (such as Swin, Nachet-6seeds, etc.). The inference function processes the data before sending it to the frontend if the model requires it. For instance, the Seed-detector only returns "seed" as a label, and its inference needs to be processed and passed to the next model which assigns the correct label to the seeds.
+The request inference functions request a prediction from the specified model (such as Swin, Nachet-6seeds, etc.). If needed, the function will process the data to be readable by the next model in the pipeline. For instance, the Seed-detector only returns "seed" as a label, and its inference needs to be processed and passed to the next model which assigns the correct label to the seeds.
 
 ## Return value of models
 

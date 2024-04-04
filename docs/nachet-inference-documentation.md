@@ -242,50 +242,47 @@ the `CACHE["endpoint"]` variable. This the variable that feed the frontend the `
 information and metadata.
 
 ```python
-async def get_pipeline(mock:bool = False):
+async def get_pipelines():
     """
     Retrieves the pipelines from the Azure storage API.
-
-    Parameters:
-    - mock (bool): If True, retrieves the pipelines from a mock JSON file. If False, retrieves the pipelines from the Azure storage API.
 
     Returns:
     - list: A list of dictionaries representing the pipelines.
     """
-    if mock:
-        with open("mock_pipeline_json.json", "r+") as f:
-            result_json = json.load(f)
-    else:
-        result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
+    try:
+        app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
+        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], PIPELINE_BLOB_NAME, PIPELINE_VERSION)
         cipher_suite = Fernet(FERNET_KEY)
-    # Get all the api_call function and map them in a dictionary
-    api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
-    # Get all the inference functions and map them in a dictionary
-    inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
+    except (ConnectionStringError, PipelineNotFoundError) as error:
+        print(error)
+        raise ServerError("server errror: could not retrieve the pipelines") from error
 
     models = ()
     for model in result_json.get("models"):
         m = Model(
-            api_call_function.get(model.get("api_call_function")),
+            request_function.get(model.get("api_call_function")),
             model.get("model_name"),
+            # To protect sensible data (API key and model endpoint), we encrypt it when
+            # it's pushed into the blob storage. Once we retrieve the data here in the
+            # backend, we need to decrypt the byte format to recover the original
+            # data.
             cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
             cipher_suite.decrypt(model.get("api_key").encode()).decode(),
-            inference_functions.get(model.get("inference_function")),
-            model.get("content-type"),
+            model.get("content_type"),
             model.get("deployment_platform")
         )
         models += (m,)
-
     # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
     return result_json.get("pipelines")
-
 ```
 
 ### Available Version of the JSON file
 
 |Version|Creation Date| Pipelines|
 |--|--|--|
+|0.1.3 | 2024-03-26 | Swin Transformer and 6 Seeds Detector|
 |0.1.0 | 2024-02-26 | Swin Transformer and 6 Seeds Detector|
+|0.1.1 | 2024-03-14 | Swin Transformer and 6 Seeds Detector|

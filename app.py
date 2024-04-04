@@ -45,7 +45,7 @@ except TypeError:
 Model = namedtuple(
     'Model',
     [
-        'entry_function',
+        'request_function',
         'name',
         'endpoint',
         'api_key',
@@ -178,29 +178,26 @@ async def inference_request():
 
         header, encoded_data = image_base64.split(",", 1)
 
-        # Validate image header
+        # Validate image header #TODO with magic header
         if not header.startswith("data:image/"):
             raise InferenceRequestError("invalid image header")
 
+        # Keep track of every output given by the models
+        # TODO: add it to CACHE variable
+        cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
         container_client = await azure_storage_api.mount_container(
             blob_service_client, container_name, create_container=True
         )
         hash_value = await azure_storage_api.generate_hash(image_bytes)
-        blob_name = await azure_storage_api.upload_image(
+        await azure_storage_api.upload_image(
             container_client, folder_name, image_bytes, hash_value
         )
-        blob = await azure_storage_api.get_blob(container_client, blob_name)
-        image_bytes = base64.b64encode(blob).decode("utf8")
-
-        # Keep track of every output given by the models
-        # TODO: add it to CACHE variable
-        cache_json_result = [image_bytes]
 
         for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
             print(f"Entering {model.name.upper()} model") # TODO: Transform into logging
-            result_json = await model.entry_function(model, cache_json_result[idx])
+            result_json = await model.request_function(model, cache_json_result[idx])
             cache_json_result.append(result_json)
 
         print("End of inference request") # TODO: Transform into logging
@@ -231,6 +228,10 @@ async def inference_request():
     except Exception as error:
         print(error)
         return jsonify(["Unexpected error occured"]), 500
+
+@app.get("/coffee")
+async def get_coffee():
+    return jsonify("Tea is great!"), 418
 
 
 @app.get("/seed-data/<seed_name>")
@@ -264,7 +265,7 @@ async def get_model_endpoints_metadata():
     if CACHE['endpoints']:
         return jsonify(CACHE['endpoints']), 200
     else:
-        return jsonify("Error retrieving model endpoints metadata.", 400)
+        return jsonify("Error retrieving model endpoints metadata.", 404)
 
 
 @app.get("/health")
@@ -329,7 +330,6 @@ async def get_pipelines():
         print(error)
         raise ServerError("server errror: could not retrieve the pipelines") from error
 
-
     models = ()
     for model in result_json.get("models"):
         m = Model(
@@ -369,6 +369,14 @@ async def before_serving():
 
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
         CACHE["endpoints"] = await get_pipelines()
+
+        print(
+            f"""Server start with current configuration:\n
+                date: {date.today()}
+                file version of pipelines: {PIPELINE_VERSION}
+                pipelines: {[pipeline for pipeline in CACHE["pipelines"].keys()]}\n
+            """
+        ) #TODO Transform into logging
 
     except ServerError as e:
         print(e)

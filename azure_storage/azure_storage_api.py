@@ -99,7 +99,7 @@ async def get_blob(container_client: ContainerClient, blob_name: str):
             f"the specified blob: {blob_name} cannot be found") from error
 
 
-async def upload_image(container_client, folder_name, image, hash_value):
+async def upload_image(container_client: ContainerClient, folder_name, image, hash_value):
     """
     uploads the image to the specified folder within the user's container, if
     the specified folder doesnt exist, it creates it with a uuid
