@@ -14,7 +14,7 @@ sequenceDiagram
 
 Client->>+frontend: getDirectoriesList()
 frontend->>+backend: HTTP POST req.
-backend->>+AzureStorageAPI: get_Blobs()
+backend->>+AzureStorageAPI: get_blobs()
 AzureStorageAPI-->>-backend: blobListObject
 backend-->>frontend: directories list res.
 frontend-->>Client: display directories
