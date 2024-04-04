@@ -48,6 +48,9 @@ CACHE = {
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
+mb = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
+
+app.config["MAX_CONTENT_LENGTH"] = mb * 1024 * 1024
 
 
 @app.post("/del")
