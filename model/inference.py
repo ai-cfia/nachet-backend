@@ -12,7 +12,12 @@ The colors are based on the colormaps from matplotlib.
 import numpy as np
 
 from custom_exceptions import ProcessInferenceResultError
-from model.color_palette import primary_colors, light_colors
+from model.color_palette import primary_colors, light_colors, mixing_palettes, shades_colors
+
+
+def generator(list_length):
+    for i in range(list_length):
+        yield i
 
 
 async def process_inference_results(
@@ -45,7 +50,7 @@ async def process_inference_results(
     """
     try:
         boxes = data[0]['boxes']
-        colors = primary_colors.get(color_format)
+        colors = mixing_palettes(primary_colors, light_colors).get(color_format)
 
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
@@ -114,11 +119,12 @@ async def process_inference_results(
                             box["box"]["topY"] = box2["box"]["topY"]
 
         # Calculate label occurrence
+        gen = generator(i) # Number of individual seed (boxes)
         label_occurrence = {}
         label_colors = {}
         for i, box in enumerate(boxes):
             if i >= len(colors):
-                colors = sum((colors, light_colors.get(color_format)), ())
+                colors = colors + (shades_colors(colors[next(gen)]),)
 
             if box["label"] not in label_occurrence:
                 label_occurrence[box["label"]] = 1
