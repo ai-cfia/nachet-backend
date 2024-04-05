@@ -31,7 +31,12 @@ Nachet Interactive models' perform the following tasks:
 
 ### Request Inference Function
 
-The request inference functions request a prediction from the specified model (such as Swin, Nachet-6seeds, etc.). If needed, the function will process the data to be readable by the next model in the pipeline. For instance, the Seed-detector only returns "seed" as a label, and its inference needs to be processed and passed to the next model which assigns the correct label to the seeds.
+The request inference functions request a prediction from the specified model
+(such as Swin, Nachet-6seeds, etc.). If needed, the function will process the
+data to be readable by the next model in the pipeline. For instance, the
+Seed-detector only returns "seed" as a label, and its inference needs to be
+processed and passed to the next model which assigns the correct label to the
+seeds.
 
 ## Return value of models
 
@@ -82,16 +87,21 @@ The request inference functions request a prediction from the specified model (s
 
 ### Why topN
 
-We decided to named the top results property top N because this value can return n predictions. Usually in AI, the top 5 result are use to measure the accuracy of a model. If the correct result is the top 5, then it is considered that the prediction was true.
+We decided to named the top results property top N because this value can return
+n predictions. Usually in AI, the top 5 result are use to measure the accuracy
+of a model. If the correct result is the top 5, then it is considered that the
+prediction was true.
 
 This is useful in case were the user have is attention on more then 1 result.
 
- > "Top N accuracy — Top N accuracy is when you measure how often your predicted class falls in the top N values of your softmax distribution."
+ > "Top N accuracy — Top N accuracy is when you measure how often your predicted
+ > class falls in the top N values of your softmax distribution."
  [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*. Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
 
 ### Box around seed
 
-The `box` key stores the value for a specific box around a seed. This helps the frontend application build a red rectangle around every seed on the image.
+The `box` key stores the value for a specific box around a seed. This helps the
+frontend application build a red rectangle around every seed on the image.
 
 ![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
 
@@ -149,7 +159,9 @@ A list of common error models returns to the backend.
 ## Pipeline and model data
 
 In order to dynamically build the pipeline in the backend from the model, the
-following data structure was designed. For now, the pipelines will have two keys for their names (`model_name`, `piepline_name`) to support the frontend code until it is changed to get the name of the pipeline with the correct key.
+following data structure was designed. For now, the pipelines will have two keys
+for their names (`model_name`, `piepline_name`) to support the frontend code
+until it is changed to get the name of the pipeline with the correct key.
 
 ```yaml
 version:

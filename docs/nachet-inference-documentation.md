@@ -20,9 +20,9 @@ selected by a parameter.
 
 ### Pipelines
 
-Pipelines are defined as a set of models that follow each other, where the output of
-one model is used as input for the next models, and so on. A pipeline contains from 1 to n
-models.
+Pipelines are defined as a set of models that follow each other, where the
+output of one model is used as input for the next models, and so on. A pipeline
+contains from 1 to n models.
 
 #### Pipelines flowchart 1.0.0
 
@@ -141,18 +141,18 @@ sequenceDiagram
 
 ### Inference Request function
 
-The inference request function plays a crucial role in Nachet Interactive's backend.
-It requests actions from selected models or pipelines based on certain checks.
-These checks include verifying that all arguments required to find or initialize
-the blob container and process the image have been transmitted to the function.
-It also checks if the selected pipeline is recognized by the system and if the image sent for analysis
-has a valid header.
+The inference request function plays a crucial role in Nachet Interactive's
+backend. It requests actions from selected models or pipelines based on certain
+checks. These checks include verifying that all arguments required to find or
+initialize the blob container and process the image have been transmitted to the
+function. It also checks if the selected pipeline is recognized by the system
+and if the image sent for analysis has a valid header.
 
-If all the above checks pass, the function initializes or finds the user blob container
-and uploads the image. Next, it requests an inference from every model in the pipeline.
-Each model specifies their `entry_function` (how to call and retrieve data) and whether
-they have a `process_inference` function. Based on these indications, the results are returned
-and stored in the cache.
+If all the above checks pass, the function initializes or finds the user blob
+container and uploads the image. Next, it requests an inference from every model
+in the pipeline. Each model specifies their `entry_function` (how to call and
+retrieve data) and whether they have a `process_inference` function. Based on
+these indications, the results are returned and stored in the cache.
 
 If no other model is called, the last result is then processed and sent to the frontend.
 
