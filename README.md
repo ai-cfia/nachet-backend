@@ -1,7 +1,34 @@
-# nachet-backend
+# :microscope: nachet-backend 🌱
 
 ## High level sequence diagram
-![SD_1 drawio (2)](https://github.com/ai-cfia/nachet-backend/assets/19809069/272f37dc-f4ec-449b-ba82-950c54b9f856)
+
+```mermaid
+sequenceDiagram
+
+  title: High Level Sequence Diagram 1.0.0
+  actor Client
+  participant frontend
+  participant backend
+  participant EndpointAPI
+  participant AzureStorageAPI
+
+Client->>+frontend: getDirectoriesList()
+frontend->>+backend: HTTP POST req.
+backend->>+AzureStorageAPI: get_blobs()
+AzureStorageAPI-->>-backend: blobListObject
+backend-->>frontend: directories list res.
+frontend-->>Client: display directories
+Client->>frontend: handleInference()
+frontend->>backend: HTTP POST req.
+backend->>+AzureStorageAPI: upload_image(image)
+AzureStorageAPI-->>-backend: imageBlobObject
+backend->>+EndpointAPI: get_inference_result(image)
+EndpointAPI-->>-backend: inference res.
+backend->>backend: process inf. result
+backend-->>frontend: inference res.
+frontend-->>-Client: display inference res.
+backend->>+AzureStorageAPI: (async) upload_inference_result(json)
+```
 
 **Details**
 
