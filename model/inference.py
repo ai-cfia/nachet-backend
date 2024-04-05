@@ -12,8 +12,7 @@ The colors are based on the colormaps from matplotlib.
 import numpy as np
 
 from custom_exceptions import ProcessInferenceResultError
-
-from model_inference.color_palette import get_color_palettes
+from model.color_palette import primary_colors, light_colors
 
 
 async def process_inference_results(
@@ -46,13 +45,7 @@ async def process_inference_results(
     """
     try:
         boxes = data[0]['boxes']
-
-        if color_format == "hex":
-            colors = get_color_palettes()
-            over_colors = get_color_palettes(set_="set2")
-        elif color_format == "rgb":
-            colors = get_color_palettes(format_=color_format)
-            over_colors = get_color_palettes(set_="set2", format_=color_format)
+        colors = primary_colors.get(color_format)
 
         # Perform operations on each box in the data
         for i, box in enumerate(boxes):
@@ -124,15 +117,13 @@ async def process_inference_results(
         label_occurrence = {}
         label_colors = {}
         for i, box in enumerate(boxes):
+            if i >= len(colors):
+                colors = sum((colors, light_colors.get(color_format)), ())
+
             if box["label"] not in label_occurrence:
                 label_occurrence[box["label"]] = 1
-                if i < len(colors):
-                    label_colors[box["label"]] = colors[i]
-                    box["color"] = colors[i]
-                else:
-                    diff = len(over_colors) + 1
-                    label_colors[box["label"]] = over_colors[i - diff]
-                    box["color"] = over_colors[i - diff]
+                label_colors[box["label"]] = colors[i]
+                box["color"] = colors[i]
             else:
                 label_occurrence[box["label"]] += 1
                 color = label_colors[box["label"]]

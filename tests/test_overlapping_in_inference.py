@@ -1,9 +1,10 @@
 import unittest
 import asyncio
 
-from model_inference.inference import (
+from model.inference import (
     process_inference_results,
-    get_color_palettes,
+    primary_colors,
+    light_colors,
     ProcessInferenceResultError
 )
 
@@ -69,7 +70,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
         color_res = set()
 
         expected_result = set()
-        for i, c in enumerate(get_color_palettes()[:len(boxes)]):
+        for i, c in enumerate(primary_colors["hex"][:len(boxes)]):
             if boxes[i]["label"] != boxes[i - 1]["label"]:
                 expected_result.add(c)
 
@@ -97,7 +98,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
 
         expected_result = set()
 
-        for i, c in enumerate(get_color_palettes(format_="rgb")[:len(boxes)]):
+        for i, c in enumerate(primary_colors["rgb"][:len(boxes)]):
             if boxes[i]["label"] != boxes[i - 1]["label"]:
                 expected_result.add(c)
 
@@ -132,8 +133,8 @@ class TestInferenceProcessFunction(unittest.TestCase):
         color_res = []
         expected_result = []
 
-        set1 = get_color_palettes(format_="rgb")
-        set2 = get_color_palettes(set_="set2", format_="rgb")
+        set1 = primary_colors["rgb"]
+        set2 = light_colors["rgb"]
 
         for i, _ in enumerate(boxes):
             if i < len(set1):
