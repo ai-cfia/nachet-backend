@@ -48,7 +48,11 @@ CACHE = {
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
-mb = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
+
+try:
+    mb = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
+except TypeError:
+    mb = 16
 
 app.config["MAX_CONTENT_LENGTH"] = mb * 1024 * 1024
 
