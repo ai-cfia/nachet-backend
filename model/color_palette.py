@@ -85,7 +85,7 @@ def shades_colors(base_color: str | tuple, num_shades = 5, lighten_factor = 0.15
         darken_factor (float): Factor to darken the base color (0 to 1, default is 0.1).
 
     Returns:
-        tuple: RGB tuples representing the shades.
+        tuple: RGB tuples representing the shade color.
     """
     def hex_to_rgb(hex_value):
         hex_value = hex_value.lstrip("#")

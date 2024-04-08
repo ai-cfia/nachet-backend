@@ -6,7 +6,6 @@ It returns the processed inference results with additional information such as
 overlapping boxes, label occurrence, and colors for each species found.
 
 The colors can be returned in HEX or RGB format depending on the frontend preference.
-The colors are based on the colormaps from matplotlib.
 """
 
 import numpy as np
@@ -37,7 +36,6 @@ async def process_inference_results(
         imageDims (tuple): The dimensions of the image.
         area_ratio (float): The area ratio of a box to consider in the box
         overlap claculation.
-        color_set (str): The color set to use.
         color_format (str): Specified the format representation of the color.
         Support hex and rgb.
 

@@ -85,7 +85,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
         self.assertEqual(color_res, expected_result)
 
     def test_boxes_over_available_colors(self):
-# Create 36 different boxes
+        # Create 36 different boxes
         boxes = [{"box": self.box1, "score": 10, "label": f"box{i}"} for i in range(len(self.colors["hex"])*2)]
         data = [{"boxes": boxes}]
 
