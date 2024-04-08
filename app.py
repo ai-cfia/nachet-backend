@@ -52,7 +52,7 @@ app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 try:
     MAX_CONTENT_LENGTH_MEGABYTES = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
 except (TypeError, ValueError):
-    MAX_CONTENT_LENGTH = 16
+    MAX_CONTENT_LENGTH_MEGABYTES = 16
 
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH_MEGABYTES * 1024 * 1024
 
