@@ -14,6 +14,7 @@ from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
 import azure_storage.azure_storage_api as azure_storage_api
+
 from custom_exceptions import (
     DeleteDirectoryRequestError,
     ListDirectoriesRequestError,
