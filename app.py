@@ -59,6 +59,7 @@ CACHE = {
     "endpoints": None,
     "pipelines": {},
 }
+
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH * 1024 * 1024
@@ -296,7 +297,6 @@ async def test():
 
     return CACHE["endpoints"], 200
 
-
 async def fetch_json(repo_URL, key, file_path):
     """
     Fetches JSON document from a GitHub repository and caches it
@@ -350,7 +350,6 @@ async def get_pipelines():
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
     return result_json.get("pipelines")
-
 
 
 @app.before_serving
