@@ -168,6 +168,9 @@ async def inference_request():
         imageDims = data["imageDims"]
         image_base64 = data["image"]
 
+        area_ratio = data.get("area_ratio", 0.5)
+        color_format = data.get("color_format", "hex")
+
         print(f"Requested by user: {container_name}") # TODO: Transform into logging
         pipelines_endpoints = CACHE.get("pipelines")
         blob_service_client = app.config.get("BLOB_CLIENT")
@@ -207,7 +210,7 @@ async def inference_request():
         print("Process results") # TODO: Transform into logging
 
         processed_result_json = await inference.process_inference_results(
-            cache_json_result[-1], imageDims
+            cache_json_result[-1], imageDims, area_ratio, color_format
         )
 
         result_json_string = json.dumps(processed_result_json)

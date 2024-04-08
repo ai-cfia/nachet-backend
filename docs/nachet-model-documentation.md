@@ -52,6 +52,7 @@ seeds.
             },
         "label": "top_label_name",
         "score": 0.912,
+        "color": "#ff0",
         "topN": [
             {
                 "score": 0.912,
