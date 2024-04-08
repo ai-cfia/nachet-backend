@@ -99,7 +99,7 @@ class TestImageValidation(unittest.TestCase):
         self.assertEqual(data[0], 'invalid file size: 2000x2000')
 
     @patch("PIL.Image.open")
-    def test_rezisable_error(self, mock_open):
+    def test_resizable_error(self, mock_open):
         mock_image = Mock()
         mock_image.size = [1080, 1080]
         mock_image.format = "PNG"
