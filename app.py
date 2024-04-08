@@ -38,7 +38,7 @@ NACHET_MODEL = os.getenv("NACHET_MODEL")
 
 try:
     MAX_CONTENT_LENGTH = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
-except TypeError:
+except (TypeError, ValueError):
     MAX_CONTENT_LENGTH = 16
 
 
@@ -167,6 +167,7 @@ async def inference_request():
         imageDims = data["imageDims"]
         image_base64 = data["image"]
 
+        print(f"Requested by user: {container_name}") # TODO: Transform into logging
         pipelines_endpoints = CACHE.get("pipelines")
         blob_service_client = app.config.get("BLOB_CLIENT")
 
