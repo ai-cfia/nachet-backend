@@ -60,6 +60,7 @@ class TestInferenceRequest(unittest.TestCase):
             "totalBoxes",
             "box",
             "label",
+            "color",
             "score",
             "topN",
             "overlapping",
