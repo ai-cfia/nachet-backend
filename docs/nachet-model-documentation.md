@@ -8,7 +8,7 @@ tasks, including Image Classification, Image Segmentation, and Object Detection.
 
 ## Task
 
-Nachet Interactive models' perform the following tasks:
+Nachet Interactive's models perfom the following tasks:
 
 |Task|Action|Input/Output|
 |:--|:--|:-----|
