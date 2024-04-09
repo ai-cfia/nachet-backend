@@ -220,7 +220,7 @@ The inference request will return a list with the following information:
 
 ### Blob storage and Pipeline versioning
 
-To keep track of the various pipelines iterations and versions, JSON files are
+To keep track of the various pipeline iterations and versions, JSON files are
 stored in the blob storage. Users can add the JSON to the blob storage
 using the `pipelines_version_insertion.py` script. This allows for easy
 management of model and pipeline history.
