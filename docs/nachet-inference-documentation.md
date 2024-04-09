@@ -238,8 +238,8 @@ To use the script, 3 environment variables are necessary:
 
 In the backend, the pipelines are retrieved using the `get_pipelines` function.
 This function retrieves the data from the blob storage and stores the pipeline in
-the `CACHE["endpoint"]` variable. This the variable that feed the frontend the `models`
-information and metadata.
+the `CACHE["endpoint"]` variable. This is the variable that feeds the `models`
+information and metadata to the frontend.
 
 ```python
 async def get_pipelines():
