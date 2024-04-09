@@ -2,7 +2,8 @@ import json
 import uuid
 import hashlib
 import datetime
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, ContainerClient
+from azure.core.exceptions import ResourceNotFoundError
 from custom_exceptions import (
     ConnectionStringError,
     MountContainerError,
@@ -13,23 +14,23 @@ from custom_exceptions import (
     FolderListError,
     GenerateHashError,
     CreateDirectoryError,
+    PipelineNotFoundError,
 )
 
 """
----- user-container based structure -----
-- container name is user id
-- whenever a new user is created, a new container is created with the user uuid
-- inside the container, there are project folders (project name = project uuid)
-- for each project folder, there is a json file with the project info and creation
-date, in the container
-- inside the project folder, there is an image file and a json file with
-the image inference results
+---- user-container based structure ----- - container name is user id - whenever
+a new user is created, a new container is created with the user uuid - inside
+the container, there are project folders (project name = project uuid) - for
+each project folder, there is a json file with the project info and creation
+date, in the container - inside the project folder, there is an image file and a
+json file with the image inference results
 """
 
 
 async def generate_hash(image):
     """
-    generates a hash value for the image to be used as the image name in the container
+    generates a hash value for the image to be used as the image name in the
+    container
     """
     try:
         hash = hashlib.sha256(image).hexdigest()
@@ -38,40 +39,52 @@ async def generate_hash(image):
     except GenerateHashError as error:
         print(error)
 
-
-async def mount_container(connection_string, container_uuid, create_container=True):
+async def get_blob_client(connection_string: str):
     """
-    given a connection string and a container name, mounts the container and
-    returns the container client as an object that can be used in other functions.
-    if a specified container doesnt exist, it creates one with the provided uuid,
-    if create_container is True
+    given a connection string, returns the blob client object
     """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
-        if blob_service_client:
-            container_name = "user-{}".format(container_uuid)
-            container_client = blob_service_client.get_container_client(container_name)
-            if container_client.exists():
-                return container_client
-            elif create_container and not container_client.exists():
-                container_client = blob_service_client.create_container(container_name)
-                # create general directory for new user container
-                response = await create_folder(container_client, "General")
-                if response:
-                    return container_client
-                else:
-                    return False
-        else:
-            raise ConnectionStringError("Invalid connection string")
+        if blob_service_client is None:
+            raise ValueError(f"the given connection string is invalid: {connection_string}")
+        return blob_service_client
 
+    except ValueError as error:
+        print(error)
+        raise ConnectionStringError(error.args[0]) from error
+
+
+async def mount_container(
+        blob_service_client: BlobServiceClient,
+        container_uuid: str,
+        create_container: bool =True):
+    """
+    given a connection string and a container uuid, mounts the container and
+    returns the container client as an object that can be used in other
+    functions. if a specified container doesnt exist, it creates one with the
+    provided uuid, if create_container is True
+    """
+    try:
+        container_name = "user-{}".format(container_uuid)
+        container_client = blob_service_client.get_container_client(container_name)
+        if container_client.exists():
+            return container_client
+        elif create_container and not container_client.exists():
+            container_client = blob_service_client.create_container(container_name)
+            # create general directory for new user container
+            response = await create_folder(container_client, "General")
+            if response:
+                return container_client
+            else:
+                raise MountContainerError(f"could not create general directory: {container_name}")
     except MountContainerError as error:
         print(error)
-        return False
+        raise
 
 
-async def get_blob(container_client, blob_name):
+async def get_blob(container_client: ContainerClient, blob_name: str):
     """
     gets the contents of a specified blob in the user's container
     """
@@ -81,15 +94,15 @@ async def get_blob(container_client, blob_name):
         blob_content = blob.readall()
         return blob_content
 
-    except GetBlobError as error:
-        print(error)
-        return False
+    except ResourceNotFoundError as error:
+        raise GetBlobError(
+            f"the specified blob: {blob_name} cannot be found") from error
 
 
-async def upload_image(container_client, folder_name, image, hash_value):
+async def upload_image(container_client: ContainerClient, folder_name, image, hash_value):
     """
-    uploads the image to the specified folder within the user's container,
-    if the specified folder doesnt exist, it creates it with a uuid
+    uploads the image to the specified folder within the user's container, if
+    the specified folder doesnt exist, it creates it with a uuid
     """
     try:
         directories = await get_directories(container_client)
@@ -148,8 +161,8 @@ async def create_folder(container_client, folder_name):
 
 async def upload_inference_result(container_client, folder_name, result, hash_value):
     """
-    uploads the inference results json file to the specified folder
-    in the users container
+    uploads the inference results json file to the specified folder in the users
+    container
     """
     try:
         folder_uuid = await get_folder_uuid(container_client, folder_name)
@@ -166,8 +179,8 @@ async def upload_inference_result(container_client, folder_name, result, hash_va
 async def get_folder_uuid(container_client, folder_name):
     """
     gets the uuid of a folder in the user's container given the folder name by
-    iterating through the folder json files and extracting the name
-    to match given folder name
+    iterating through the folder json files and extracting the name to match
+    given folder name
     """
     try:
         blob_list = container_client.list_blobs()
@@ -234,3 +247,37 @@ async def get_directories(container_client):
     except FolderListError as error:
         print(error)
         return []
+
+async def get_pipeline_info(
+        blob_service_client: BlobServiceClient,
+        pipeline_container_name: str,
+        pipeline_version: str
+    ) -> json:
+    """
+    Retrieves the pipeline information from Azure Blob Storage based on the
+    provided parameters.
+
+    Args:
+        blob_service_client (BlobServiceClient): The BlobServiceClient object
+        pipeline_container_name (str): The name of the container where
+        the pipeline files are stored.
+        pipeline_version (str): The version of the pipeline to retrieve.
+
+    Returns:
+        json: The pipeline information in JSON format.
+
+    Raises:
+        PipelineNotFoundError: If the specified version of the pipeline is not
+        found.
+    """
+    try:
+        container_client = blob_service_client.get_container_client(
+            pipeline_container_name
+        )
+
+        blob = await get_blob(container_client, f"pipelines/{pipeline_version}.json")
+        pipeline = json.loads(blob)
+        return pipeline
+
+    except GetBlobError as error:
+        raise PipelineNotFoundError(f"This version {pipeline_version} was not found") from error

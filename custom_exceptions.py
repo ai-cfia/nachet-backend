@@ -64,3 +64,7 @@ class ValidateEnvVariablesError(Exception):
 
 class ServerError(Exception):
     pass
+
+
+class PipelineNotFoundError(Exception):
+    pass
