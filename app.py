@@ -11,7 +11,7 @@ import warnings
 import model.inference as inference
 from model import request_function
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from datetime import date
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
@@ -88,7 +88,7 @@ Model = namedtuple(
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
     VALID_DIMENSION = json.loads(os.getenv("NACHET_VALID_DIMENSION"))
-except TypeError:
+except (TypeError, json.decoder.JSONDecodeError):
     # For testing
     VALID_DIMENSION = {"width": 1920, "height": 1080}
     VALID_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
