@@ -48,7 +48,15 @@ class ImageValidationError(APIErrors):
     pass
 
 
-class ImageWarning(UserWarning):
+class APIWarnings(UserWarning):
+    pass
+
+
+class ImageWarning(APIWarnings):
+    pass
+
+
+class MaxContentLengthWarning(APIWarnings):
     pass
 
 load_dotenv()
@@ -75,6 +83,10 @@ try:
     MAX_CONTENT_LENGTH_MEGABYTES = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
 except (TypeError, ValueError):
     MAX_CONTENT_LENGTH_MEGABYTES = 16
+    warnings.warn(
+        f"NACHET_MAX_CONTENT_LENGTH not set, using default value of {MAX_CONTENT_LENGTH_MEGABYTES}",
+        MaxContentLengthWarning
+    )
 
 
 Model = namedtuple(
