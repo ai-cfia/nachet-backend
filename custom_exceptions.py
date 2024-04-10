@@ -65,5 +65,9 @@ class ValidateEnvVariablesError(Exception):
 class ServerError(Exception):
     pass
 
+
 class ImageValidationError(Exception):
+    pass
+
+class PipelineNotFoundError(Exception):
     pass
