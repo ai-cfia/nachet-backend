@@ -92,6 +92,13 @@ except TypeError:
     # For testing
     VALID_DIMENSION = {"width": 1920, "height": 1080}
     VALID_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
+    warnings.warn(
+        f"""
+        NACHET_VALID_EXTENSION or NACHET_VALID_DIMENSION is not set,
+        using default values: {", ".join(list(VALID_EXTENSION))} and dimension: {tuple(VALID_DIMENSION.values())}
+        """,
+        ImageWarning
+    )
 
 try:
     MAX_CONTENT_LENGTH_MEGABYTES = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
