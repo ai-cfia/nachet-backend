@@ -6,6 +6,7 @@ import re
 import io
 import magic
 import time
+import warnings
 
 import model.inference as inference
 from model import request_function
@@ -19,16 +20,36 @@ from collections import namedtuple
 from cryptography.fernet import Fernet
 import azure_storage.azure_storage_api as azure_storage_api
 
-from custom_exceptions import (
-    DeleteDirectoryRequestError,
-    ListDirectoriesRequestError,
-    InferenceRequestError,
-    CreateDirectoryRequestError,
-    ServerError,
-    ImageValidationError,
-    PipelineNotFoundError,
-    ConnectionStringError
-)
+class APIErrors(Exception):
+    pass
+
+
+class DeleteDirectoryRequestError(APIErrors):
+    pass
+
+
+class ListDirectoriesRequestError(APIErrors):
+    pass
+
+
+class InferenceRequestError(APIErrors):
+    pass
+
+
+class CreateDirectoryRequestError(APIErrors):
+    pass
+
+
+class ServerError(APIErrors):
+    pass
+
+
+class ImageValidationError(APIErrors):
+    pass
+
+
+class ImageWarning(UserWarning):
+    pass
 
 load_dotenv()
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
@@ -50,7 +71,7 @@ except TypeError:
     VALID_DIMENSION = {"width": 1920, "height": 1080}
     VALID_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
 
-  try:
+try:
     MAX_CONTENT_LENGTH_MEGABYTES = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
 except (TypeError, ValueError):
     MAX_CONTENT_LENGTH_MEGABYTES = 16
@@ -232,6 +253,7 @@ async def inference_request():
         print(f"{date.today()} Entering inference request") # TODO: Transform into logging
         data = await request.get_json()
         pipeline_name = data.get("model_name")
+        validator = data.get("validator")
         folder_name = data["folder_name"]
         container_name = data["container_name"]
         imageDims = data["imageDims"]
@@ -243,6 +265,7 @@ async def inference_request():
         print(f"Requested by user: {container_name}") # TODO: Transform into logging
         pipelines_endpoints = CACHE.get("pipelines")
         blob_service_client = app.config.get("BLOB_CLIENT")
+        validators = CACHE.get("validators")
 
         if not (folder_name and container_name and imageDims and image_base64):
             raise InferenceRequestError(
@@ -251,11 +274,11 @@ async def inference_request():
         if not pipelines_endpoints.get(pipeline_name):
             raise InferenceRequestError(f"model {pipeline_name} not found")
 
-        header, encoded_data = image_base64.split(",", 1)
+        _, encoded_data = image_base64.split(",", 1)
 
-        # Validate image header #TODO with magic header
-        if not header.startswith("data:image/"):
-            raise InferenceRequestError("invalid image header")
+        if validator not in validators:
+            warnings.warn("this picture was not validate", ImageWarning)
+            # TODO: implement logic when frontend start returning validators
 
         # Keep track of every output given by the models
         # TODO: add it to CACHE variable
@@ -400,7 +423,7 @@ async def get_pipelines():
         app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
         result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], PIPELINE_BLOB_NAME, PIPELINE_VERSION)
         cipher_suite = Fernet(FERNET_KEY)
-    except (ConnectionStringError, PipelineNotFoundError) as error:
+    except (azure_storage_api.AzureAPIErrors) as error:
         print(error)
         raise ServerError("server errror: could not retrieve the pipelines") from error
 

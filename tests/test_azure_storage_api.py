@@ -6,16 +6,13 @@ from azure_storage.azure_storage_api import (
     mount_container,
     get_blob,
     get_pipeline_info,
-    get_blob_client
-)
-
-from azure.core.exceptions import ResourceNotFoundError
-
-from custom_exceptions import (
+    get_blob_client,
     GetBlobError,
     PipelineNotFoundError,
     ConnectionStringError
 )
+from azure.core.exceptions import ResourceNotFoundError
+
 
 class TestGetBlobServiceClient(unittest.TestCase):
     @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
