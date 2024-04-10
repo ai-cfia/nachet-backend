@@ -3,8 +3,9 @@ import json
 import os
 import base64
 import asyncio
+import warnings
 
-from app import app
+from app import app, ImageWarning
 from unittest.mock import patch, MagicMock, Mock
 
 class TestInferenceRequest(unittest.TestCase):
@@ -35,9 +36,8 @@ class TestInferenceRequest(unittest.TestCase):
         self.image_src = None
         self.test = None
 
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_inference_request_successful(self, MockFromConnectionString):
-
+    @patch("azure_storage.azure_storage_api.mount_container")
+    def test_inference_request_successful(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
         mock_blob.readall.return_value = bytes(self.image_src, encoding="utf-8")
@@ -51,11 +51,7 @@ class TestInferenceRequest(unittest.TestCase):
         mock_container_client.get_blob_client.return_value = mock_blob_client
         mock_container_client.exists.return_value = True
 
-        mock_blob_service_client = MockFromConnectionString.return_value
-        mock_blob_service_client.get_container_client.return_value = (
-            mock_container_client
-        )
-
+        mock_container.return_value = mock_container_client
         # Build expected response keys
         responses = set()
         expected_keys = {
@@ -65,6 +61,7 @@ class TestInferenceRequest(unittest.TestCase):
             "totalBoxes",
             "box",
             "label",
+            "color",
             "score",
             "topN",
             "overlapping",
@@ -96,8 +93,8 @@ class TestInferenceRequest(unittest.TestCase):
         print(expected_keys == responses)
         self.assertEqual(responses, expected_keys)
 
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_inference_request_unsuccessfull(self, MockFromConnectionString):
+    @patch("azure_storage.azure_storage_api.mount_container")
+    def test_inference_request_unsuccessfull(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
         mock_blob.readall.return_value = b""
@@ -111,10 +108,7 @@ class TestInferenceRequest(unittest.TestCase):
         mock_container_client.get_blob_client.return_value = mock_blob_client
         mock_container_client.exists.return_value = True
 
-        mock_blob_service_client = MockFromConnectionString.return_value
-        mock_blob_service_client.get_container_client.return_value = (
-            mock_container_client
-        )
+        mock_container.return_value = mock_container_client
 
         # Build expected response
         expected = 400
@@ -132,7 +126,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
                     "container_name": self.container_name,
-                    "model_name": self.pipeline.get("pipeline_name")
+                    "model_name": "not_in_pipeline_name"
                 })
         )
 
@@ -176,7 +170,6 @@ class TestInferenceRequest(unittest.TestCase):
 
         if len(responses) > 1:
             raise ValueError(f"Different errors messages were given; expected only 'missing request arguments', {responses}")
-
         print(expected == result_json[0])
         print(response.status_code == 400)
         self.assertEqual(result_json[0], expected)
@@ -211,34 +204,30 @@ class TestInferenceRequest(unittest.TestCase):
         self.assertEqual(result_json[0], expected)
         self.assertEqual(response.status_code, 400)
 
-    def test_inference_request_wrong_header(self):
+    # TODO test validation error when frontend return validators
+    def test_inference_request_validation_warning(self):
         # Build expected response
-        expected = ("InferenceRequestError: invalid image header")
-
-        # Test the answers from inference_request
-        response = asyncio.run(
-            self.test.post(
-                '/inf',
-                headers={
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*",
-                },
-                json={
-                    "image": "data:python," + self.image_src,
-                    "imageDims": [720,540],
-                    "folder_name": self.folder_name,
-                    "container_name": self.container_name,
-                    "model_name": self.pipeline.get("pipeline_name")
-                }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            asyncio.run(
+                self.test.post(
+                    '/inf',
+                    headers={
+                        "Content-Type": "application/json",
+                        "Access-Control-Allow-Origin": "*",
+                    },
+                    json={
+                        "image": "data:python," + self.image_src,
+                        "imageDims": [720,540],
+                        "folder_name": self.folder_name,
+                        "container_name": self.container_name,
+                        "model_name": self.pipeline.get("pipeline_name")
+                    }
+                )
             )
-        )
-        result_json = json.loads(asyncio.run(response.get_data()))
 
-        print(expected == result_json[0])
-        print(response.status_code == 400)
-
-        self.assertEqual(result_json[0], expected)
-        self.assertEqual(response.status_code, 400)
+        self.assertTrue(issubclass(w[-1].category, ImageWarning))
+        self.assertTrue("this picture was not validate" in str(w[-1].message))
 
 if __name__ == '__main__':
     unittest.main()

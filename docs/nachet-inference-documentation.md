@@ -20,9 +20,9 @@ selected by a parameter.
 
 ### Pipelines
 
-Pipelines are defined as a set of models that follow each other, where the output of
-one model is used as input for the next models, and so on. A pipeline contains from 1 to n
-models.
+Pipelines are defined as a set of models that follow each other, where the
+output of one model is used as input for the next models, and so on. A pipeline
+contains from 1 to n models.
 
 #### Pipelines flowchart 1.0.0
 
@@ -61,7 +61,7 @@ to a model and receive the result.
 
 ```mermaid
 sequenceDiagram
-
+  title: Sequence Diagram for inference request 1.2.1
     actor Client
     participant Frontend
     participant Backend
@@ -141,18 +141,18 @@ sequenceDiagram
 
 ### Inference Request function
 
-The inference request function plays a crucial role in Nachet Interactive's backend.
-It requests actions from selected models or pipelines based on certain checks.
-These checks include verifying that all arguments required to find or initialize
-the blob container and process the image have been transmitted to the function.
-It also checks if the selected pipeline is recognized by the system and if the image sent for analysis
-has a valid header.
+The inference request function plays a crucial role in Nachet Interactive's
+backend. It requests actions from selected models or pipelines based on certain
+checks. These checks include verifying that all arguments required to find or
+initialize the blob container and process the image have been transmitted to the
+function. It also checks if the selected pipeline is recognized by the system
+and if the image sent for analysis has a valid header.
 
-If all the above checks pass, the function initializes or finds the user blob container
-and uploads the image. Next, it requests an inference from every model in the pipeline.
-Each model specifies their `entry_function` (how to call and retrieve data) and whether
-they have a `process_inference` function. Based on these indications, the results are returned
-and stored in the cache.
+If all the above checks pass, the function initializes or finds the user blob
+container and uploads the image. Next, it requests an inference from every model
+in the pipeline. Each model specifies their `entry_function` (how to call and
+retrieve data) and whether they have a `process_inference` function. Based on
+these indications, the results are returned and stored in the cache.
 
 If no other model is called, the last result is then processed and sent to the frontend.
 
@@ -238,54 +238,50 @@ To use the script, 3 environment variables are necessary:
 
 In the backend, the pipelines are retrieved using the `get_pipelines` function.
 This function retrieves the data from the blob storage and stores the pipeline in
-the `CACHE["endpoint"]` variable. This the variable that feeds the frontend the `models`
-information and metadata.
+the `CACHE["endpoint"]` variable. This is the variable that feeds the `models`
+information and metadata to the frontend.
 
 ```python
-async def get_pipeline(mock:bool = False):
+async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
     """
     Retrieves the pipelines from the Azure storage API.
-
-    Parameters:
-    - mock (bool): If True, retrieves the pipelines from a mock JSON file. If False, retrieves the pipelines from the Azure storage API.
 
     Returns:
     - list: A list of dictionaries representing the pipelines.
     """
-    if mock:
-        with open("mock_pipeline_json.json", "r+") as f:
-            result_json = json.load(f)
-    else:
-        result_json = await azure_storage_api.get_pipeline_info(connection_string, PIPELINE_BLOB_NAME, PIPELINE_VERSION)
-        cipher_suite = Fernet(FERNET_KEY)
-    # Get all the api_call function and map them in a dictionary
-    api_call_function = {func.split("from_")[1]: getattr(model_module, func) for func in dir(model_module) if "inference" in func.split("_")}
-    # Get all the inference functions and map them in a dictionary
-    inference_functions = {func: getattr(inference, func) for func in dir(inference) if "process" in func.split("_")}
+    try:
+        app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
+        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
+    except (azure_storage_api.AzureAPIErrors) as error:
+        print(error)
+        raise ServerError("server errror: could not retrieve the pipelines") from error
 
     models = ()
     for model in result_json.get("models"):
         m = Model(
-            api_call_function.get(model.get("api_call_function")),
+            request_function.get(model.get("api_call_function")),
             model.get("model_name"),
+            # To protect sensible data (API key and model endpoint), we encrypt it when
+            # it's pushed into the blob storage. Once we retrieve the data here in the
+            # backend, we need to decrypt the byte format to recover the original
+            # data.
             cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
             cipher_suite.decrypt(model.get("api_key").encode()).decode(),
-            inference_functions.get(model.get("inference_function")),
-            model.get("content-type"),
+            model.get("content_type"),
             model.get("deployment_platform")
         )
         models += (m,)
-
     # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
     return result_json.get("pipelines")
-
 ```
 
 ### Available Version of the JSON file
 
 |Version|Creation Date| Pipelines|
 |--|--|--|
+|0.1.3 | 2024-03-26 | Swin Transformer and 6 Seeds Detector|
 |0.1.0 | 2024-02-26 | Swin Transformer and 6 Seeds Detector|
+|0.1.1 | 2024-03-14 | Swin Transformer and 6 Seeds Detector|

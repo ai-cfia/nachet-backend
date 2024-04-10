@@ -9,3 +9,4 @@ Pillow
 cryptography
 pyyaml
 pydantic
+python-magic
