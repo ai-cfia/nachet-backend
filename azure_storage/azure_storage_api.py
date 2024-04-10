@@ -1,22 +1,3 @@
-import json
-import uuid
-import hashlib
-import datetime
-from azure.storage.blob import BlobServiceClient, ContainerClient
-from azure.core.exceptions import ResourceNotFoundError
-from custom_exceptions import (
-    ConnectionStringError,
-    MountContainerError,
-    GetBlobError,
-    UploadImageError,
-    UploadInferenceResultError,
-    GetFolderUUIDError,
-    FolderListError,
-    GenerateHashError,
-    CreateDirectoryError,
-    PipelineNotFoundError,
-)
-
 """
 ---- user-container based structure ----- - container name is user id - whenever
 a new user is created, a new container is created with the user uuid - inside
@@ -25,6 +6,56 @@ each project folder, there is a json file with the project info and creation
 date, in the container - inside the project folder, there is an image file and a
 json file with the image inference results
 """
+import json
+import uuid
+import hashlib
+import datetime
+from azure.storage.blob import BlobServiceClient, ContainerClient
+from azure.core.exceptions import ResourceNotFoundError
+
+
+class AzureAPIErrors(Exception):
+    pass
+
+
+class ConnectionStringError(AzureAPIErrors):
+    pass
+
+
+class MountContainerError(AzureAPIErrors):
+    pass
+
+
+class GetBlobError(AzureAPIErrors):
+    pass
+
+
+class UploadImageError(AzureAPIErrors):
+    pass
+
+
+class UploadInferenceResultError(AzureAPIErrors):
+    pass
+
+
+class GetFolderUUIDError(AzureAPIErrors):
+    pass
+
+
+class FolderListError(AzureAPIErrors):
+    pass
+
+
+class GenerateHashError(AzureAPIErrors):
+    pass
+
+
+class CreateDirectoryError(AzureAPIErrors):
+    pass
+
+
+class PipelineNotFoundError(AzureAPIErrors):
+    pass
 
 
 async def generate_hash(image):

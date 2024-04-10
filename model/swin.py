@@ -7,7 +7,7 @@ import json
 
 from collections import namedtuple
 from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import InferenceRequestError
+from custom_exceptions import ProcessInferenceResultError
 
 
 def process_swin_result(img_box:dict, results: dict) -> list:
@@ -59,4 +59,4 @@ async def request_inference_from_swin(model: namedtuple, previous_result: list[b
 
         return process_swin_result(previous_result.get("result_json"), results)
     except HTTPError as e:
-       raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}") from None
+       raise ProcessInferenceResultError(f"An error occurred while processing the request:\n {str(e)}") from None

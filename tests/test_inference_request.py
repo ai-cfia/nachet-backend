@@ -3,8 +3,9 @@ import json
 import os
 import base64
 import asyncio
+import warnings
 
-from app import app
+from app import app, ImageWarning
 from unittest.mock import patch, MagicMock, Mock
 
 class TestInferenceRequest(unittest.TestCase):
@@ -125,7 +126,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
                     "container_name": self.container_name,
-                    "model_name": self.pipeline.get("pipeline_name")
+                    "model_name": "not_in_pipeline_name"
                 })
         )
 
@@ -203,34 +204,30 @@ class TestInferenceRequest(unittest.TestCase):
         self.assertEqual(result_json[0], expected)
         self.assertEqual(response.status_code, 400)
 
-    def test_inference_request_wrong_header(self):
+    # TODO test validation error when frontend return validators
+    def test_inference_request_validation_warning(self):
         # Build expected response
-        expected = ("InferenceRequestError: invalid image header")
-
-        # Test the answers from inference_request
-        response = asyncio.run(
-            self.test.post(
-                '/inf',
-                headers={
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*",
-                },
-                json={
-                    "image": "data:python," + self.image_src,
-                    "imageDims": [720,540],
-                    "folder_name": self.folder_name,
-                    "container_name": self.container_name,
-                    "model_name": self.pipeline.get("pipeline_name")
-                }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            asyncio.run(
+                self.test.post(
+                    '/inf',
+                    headers={
+                        "Content-Type": "application/json",
+                        "Access-Control-Allow-Origin": "*",
+                    },
+                    json={
+                        "image": "data:python," + self.image_src,
+                        "imageDims": [720,540],
+                        "folder_name": self.folder_name,
+                        "container_name": self.container_name,
+                        "model_name": self.pipeline.get("pipeline_name")
+                    }
+                )
             )
-        )
-        result_json = json.loads(asyncio.run(response.get_data()))
 
-        print(expected == result_json[0])
-        print(response.status_code == 400)
-
-        self.assertEqual(result_json[0], expected)
-        self.assertEqual(response.status_code, 400)
+        self.assertTrue(issubclass(w[-1].category, ImageWarning))
+        self.assertTrue("this picture was not validate" in str(w[-1].message))
 
 if __name__ == '__main__':
     unittest.main()

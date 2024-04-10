@@ -10,7 +10,7 @@ import json
 from PIL import Image
 from collections import namedtuple
 from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import InferenceRequestError
+from custom_exceptions import ProcessInferenceResultError
 
 def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:
     """
@@ -100,4 +100,4 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
             "images": process_image_slicing(previous_result, result_object)
         }
     except HTTPError as e:
-        raise InferenceRequestError(f"An error occurred while processing the request:\n {str(e)}") from None
+        raise ProcessInferenceResultError(f"An error occurred while processing the request:\n {str(e)}") from None
