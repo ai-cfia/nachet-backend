@@ -66,8 +66,6 @@ To test the program, use this command:
 python -m unittest discover -s tests
 ```
 
-****
-
 ### ENVIRONMENT VARIABLES
 
 Start by making a copy of `.env.template` and renaming it `.env`. For the
@@ -75,23 +73,26 @@ backend to function, you will need to add the missing values:
 
 - **NACHET_AZURE_STORAGE_CONNECTION_STRING**: Connection string to access
   external storage (Azure Blob Storage).
+- **NACHET_DATA**: Url to access nachet-data repository
+- **NACHET_BLOB_PIPELINE_NAME**: The name of the blob containing the pipeline.
+- **NACHET_BLOB_PIPELINE_VERSION**: The version of the file containing the
+  pipeline used.
+- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**: The key to decrypt sensible data from
+  the models.
+- **NACHET_VALID_EXTENSION**: Contains the valid image extensions that are
+  accepted by the backend
+- **NACHET_VALID_DIMENSION**: Contains the valid dimensions for an image to be
+  accepted in the backend.
+
+#### DEPRECATED
+
 - **NACHET_MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed
   model for inferencing.
 - **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
-- **NACHET_DATA**: Url to access nachet-data repository
-- **NACHET_HEALTH_MESSAGE**: Health check message for the server.
-- **NACHET_MAX_CONTENT_LENGTH**: Set the maximum size of the file that can be
-  uploaded to the backend. Needs to be the same size as the
-  `client_max_body_size`
-  [value](https://github.com/ai-cfia/howard/blob/dedee069f051ba743122084fcb5d5c97c2499359/kubernetes/aks/apps/nachet/base/nachet-ingress.yaml#L13)
-  set from the deployment in Howard.
-- **NACHET_SUBSCRIPTION_ID**
-- **NACHET_RESOURCE_GROUP**
-- **NACHET_WORKSPACE**
-- **NACHET_MODEL**
-- **NACHET_BLOB_PIPELINE_NAME**
-- **NACHET_BLOB_PIPELINE_VERSION**
-- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**
+- **NACHET_SUBSCRIPTION_ID**: Was used to retrieve models metadata
+- **NACHET_WORKSPACE**: Was used to retrieve models metadata
+- **NACHET_RESOURCE_GROUP**: Was used to retrieve models metadata
+- **NACHET_MODEL**: Was used to retrieve models metadata
 
 ****
 
