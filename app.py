@@ -8,17 +8,17 @@ import magic
 import time
 import warnings
 
-import model.inference as inference
-from model import request_function
-
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from datetime import date
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
+
 import azure_storage.azure_storage_api as azure_storage_api
+import model.inference as inference
+from model import request_function
 
 class APIErrors(Exception):
     pass
@@ -283,17 +283,18 @@ async def image_validation():
         header, encoded_image = image_base64.split(",", 1)
         image_bytes = base64.b64decode(encoded_image)
 
-        with Image.open(io.BytesIO(image_bytes)) as image:
-            # size check
-            if image.size[0] > VALID_DIMENSION["width"] and image.size[1] > VALID_DIMENSION["height"]:
-                raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
+        image = Image.open(io.BytesIO(image_bytes))
 
-            # resizable check
-            try:
-                size = (100,150)
-                image.thumbnail(size)
-            except IOError:
-                raise ImageValidationError("invalid file not resizable")
+        # size check
+        if image.size[0] > VALID_DIMENSION["width"] and image.size[1] > VALID_DIMENSION["height"]:
+            raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
+
+        # resizable check
+        try:
+            size = (100,150)
+            image.thumbnail(size)
+        except IOError:
+            raise ImageValidationError("invalid file not resizable")
 
         magic_header = magic.from_buffer(image_bytes, mime=True)
         image_extension = magic_header.split("/")[1]
@@ -313,7 +314,7 @@ async def image_validation():
 
         return jsonify([validator]), 200
 
-    except (ImageValidationError) as error:
+    except (UnidentifiedImageError, ImageValidationError) as error:
         print(error)
         return jsonify([error.args[0]]), 400
 
@@ -400,15 +401,6 @@ async def inference_request():
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 
-    except Exception as error:
-        print(error)
-        return jsonify(["Unexpected error occured"]), 500
-
-
-@app.get("/coffee")
-async def get_coffee():
-    return jsonify("Tea is great!"), 418
-
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -429,8 +421,9 @@ async def reload_seed_data():
     try:
         await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
         return jsonify(["Seed data reloaded successfully"]), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except urllib.error.HTTPError as e:
+        return jsonify(
+            {f"An error happend when reloading the seed data: {e.args[0]}"}), 500
 
 
 @app.get("/model-endpoints-metadata")
@@ -484,22 +477,13 @@ async def fetch_json(repo_URL, key, file_path):
 
     Returns:
     - dict: The JSON document as a Python dictionary.
-
-    Raises:
-    - ValueError: If there is an HTTP error or any other exception occurs during the fetch process.
     """
-    try:
-        if key != "endpoints":
-            json_url = os.path.join(repo_URL, file_path)
-            with urllib.request.urlopen(json_url) as response:
-                result = response.read()
-                result_json = json.loads(result.decode("utf-8"))
-            return result_json
-
-    except urllib.error.HTTPError as error:
-        raise ValueError(str(error))
-    except Exception as e:
-        raise ValueError(str(e))
+    if key != "endpoints":
+        json_url = os.path.join(repo_URL, file_path)
+        with urllib.request.urlopen(json_url) as response:
+            result = response.read()
+            result_json = json.loads(result.decode("utf-8"))
+        return result_json
 
 
 async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
