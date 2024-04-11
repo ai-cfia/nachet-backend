@@ -64,7 +64,7 @@ class TestPipelineInsertion(unittest.TestCase):
         mock_blob_client.get_container_client.side_effect = ResourceExistsError("Resource not found")
 
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml", mock_blob_client, Mock())
+            pipeline_insertion("test_file.yaml", mock_blob_client, Mock(), self.account_name)
         self.assertEqual(
             str(context.exception),
             """an error occurred while uploading the file to the blob storage:
@@ -78,7 +78,7 @@ class TestPipelineInsertion(unittest.TestCase):
             """
 
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml", Mock(), Mock())
+            pipeline_insertion("test_file.yaml", Mock(), Mock(), self.account_name)
         self.assertEqual(str(context.exception), expected)
 
     @patch("os.path.exists")
@@ -89,7 +89,7 @@ class TestPipelineInsertion(unittest.TestCase):
         mock_os_path_exists.return_value = True
 
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.md", Mock(), Mock())
+            pipeline_insertion("test_file.md", Mock(), Mock(), self.account_name)
         self.assertEqual(str(context.exception), expected)
 
     @patch("pipelines_version_insertion.yaml_to_json")
@@ -102,7 +102,7 @@ class TestPipelineInsertion(unittest.TestCase):
         mock_yaml_to_json.return_value = []
 
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml", Mock(), Mock())
+            pipeline_insertion("test_file.yaml", Mock(), Mock(), self.account_name)
         self.assertEqual(str(context.exception), expected)
 
     @patch("pipelines_version_insertion.yaml_to_json")
@@ -118,7 +118,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         # Missing argument and Wrong Type
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml", Mock(), Mock())
+            pipeline_insertion("test_file.yaml", Mock(), Mock(), self.account_name)
 
         self.assertIn("validation errors", str(context.exception))
 
@@ -168,9 +168,9 @@ class TestPipelineInsertion(unittest.TestCase):
             ],
         }
 
-        expected = "no pipeline was set as default, please set one as default by setting the default value as True"
+        expected = "no pipeline was set as default, please set one by setting the default value as True"
         with self.assertRaises(PipelineInsertionError) as context:
-            pipeline_insertion("test_file.yaml", Mock(), Mock())
+            pipeline_insertion("test_file.yaml", Mock(), Mock(), self.account_name)
 
         self.assertEqual(str(context.exception), expected)
 

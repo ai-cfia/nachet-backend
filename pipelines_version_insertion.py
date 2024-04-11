@@ -57,7 +57,7 @@ KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 BLOB_STORAGE_ACCOUNT_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
-NO_DEFAULT_MSG = "no pipeline was set as default, please set one as default by setting the default value as True"
+NO_DEFAULT_MSG = "no pipeline was set as default, please set one by setting the default value as True"
 
 class PipelineInsertionError(Exception):
     pass
@@ -219,7 +219,8 @@ def yaml_to_json(yaml_file:str) -> str:
 def pipeline_insertion(
         file_path: str,
         blob_service_client: BlobServiceClient,
-        cipher_suite: Fernet
+        cipher_suite: Fernet,
+        account_name: str
 ) -> str:
     """
     Inserts a new version of a pipeline into an Azure Blob Storage container.
@@ -265,6 +266,7 @@ def pipeline_insertion(
             """
         )
     try:
+        # Validate the data given by the users
         Data(**pipelines)
         for pipeline in pipelines["pipelines"]:
             if pipeline.get("default"):
@@ -277,15 +279,16 @@ def pipeline_insertion(
 
     try:
         for model in pipelines["models"]:
-            # crypting endopoint
+            # The encryption of the endpoint and the API Key is important
+            # because they are sensible data that should not be exposed
             endpoint = model["endpoint"].encode()
             model["endpoint"] = cipher_suite.encrypt(endpoint).decode()
-            # crypting api_key
             api_key = model["api_key"].encode()
             model["api_key"] = cipher_suite.encrypt(api_key).decode()
 
+
         return insert_new_version_pipeline(
-            pipelines, blob_service_client, BLOB_STORAGE_ACCOUNT_NAME)
+            pipelines, blob_service_client, account_name)
 
     except ResourceExistsError as error:
         raise PipelineInsertionError(
@@ -304,14 +307,14 @@ def main():
         blob_service_client = BlobServiceClient.from_connection_string(
             CONNECTION_STRING
         )
-        print(pipeline_insertion(sys.argv[1], blob_service_client, Fernet(KEY)))
-    except (ValueError, IndexError, PipelineInsertionError) as error:
+        print(pipeline_insertion(sys.argv[1], blob_service_client, Fernet(KEY), BLOB_STORAGE_ACCOUNT_NAME))
+    except (IndexError, PipelineInsertionError) as error:
         if isinstance(error, IndexError):
             print("please provide the path to the file as an argument")
 
         if isinstance(error, PipelineInsertionError):
             print(error.args[0])
-    return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
