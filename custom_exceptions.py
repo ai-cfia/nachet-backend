@@ -4,7 +4,3 @@ class ContainerNameError(Exception):
 
 class ProcessInferenceResultError(Exception):
     pass
-
-
-class ValidateEnvVariablesError(Exception):
-    pass

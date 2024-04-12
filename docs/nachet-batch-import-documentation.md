@@ -33,13 +33,13 @@ sequenceDiagram;
     Frontend->>+Backend: HTTP Post Req.
     Backend->>+Datastore: get_all_seeds_names(cursor)
     Datastore-->>-Backend: seed_names res.
-    Backend->>+Datastore: is_user_registered(cursor, email)
-    Datastore-->>-Backend: user_id res.
     Backend-->>-Frontend: seedNames res.
     Frontend -->>-User: Show session form
     User -) User: Fill form :<br> Seed selection, nb Seeds/Pic, Zoom
     User -)+Frontend: Upload: session folder
     Frontend ->>+Backend: HTTP Post Req.
+    Backend->>+Datastore: is_user_registered(cursor, email)
+    Datastore-->>-Backend: user_id res.
     Backend -)Datastore: upload_picture_set (cursor, pictures, user_id, **data)
     Note over Backend, Datastore: data contains at least the <br> following value: seed_name, zoom_level, nb_seeds
 ```

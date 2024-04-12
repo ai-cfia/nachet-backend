@@ -48,6 +48,13 @@ class ImageValidationError(APIErrors):
     pass
 
 
+class ValidateEnvVariablesError(APIErrors):
+    pass
+
+class EmailNotSendError(APIErrors):
+    pass
+
+
 class APIWarnings(UserWarning):
     pass
 
@@ -393,11 +400,53 @@ async def inference_request():
 
 @app.get("/picture-form")
 async def get_picture_form_info():
-    return jsonify("form_info"), 200
+    """
+    Retrieves the names of seeds from the database and returns them as a JSON
+    response.
+
+    Returns:
+        A JSON response containing the names of seeds.
+
+    Raises:
+        APIErrors: If there is an error while retrieving the seeds names from
+        the database.
+    """
+    try:
+        cursor = app.config["DB"].cursor()
+        seeds_names = datastore.get_seeds_names(cursor)
+
+        return jsonify(seeds_names), 200
+    except APIErrors as error:
+        return jsonify([error.args[0]]), 400
 
 @app.get("/upload-picture")
 async def picture_batch_import():
-    return "picture upload", 200
+    """
+    This function handles the batch import of pictures.
+
+    It expects a JSON payload containing the user's email and picture data.
+    The function checks if the email is provided and registered in the database.
+    If the email is valid, it uploads the picture set to the database and returns the picture ID.
+
+    Returns:
+        A JSON response containing the picture ID(s) if successful, or an error message if unsuccessful.
+    """
+    try:
+        data = await request.get_json()
+        email = data.get("email")
+
+        if email is None:
+            raise EmailNotSendError("the user email is not provided")
+
+        cursor = app.config["DB"].cursor()
+        user_id = datastore.is_user_registered(cursor, email)
+
+        cursor = app.config["DB"].cursor()
+        picture_id = datastore.upload_picture_set(cursor, user_id=user_id, **data)
+
+        return jsonify([picture_id]), 200
+    except APIErrors as error:
+        return jsonify([error.args[0]]), 400
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):

@@ -1,8 +1,8 @@
 import unittest
 import asyncio
 
-from app import app, json, base64, Image, io
-from unittest.mock import patch, Mock
+from app import app, json
+from unittest.mock import patch #Mock
 
 
 class TestImageBatchImport(unittest.TestCase):
