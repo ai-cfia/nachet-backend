@@ -56,7 +56,7 @@ here:
 The `picture-form` is the route to call to get all the information needed for
 the frontend to build the form to upload the pictures to the database.
 
-#### /batch-import
+#### /upload-pictures
 
-The `/batch-import` route is the API endpoint responsible to assure the transit
+The `/upload-pictures` route is the API endpoint responsible to assure the transit
 of the picture to the database.

@@ -391,6 +391,13 @@ async def inference_request():
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 
+@app.get("/picture-form")
+async def get_picture_form_info():
+    return jsonify("form_info"), 200
+
+@app.get("/upload-picture")
+async def picture_batch_import():
+    return "picture upload", 200
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
