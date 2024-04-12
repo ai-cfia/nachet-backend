@@ -33,7 +33,15 @@ class TestImageBatchImport(unittest.TestCase):
         # TODO change with datastore.db.queries.seed.SeedNotFoundError()
         mock_seed_name.side_effect = Exception("Error: seeds could not be retrieved")
 
-        response = asyncio.run(self.test_client.get("/picture-form"))
+        response = asyncio.run(
+            self.test_client.post(
+                "/picture-form",
+                headers={
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                json={"email": "test@inspection.gc.ca"}
+            ))
         result = json.loads(asyncio.run(response.get_data()))
 
         self.assertEqual(response.status_code, 400)
