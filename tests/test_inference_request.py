@@ -20,7 +20,7 @@ class TestInferenceRequest(unittest.TestCase):
         )
         self.pipeline = json.loads(asyncio.run(response.get_data()))[0]
         current_dir = os.path.dirname(__file__)
-        image_path = os.path.join(current_dir, '1310_1.png')
+        image_path = os.path.join(current_dir, 'img/1310_1.png')
         self.endpoints = "/model-endpoints-metadata"
         self.inference = "/inf"
         self.container_name = "bab1da84-5937-4016-965e-67e1ea6e29c4"
