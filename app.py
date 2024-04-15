@@ -94,6 +94,7 @@ Model = namedtuple(
     [
         'request_function',
         'name',
+        'version',
         'endpoint',
         'api_key',
         'content_type',
@@ -305,7 +306,9 @@ async def inference_request():
             container_client, folder_name, image_bytes, hash_value
         )
 
-        for idx, model in enumerate(pipelines_endpoints.get(pipeline_name)):
+        pipeline = pipelines_endpoints.get(pipeline_name)
+
+        for idx, model in enumerate(pipeline):
             print(f"Entering {model.name.upper()} model") # TODO: Transform into logging
             result_json = await model.request_function(model, cache_json_result[idx])
             cache_json_result.append(result_json)
@@ -317,7 +320,7 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
 
-        result_json_string = json.dumps(processed_result_json)
+        result_json_string = await record_model(pipeline, processed_result_json)
 
         # upload the inference results to the user's container as async task
         app.add_background_task(
@@ -406,6 +409,13 @@ async def test():
 
     return CACHE["endpoints"], 200
 
+
+async def record_model(pipeline: namedtuple, result: list):
+    new_entry = [{"name": model.name, "version": model.version} for model in pipeline]
+    result[0]["models"] = new_entry
+    return json.dumps(result, indent=4)
+
+
 async def fetch_json(repo_URL, key, file_path):
     """
     Fetches JSON document from a GitHub repository and caches it
@@ -444,6 +454,7 @@ async def get_pipelines():
         m = Model(
             request_function.get(model.get("api_call_function")),
             model.get("model_name"),
+            model.get("version"),
             # To protect sensible data (API key and model endpoint), we encrypt it when
             # it's pushed into the blob storage. Once we retrieve the data here in the
             # backend, we need to decrypt the byte format to recover the original
