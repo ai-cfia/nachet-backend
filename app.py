@@ -399,6 +399,7 @@ async def test():
     m = Model(
         request_function["test"],
         "test_model1",
+        1,
         "http://localhost:8080/test_model1",
         "test_api_key",
         "application/json",
