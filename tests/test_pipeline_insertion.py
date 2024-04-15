@@ -2,26 +2,13 @@ import unittest
 
 from azure.core.exceptions import ResourceExistsError
 from unittest.mock import patch, Mock
-from pipelines_version_insertion import (
+from pipelines.pipelines_version_insertion import (
     insert_new_version_pipeline,
     pipeline_insertion,
     PipelineInsertionError,
 )
 
 class TestPipelineInsertion(unittest.TestCase):
-    """
-    Test to perform:
-     - Successful pipeline insertion
-     - Unsuccessful pipeline insertion
-       - File does not exist
-       - File extension not supported
-       - Not instance of dict
-       - Validation Error
-         - Missing argument
-         - Wrong type
-       - Connection String Error
-    """
-
     def setUp(self):
         self.key = Mock()
         self.account_name = "test_storage"
@@ -46,8 +33,8 @@ class TestPipelineInsertion(unittest.TestCase):
         self.assertEqual(result, expected_message)
         print(result == expected_message)
 
-    @patch("pipelines_version_insertion.Data")
-    @patch("pipelines_version_insertion.yaml_to_json")
+    @patch("pipelines.pipelines_version_insertion.Data")
+    @patch("pipelines.pipelines_version_insertion.yaml_to_json")
     @patch("os.path.exists")
     def test_pipeline_insertion_resouce_exists_error(self, mock_os_path_exists, mock_yaml_to_json, mock_data):
 
@@ -92,7 +79,7 @@ class TestPipelineInsertion(unittest.TestCase):
             pipeline_insertion("test_file.md", Mock(), Mock(), self.account_name)
         self.assertEqual(str(context.exception), expected)
 
-    @patch("pipelines_version_insertion.yaml_to_json")
+    @patch("pipelines.pipelines_version_insertion.yaml_to_json")
     @patch("os.path.exists")
     def test_pipeline_insertion_not_dict(self, mock_os_path_exists, mock_yaml_to_json):
         expected = """\nthe file must contain a dictionary with the following keys:
@@ -105,7 +92,7 @@ class TestPipelineInsertion(unittest.TestCase):
             pipeline_insertion("test_file.yaml", Mock(), Mock(), self.account_name)
         self.assertEqual(str(context.exception), expected)
 
-    @patch("pipelines_version_insertion.yaml_to_json")
+    @patch("pipelines.pipelines_version_insertion.yaml_to_json")
     @patch("os.path.exists")
     def test_pipeline_insertion_fail_validation(self, mock_os_path_exists, mock_yaml_to_json):
         mock_os_path_exists.return_value = True
@@ -122,7 +109,7 @@ class TestPipelineInsertion(unittest.TestCase):
 
         self.assertIn("validation errors", str(context.exception))
 
-    @patch("pipelines_version_insertion.yaml_to_json")
+    @patch("pipelines.pipelines_version_insertion.yaml_to_json")
     @patch("os.path.exists")
     def test_pipeline_insertion_fail_no_default(self, mock_os_path_exists, mock_yaml_to_json):
         mock_os_path_exists.return_value = True
@@ -132,26 +119,22 @@ class TestPipelineInsertion(unittest.TestCase):
             "pipelines": [
                     {
                         "models": ["test_model"],
-                        "model_name": "p_test",
                         "pipeline_name": "p_test",
                         "created_by": "test",
                         "creation_date": "test",
                         "version": 1,
                         "description": "test",
                         "job_name": "test",
-                        "dataset": "test",
-                        "metrics": [],
-                        "identifiable": [],
+                        "dataset_description": "test",
+                        "accuracy": 0.0,
                         "default": False
                     }
                 ],
             "models": [
                 {
                     "task": "test",
-                    "api_call_function": "test",
                     "endpoint": "test",
                     "api_key": "test",
-                    "inference_function": "test",
                     "content_type": "test",
                     "deployment_platform": "test",
                     "endpoint_name": "test",
@@ -161,9 +144,8 @@ class TestPipelineInsertion(unittest.TestCase):
                     "version": 1,
                     "description": "test",
                     "job_name": "test",
-                    "dataset": "test",
-                    "metrics": ["test"],
-                    "identifiable": ["test"]
+                    "dataset_description": "test",
+                    "accuracy": 0.0
                 }
             ],
         }

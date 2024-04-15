@@ -11,7 +11,7 @@ Usage:
 
 2. Call the `pipeline_version_insertion.py` file with the path to the file
     containing the pipeline data as an argument directly in the terminal.
-    Example: pipeline_version_insertion.py /path/to/pipeline.yaml
+    Example: pipelines/pipeline_version_insertion.py /path/to/pipeline.yaml
 
 3. The function will read the file, encrypt the endpoint and API key, and
    upload the pipeline to the specified Azure Blob Storage container.
@@ -63,6 +63,66 @@ class PipelineInsertionError(Exception):
     pass
 
 
+class Pipeline(BaseModel):
+    models: list
+    pipeline_name: str
+    created_by: str
+    creation_date: str
+    version: int
+    description: str
+    job_name: str
+    dataset_description: str
+    accuracy: float
+    default: bool
+
+    @field_validator ("*", mode="before", check_fields=True)
+    def validate_data(cls, v):
+        if v is None:
+            return ""
+        return v
+
+    @field_validator ("models", mode="before", check_fields=True)
+    def validate_list(cls, v):
+        if v is None:
+            return []
+        return v
+
+    class Config:
+        protected_namespaces = ()
+
+
+class Model(BaseModel):
+    task: str
+    endpoint: str
+    api_key: str
+    content_type: str
+    deployment_platform: str
+    endpoint_name: str
+    model_name: str
+    created_by: str
+    creation_date: str
+    version: int
+    description: str
+    job_name: str
+    dataset_description: str
+    accuracy: float
+
+    @field_validator ("*", mode="before", check_fields=True)
+    def validate_data(cls, v):
+        if v is None:
+            return ""
+        return v
+
+    @field_validator ("deployment_platform", mode="before", check_fields=True)
+    def validate_dict(cls, v):
+        if v is None:
+            return {}
+        return v
+
+    class Config:
+        protected_namespaces = ()
+
+
 class Data(BaseModel):
     version: str
     date: datetime.date
@@ -80,76 +140,6 @@ class Data(BaseModel):
         for m in v:
             Model(**m)
         return v
-
-
-class Pipeline(BaseModel):
-    models: list
-    model_name: str
-    pipeline_name: str
-    created_by: str
-    creation_date: str
-    version: int
-    description: str
-    job_name: str
-    dataset: str
-    metrics: list
-    identifiable: list
-    default: bool
-
-    @field_validator ("*", mode="before", check_fields=True)
-    def validate_data(cls, v):
-        if v is None:
-            return ""
-        return v
-
-    @field_validator ("metrics", "identifiable", mode="before", check_fields=True)
-    def validate_list(cls, v):
-        if v is None:
-            return []
-        return v
-
-    class Config:
-        protected_namespaces = ()
-
-class Model(BaseModel):
-    task: str
-    api_call_function: str
-    endpoint: str
-    api_key: str
-    inference_function: str
-    content_type: str
-    deployment_platform: str
-    endpoint_name: str
-    model_name: str
-    created_by: str
-    creation_date: str
-    version: int
-    description: str
-    job_name: str
-    dataset: str
-    metrics: list
-    identifiable: list
-
-    @field_validator ("*", mode="before", check_fields=True)
-    def validate_data(cls, v):
-        if v is None:
-            return ""
-        return v
-
-    @field_validator ("metrics", "identifiable", mode="before", check_fields=True)
-    def validate_list(cls, v):
-        if v is None:
-            return []
-        return v
-
-    @field_validator ("deployment_platform", mode="before", check_fields=True)
-    def validate_dict(cls, v):
-        if v is None:
-            return {}
-        return v
-
-    class Config:
-        protected_namespaces = ()
 
 
 def insert_new_version_pipeline(

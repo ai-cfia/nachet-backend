@@ -5,24 +5,20 @@ date:
 
 pipelines:
   - models:
-    model_name:
     pipeline_name:
     created_by:
     creation_date:
     version:
     description:
     job_name:
-    dataset:
-    metrics:
-    identifiable:
+    dataset_description:
+    accuracy:
     default:
 
 models:
   - tasks:
-    api_call_function:
     endpoint:
     api_key:
-    inference_function:
     content_type:
     deployment_platform:
     endpoint_name:
@@ -32,6 +28,5 @@ models:
     version:
     description:
     job_name:
-    dataset:
-    metrics:
-    identifiable:
+    dataset_description:
+    accuracy:

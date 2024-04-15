@@ -503,7 +503,7 @@ async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version,
     models = ()
     for model in result_json.get("models"):
         m = Model(
-            request_function.get(model.get("api_call_function")),
+            request_function.get(model.get("endpoint_name")),
             model.get("model_name"),
             # To protect sensible data (API key and model endpoint), we encrypt it when
             # it's pushed into the blob storage. Once we retrieve the data here in the

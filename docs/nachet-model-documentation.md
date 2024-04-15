@@ -176,17 +176,14 @@ pipelines:
     version:
     description:
     job_name:
-    dataset:
-    metrics:
-    identifiable:
+    dataset_description:
+    accuracy:
     default:
 
 models:
   - task:
-    api_call_function:
     endpoint:
     api_key:
-    inference_function:
     content_type:
     deployment_platform:
     endpoint_name:
@@ -196,7 +193,123 @@ models:
     version:
     description:
     job_name:
-    dataset:
-    metrics:
-    identifiable:
+    dataset_description:
+    accuracy:
+```
+
+### Key Description
+
+#### File Specific Keys
+
+|Key|Description|Expected Value Format|
+|--|--|--|
+|version|The version of the file|0.0.0|
+|date|The date the file was upload|202x-mm-dd|
+|pipelines|A list of available pipeline||
+|models|A list of available model||
+
+#### Pipeline Specific Keys
+
+|Key|Description|Expected Value Format|
+|--|--|--|
+|models|A list of the model name used by the pipeline in order|["that_model_name", "other_model_name"]|
+|pipeline_name|The pipeline name|"First Pipeline"|
+|created_by|The creator of the pipeline|"Avery GoodDataScientist"|
+|version|The version of the pipeline|1|
+|description|The pipeline's description|"Pipeline Description"|
+|job_name|The pipeline job name|"Job Name"|
+|dataset_description|A brief description of the dataset|"Dataset Description"|
+|Accuracy|The prediction accuracy of the pipeline|0.8302|
+|default|Determine if the pipeline is the default one|true or false|
+
+#### Model Specific Keys
+
+|Key|Description|Expected Value Format|
+|--|--|--|
+|tasks|The model task|"object-detection", "classification" or "segmentation"|
+|endpoint|The model endpoint|["https://that-model.inference.ml.com/score"](#model-specific-keys)|
+|api_key|Secret key to access the API|"SeCRetKeys"|
+|content_type|The content type the model can process|"application/json"|
+|deployment_platform|The platform where the model is host|"azure"|
+|endpoint_name|The model endpoint name|"that-model-endpoint"|
+|model_name|The name of the model|"that_model_name"|
+|created_by|The creator of the model|"Avery GoodDataScientist"|
+|creation_date|The creation date of the model|"2024-03-18"|
+|version|The version of the model|1|
+|description|The description of the model|"Model Description"|
+|job_name|The job name of the model|"Job Name"|
+|dataset_description|A brief description of the dataset|"Dataset Description"|
+|Accuracy|The prediction accuracy of the model|0.9205|
+
+#### JSON Representation and Example
+
+This how the file will be represented in the datastore.
+
+```json
+{
+    "version": "0.1.0",
+    "date": "2024-02-26",
+    "pipelines":
+    [
+        {
+            "models": ["that_model_name", "other_model_name"],
+            "pipeline_name": "First Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-01",
+            "version": 1,
+            "description": "Pipeline Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.8302,
+            "default": true
+        },
+        {
+            "models": ["that_model_name"],
+            "pipeline_name": "Second Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-02",
+            "version": 2,
+            "description": "Pipeline Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.7989,
+            "default": true
+        },
+    ],
+    "models":
+    [
+        {
+            "task": "classification",
+            "endpoint": "https://that-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "azure",
+            "endpoint_name": "that-model-endpoint",
+            "model_name": "that_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2023-12-02",
+            "version": 5,
+            "description": "Model Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.6908
+        },
+        {
+            "task": "object-detection",
+            "endpoint": "https://other-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "aws",
+            "endpoint_name": "other-model-endpoint",
+            "model_name": "other_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2023-11-25",
+            "version": 3,
+            "description": "Model Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.9205
+        },
+    ]
+}
 ```
