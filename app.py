@@ -8,9 +8,6 @@ import magic
 import time
 import warnings
 
-import model.inference as inference
-from model import request_function
-
 from PIL import Image, UnidentifiedImageError
 from datetime import date
 from dotenv import load_dotenv
@@ -18,7 +15,10 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
+
 import azure_storage.azure_storage_api as azure_storage_api
+import model.inference as inference
+from model import request_function
 
 class APIErrors(Exception):
     pass
@@ -60,24 +60,45 @@ class MaxContentLengthWarning(APIWarnings):
     pass
 
 load_dotenv()
-connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
-connection_string = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
+connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
+pipeline_version_regex = r"\d.\d.\d"
+
+CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
 FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
 PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
-NACHET_MODEL = os.getenv("NACHET_MODEL")
+
+Model = namedtuple(
+    'Model',
+    [
+        'entry_function',
+        'name',
+        'endpoint',
+        'api_key',
+        'inference_function',
+        'content_type',
+        'deployment_platform',
+    ]
+)
 
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
     VALID_DIMENSION = json.loads(os.getenv("NACHET_VALID_DIMENSION"))
-except TypeError:
+except (TypeError, json.decoder.JSONDecodeError):
     # For testing
     VALID_DIMENSION = {"width": 1920, "height": 1080}
     VALID_EXTENSION = {"jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"}
+    warnings.warn(
+        f"""
+        NACHET_VALID_EXTENSION or NACHET_VALID_DIMENSION is not set,
+        using default values: {", ".join(list(VALID_EXTENSION))} and dimension: {tuple(VALID_DIMENSION.values())}
+        """,
+        ImageWarning
+    )
 
 try:
     MAX_CONTENT_LENGTH_MEGABYTES = int(os.getenv("NACHET_MAX_CONTENT_LENGTH"))
@@ -112,6 +133,51 @@ CACHE = {
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH_MEGABYTES * 1024 * 1024
+
+
+@app.before_serving
+async def before_serving():
+    try:
+        # Check: do environment variables exist?
+        if CONNECTION_STRING is None:
+            raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+        if FERNET_KEY is None:
+            raise ServerError("Missing environment variable: FERNET_KEY")
+
+        if PIPELINE_VERSION is None:
+            raise ServerError("Missing environment variable: PIPELINE_VERSION")
+
+        if PIPELINE_BLOB_NAME is None:
+            raise ServerError("Missing environment variable: PIPELINE_BLOB_NAME")
+
+        if NACHET_DATA is None:
+            raise ServerError("Missing environment variable: NACHET_DATA")
+
+        # Check: are environment variables correct?
+        if not bool(re.match(connection_string_regex, CONNECTION_STRING)):
+            raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+
+        if not bool(re.match(pipeline_version_regex, PIPELINE_VERSION)):
+            raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
+
+        CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
+        CACHE["endpoints"] = await get_pipelines(
+            CONNECTION_STRING, PIPELINE_BLOB_NAME,
+            PIPELINE_VERSION, Fernet(FERNET_KEY)
+        )
+
+        print(
+            f"""Server start with current configuration:\n
+                date: {date.today()}
+                file version of pipelines: {PIPELINE_VERSION}
+                pipelines: {[pipeline for pipeline in CACHE["pipelines"].keys()]}\n
+            """
+        ) #TODO Transform into logging
+
+    except ServerError as e:
+        print(e)
+        raise
 
 
 @app.post("/del")
@@ -216,9 +282,20 @@ async def image_validation():
         image_base64 = data["image"]
 
         header, encoded_image = image_base64.split(",", 1)
-
         image_bytes = base64.b64decode(encoded_image)
+
         image = Image.open(io.BytesIO(image_bytes))
+
+        # size check
+        if image.size[0] > VALID_DIMENSION["width"] and image.size[1] > VALID_DIMENSION["height"]:
+            raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
+
+        # resizable check
+        try:
+            size = (100,150)
+            image.thumbnail(size)
+        except IOError:
+            raise ImageValidationError("invalid file not resizable")
 
         magic_header = magic.from_buffer(image_bytes, mime=True)
         image_extension = magic_header.split("/")[1]
@@ -233,23 +310,12 @@ async def image_validation():
         if header.lower() != expected_header:
             raise ImageValidationError(f"invalid file header: {header}")
 
-        # size check
-        if image.size[0] > VALID_DIMENSION["width"] and image.size[1] > VALID_DIMENSION["height"]:
-            raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
-
-        # resizable check
-        try:
-            size = (100,150)
-            image.thumbnail(size)
-        except IOError:
-            raise ImageValidationError("invalid file not resizable")
-
         validator = await azure_storage_api.generate_hash(image_bytes)
         CACHE['validators'].append(validator)
 
         return jsonify([validator]), 200
 
-    except (FileNotFoundError, ValueError, TypeError, UnidentifiedImageError, ImageValidationError) as error:
+    except (UnidentifiedImageError, ImageValidationError) as error:
         print(error)
         return jsonify([error.args[0]]), 400
 
@@ -338,14 +404,6 @@ async def inference_request():
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 
-    except Exception as error:
-        print(error)
-        return jsonify(["Unexpected error occured"]), 500
-
-@app.get("/coffee")
-async def get_coffee():
-    return jsonify("Tea is great!"), 418
-
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -366,8 +424,9 @@ async def reload_seed_data():
     try:
         await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
         return jsonify(["Seed data reloaded successfully"]), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except urllib.error.HTTPError as e:
+        return jsonify(
+            {f"An error happend when reloading the seed data: {e.args[0]}"}), 500
 
 
 @app.get("/model-endpoints-metadata")
@@ -410,7 +469,7 @@ async def test():
 
     return CACHE["endpoints"], 200
 
-
+  
 async def record_model(pipeline: namedtuple, result: list):
     new_entry = [{"name": model.name, "version": model.version} for model in pipeline]
     result[0]["models"] = new_entry
@@ -419,23 +478,25 @@ async def record_model(pipeline: namedtuple, result: list):
 
 async def fetch_json(repo_URL, key, file_path):
     """
-    Fetches JSON document from a GitHub repository and caches it
+    Fetches JSON document from a GitHub repository.
+
+    Parameters:
+    - repo_URL (str): The URL of the GitHub repository.
+    - key (str): The key to identify the JSON document.
+    - file_path (str): The path to the JSON document in the repository.
+
+    Returns:
+    - dict: The JSON document as a Python dictionary.
     """
-    try:
-        if key != "endpoints":
-            json_url = os.path.join(repo_URL, file_path)
-            with urllib.request.urlopen(json_url) as response:
-                result = response.read()
-                result_json = json.loads(result.decode("utf-8"))
-            return result_json
-
-    except urllib.error.HTTPError as error:
-        raise ValueError(str(error))
-    except Exception as e:
-        raise ValueError(str(e))
+    if key != "endpoints":
+        json_url = os.path.join(repo_URL, file_path)
+        with urllib.request.urlopen(json_url) as response:
+            result = response.read()
+            result_json = json.loads(result.decode("utf-8"))
+        return result_json
 
 
-async def get_pipelines():
+async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
     """
     Retrieves the pipelines from the Azure storage API.
 
@@ -444,8 +505,7 @@ async def get_pipelines():
     """
     try:
         app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
-        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], PIPELINE_BLOB_NAME, PIPELINE_VERSION)
-        cipher_suite = Fernet(FERNET_KEY)
+        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
     except (azure_storage_api.AzureAPIErrors) as error:
         print(error)
         raise ServerError("server errror: could not retrieve the pipelines") from error
@@ -453,7 +513,7 @@ async def get_pipelines():
     models = ()
     for model in result_json.get("models"):
         m = Model(
-            request_function.get(model.get("api_call_function")),
+            request_function.get(model.get("endpoint_name")),
             model.get("model_name"),
             model.get("version"),
             # To protect sensible data (API key and model endpoint), we encrypt it when
@@ -472,39 +532,6 @@ async def get_pipelines():
 
     return result_json.get("pipelines")
 
-
-@app.before_serving
-async def before_serving():
-    try:
-        # Check: do environment variables exist?
-        if connection_string is None:
-            raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-        if FERNET_KEY is None:
-            raise ServerError("Missing environment variable: FERNET_KEY")
-
-        # Check: are environment variables correct?
-        if not bool(re.match(connection_string_regex, connection_string)):
-            raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-
-        CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        CACHE["endpoints"] = await get_pipelines()
-
-        print(
-            f"""Server start with current configuration:\n
-                date: {date.today()}
-                file version of pipelines: {PIPELINE_VERSION}
-                pipelines: {[pipeline for pipeline in CACHE["pipelines"].keys()]}\n
-            """
-        ) #TODO Transform into logging
-
-    except ServerError as e:
-        print(e)
-        raise
-
-    except Exception as e:
-        print(e)
-        raise ServerError("Failed to retrieve data from the repository")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)

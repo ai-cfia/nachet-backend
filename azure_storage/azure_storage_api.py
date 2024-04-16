@@ -72,7 +72,10 @@ async def generate_hash(image):
 
 async def get_blob_client(connection_string: str):
     """
-    given a connection string, returns the blob client object
+    given a connection string and a container name, mounts the container and
+    returns the container client as an object that can be used in other
+    functions. if a specified container doesnt exist, it creates one with the
+    provided uuid, if create_container is True
     """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
