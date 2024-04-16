@@ -83,7 +83,7 @@ backend to function, you will need to add the missing values:
   accepted by the backend
 - **NACHET_VALID_DIMENSION**: Contains the valid dimensions for an image to be
   accepted in the backend.
-- **NACHET_MAX_CONTENT_LENGTH_MEGABYTES**: Set the maximum size of the file that can be
+- **NACHET_MAX_CONTENT_LENGTH**: Set the maximum size of the file that can be
   uploaded to the backend. Needs to be the same size as the
   `client_max_body_size`
   [value](https://github.com/ai-cfia/howard/blob/dedee069f051ba743122084fcb5d5c97c2499359/kubernetes/aks/apps/nachet/base/nachet-ingress.yaml#L13)
