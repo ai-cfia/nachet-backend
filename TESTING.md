@@ -27,7 +27,7 @@ pipeline information.
 **Preconditions:**
 
 - [ ] Nachet backend is set up and running. Use the command `hypercorn -b :8080
-  app:app` to start the quartz server.
+  app:app` to start the quart server.
 - [ ] The environment variables are all set.
 - [ ] :exclamation: The frontend is not running yet
 
@@ -66,7 +66,7 @@ expected.
 **Preconditions:**
 
 - [ ] Nachet backend is set up and running. Use the command `hypercorn -b :8080
-  app:app` to start the quartz server.
+  app:app` to start the quart server.
 - [ ] The environment variables are all set.
 - [ ] The frontend is running.
 - [ ] Start the frontend application

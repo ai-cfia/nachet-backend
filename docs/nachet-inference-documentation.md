@@ -242,7 +242,7 @@ the `CACHE["endpoint"]` variable. This is the variable that feeds the `models`
 information and metadata to the frontend.
 
 ```python
-async def get_pipelines():
+async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
     """
     Retrieves the pipelines from the Azure storage API.
 
@@ -251,9 +251,8 @@ async def get_pipelines():
     """
     try:
         app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
-        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], PIPELINE_BLOB_NAME, PIPELINE_VERSION)
-        cipher_suite = Fernet(FERNET_KEY)
-    except (ConnectionStringError, PipelineNotFoundError) as error:
+        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
+    except (azure_storage_api.AzureAPIErrors) as error:
         print(error)
         raise ServerError("server errror: could not retrieve the pipelines") from error
 

@@ -7,4 +7,6 @@ python-dotenv
 hypercorn
 Pillow
 cryptography
+pyyaml
+pydantic
 python-magic
