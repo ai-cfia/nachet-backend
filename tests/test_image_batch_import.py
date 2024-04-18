@@ -50,10 +50,22 @@ class TestImageBatchImport(unittest.TestCase):
     @patch("datastore.bin.upload_picture_set.upload_picture_set")
     def test_upload_picture_success(self, mock_upload_picture_set):
 
-        expected_result = 1
-        mock_upload_picture_set.return_value = 1
+        expected_result = 'a' * 200 * 1024* 1024
 
-        response = asyncio.run(self.test_client.post("/upload-pictures"))
+        response = asyncio.run(
+             self.test_client.post(
+                  "/upload-pictures",
+                  headers={
+                       "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                  },
+                  json={"email": "test@email.com",
+                        "nb_seeds": 6,
+                        "seed_name": "seed_name",
+                        "zoom_level": 1,
+                        "picture_set": [expected_result]
+                        }
+                  ))
         result = json.loads(asyncio.run(response.get_data()))
 
         self.assertEqual(response.status_code, 200)

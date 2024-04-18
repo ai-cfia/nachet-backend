@@ -425,7 +425,7 @@ async def get_picture_form_info():
     except APIErrors as error:
         return jsonify([error.args[0]]), 400
 
-@app.get("/upload-picture")
+@app.post("/upload-picture")
 async def picture_batch_import():
     """
     This function handles the batch import of pictures.
