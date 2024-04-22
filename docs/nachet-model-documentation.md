@@ -52,35 +52,35 @@ seeds.
             },
         "label": "top_label_name",
         "score": 0.912,
-        "color": "#ff0",
         "topN": [
             {
                 "score": 0.912,
-                "label": "top_label_name",
+                "label": "top_label_name"
             },
             {
                 "score": 0.053,
-                "label": "seed_name",
+                "label": "seed_name"
             },
             {
                 "score": 0.0029,
-                "label": "seed_name",
+                "label": "seed_name"
             },
             {
                 "score": 0.005,
-                "label": "seed_name",
+                "label": "seed_name"
             },
             {
                 "score": 0.001,
-                "label": "seed_name",
+                "label": "seed_name"
             }
         ],
         "overlapping": false,
-        "overlappingIndices": 0
+        "overlappingIndices": [],
+        "color": "#ff0"
         },
     ],
     "labelOccurrence": {
-        "seed_name": 1,
+        "seed_name": 1
     },
     "totalBoxes": 1
 }
