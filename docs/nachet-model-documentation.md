@@ -77,7 +77,7 @@ seeds.
         "overlapping": false,
         "overlappingIndices": [],
         "color": "#ff0"
-        },
+        }
     ],
     "labelOccurrence": {
         "seed_name": 1
