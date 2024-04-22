@@ -17,9 +17,11 @@ from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
 
-import azure_storage.azure_storage_api as azure_storage_api
 import model.inference as inference
 from model import request_function
+import storage.azure_storage_api as azure_storage_api
+import storage.datastore_storage_api as datastore
+
 
 class APIErrors(Exception):
     pass
@@ -418,14 +420,12 @@ async def get_picture_form_info():
         the database.
     """
     try:
-        cursor = app.config["DB"].cursor()
-        seeds_names = datastore.get_seeds_names(cursor)
-
+        seeds_names = datastore.get_all_seeds_names()
         return jsonify(seeds_names), 200
-    except APIErrors as error:
+    except datastore.DatastoreError as error:
         return jsonify([error.args[0]]), 400
 
-@app.post("/upload-picture")
+@app.put("/upload-pictures")
 async def picture_batch_import():
     """
     This function handles the batch import of pictures.
