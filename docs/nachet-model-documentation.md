@@ -80,7 +80,8 @@ seeds.
         }
     ],
     "labelOccurrence": {
-        "seed_name": 1
+        "top_label_name": 1,
+        "seed_name": 4
     },
     "totalBoxes": 1
 }
