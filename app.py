@@ -72,19 +72,6 @@ PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 
-Model = namedtuple(
-    'Model',
-    [
-        'entry_function',
-        'name',
-        'endpoint',
-        'api_key',
-        'inference_function',
-        'content_type',
-        'deployment_platform',
-    ]
-)
-
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
     VALID_DIMENSION = json.loads(os.getenv("NACHET_VALID_DIMENSION"))
