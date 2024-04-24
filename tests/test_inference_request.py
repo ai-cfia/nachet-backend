@@ -65,7 +65,8 @@ class TestInferenceRequest(unittest.TestCase):
             "score",
             "topN",
             "overlapping",
-            "overlappingIndices"
+            "overlappingIndices",
+            "models"
         }
 
         # Test the answers from inference_request
