@@ -204,26 +204,26 @@ returns a `topN` key with 5 results:
 
 ```json
 "topN": [
-    {
-        "label": "seed_name",
-        "score": 0.75
-    }
-    {
-        "label": "seed_name",
-        "score": 0.18
-    }
-    {
-        "label": "seed_name",
-        "score": 0.05
-    }
-    {
-        "label": "seed_name",
-        "score": 0.019
-    }
-    {
-        "label": "seed_name",
-        "score": 0.001
-    }
+    {
+        "label": "seed_name",
+        "score": 0.75
+    }
+    {
+        "label": "seed_name",
+        "score": 0.18
+    }
+    {
+        "label": "seed_name",
+        "score": 0.05
+    }
+    {
+        "label": "seed_name",
+        "score": 0.019
+    }
+    {
+        "label": "seed_name",
+        "score": 0.001
+    }
 ]
 ```
 

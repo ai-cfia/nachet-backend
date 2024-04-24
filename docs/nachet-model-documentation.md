@@ -98,7 +98,7 @@ You can look at the mapping here: [model init file](../model/__init__.py)
         "name": "model_name_02",
         "version": "1"
         }
-    ]
+    ]
 }
 ```
 
