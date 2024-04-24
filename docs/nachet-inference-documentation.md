@@ -204,26 +204,26 @@ returns a `topN` key with 5 results:
 
 ```json
 "topN": [
-  {
-    "label": "seed_name",
-    "score": 0.75
-  }
-  {
-    "label": "seed_name",
-    "score": 0.18
-  }
-  {
-    "label": "seed_name",
-    "score": 0.05
-  }
-  {
-    "label": "seed_name",
-    "score": 0.019
-  }
-  {
-    "label": "seed_name",
-    "score": 0.001
-  }
+    {
+        "label": "seed_name",
+        "score": 0.75
+    }
+    {
+        "label": "seed_name",
+        "score": 0.18
+    }
+    {
+        "label": "seed_name",
+        "score": 0.05
+    }
+    {
+        "label": "seed_name",
+        "score": 0.019
+    }
+    {
+        "label": "seed_name",
+        "score": 0.001
+    }
 ]
 ```
 
@@ -255,38 +255,38 @@ information and metadata to the frontend.
 
 ```python
 async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
-  """
-  Retrieves the pipelines from the Azure storage API.
+    """
+    Retrieves the pipelines from the Azure storage API.
+    Returns:
+    - list: A list of dictionaries representing the pipelines.
+    """
+    try:
+        app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
+        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
+    except (azure_storage_api.AzureAPIErrors) as error:
+        print(error)
+        raise ServerError("server errror: could not retrieve the pipelines") from error
 
-  Returns:
-  - list: A list of dictionaries representing the pipelines.
-  """
-  try:
-    app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
-    result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
-  except (azure_storage_api.AzureAPIErrors) as error:
-    raise ServerError("server error: could not retrieve the pipelines") from error
+    models = ()
+    for model in result_json.get("models"):
+        m = Model(
+            request_function.get(model.get("api_call_function")),
+            model.get("model_name"),
+            # To protect sensible data (API key and model endpoint), we encrypt it when
+            # it's pushed into the blob storage. Once we retrieve the data here in the
+            # backend, we need to decrypt the byte format to recover the original
+            # data.
+            cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
+            cipher_suite.decrypt(model.get("api_key").encode()).decode(),
+            model.get("content_type"),
+            model.get("deployment_platform")
+        )
+        models += (m,)
+    # Build the pipeline to call the models in order in the inference request
+    for pipeline in result_json.get("pipelines"):
+        CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
-  models = ()
-  for model in result_json.get("models"):
-    m = Model(
-      request_function.get(model.get("api_call_function")),
-      model.get("model_name"),
-      # To protect sensible data (API key and model endpoint), we encrypt it when
-      # it's pushed into the blob storage. Once we retrieve the data here in the
-      # backend, we need to decrypt the byte format to recover the original
-      # data.
-      cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
-      cipher_suite.decrypt(model.get("api_key").encode()).decode(),
-      model.get("content_type"),
-      model.get("deployment_platform")
-    )
-    models += (m,)
-  # Build the pipeline to call the models in order in the inference request
-  for pipeline in result_json.get("pipelines"):
-    CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
-
-  return result_json.get("pipelines")
+    return result_json.get("pipelines")
 ```
 
 ### Available Version of the JSON file

@@ -47,59 +47,58 @@ You can look at the mapping here: [model init file](../model/__init__.py)
 
 ```json
 {
-  "filename": "tmp/tmp_file_name",
-  "boxes": [
-    {"box": {
-        "topX": 0.0,
-        "topY": 0.0,
-        "bottomX": 0.0,
-        "bottomY": 0.0
-      },
-    "label": "top_label_name",
-    "score": 0.912,
-    "topN": [
-      {
-        "score": 0.912,
-        "label": "top_label_name"
-      },
-      {
-        "score": 0.053,
-        "label": "seed_name"
-      },
-      {
-        "score": 0.0029,
-        "label": "seed_name"
-      },
-      {
-        "score": 0.005,
-        "label": "seed_name"
-      },
-      {
-        "score": 0.001,
-        "label": "seed_name"
-      }
-    ],
-    "overlapping": false,
-    "overlappingIndices": [],
-    "color": "#ff0"
-    }
-  ],
-  "labelOccurrence": {
-    "top_label_name": 1,
-    "seed_name": 4
-  },
-  "totalBoxes": 1,
-  "pipeline": "pipeline_name",
-  "models": [
-    {
-      "name": "model_name_01",
-      "version": "1"
-    },
-    {
-      "name": "model_name_02",
-      "version": "1"
-    }
-  ]
+    "filename": "tmp/tmp_file_name",
+    "boxes": [
+        {"box": {
+                "topX": 0.0,
+                "topY": 0.0,
+                "bottomX": 0.0,
+                "bottomY": 0.0
+            },
+        "label": "top_label_name",
+        "score": 0.912,
+        "color": "#ff0",
+        "topN": [
+            {
+                "score": 0.912,
+                "label": "top_label_name",
+            },
+            {
+                "score": 0.053,
+                "label": "seed_name",
+            },
+            {
+                "score": 0.0029,
+                "label": "seed_name",
+            },
+            {
+                "score": 0.005,
+                "label": "seed_name",
+            },
+            {
+                "score": 0.001,
+                "label": "seed_name",
+            }
+        ],
+        "overlapping": false,
+        "overlappingIndices": 0
+        },
+    ],
+    "labelOccurrence": {
+        "seed_name": 1,
+    },
+    "totalBoxes": 1,
+    "pipeline": "pipeline_name",
+    "models": [
+        {
+            "name": "model_name_01",
+            "version": "1"
+        },
+        {
+        "name": "model_name_02",
+        "version": "1"
+        }
+    ]
 }
 ```
 
@@ -182,36 +181,39 @@ names (`model_name`, `pipeline_name`) to support the frontend code until it is
 changed to get the name of the pipeline with the correct key.
 
 ```yaml
+---
 version:
+
 date:
+
 pipelines:
- - models:
-  model_name:
-  pipeline_name:
-  created_by:
-  creation_date:
-  version:
-  description:
-  job_name:
-  dataset_description:
-  accuracy:
-  default:
+  - models:
+    pipeline_name:
+    created_by:
+    creation_date:
+    version:
+    description:
+    job_name:
+    dataset_description:
+    accuracy:
+    default:
 
 models:
- - task:
-  endpoint:
-  api_key:
-  content_type:
-  deployment_platform:
-  endpoint_name:
-  model_name:
-  created_by:
-  creation_date:
-  version:
-  description:
-  job_name:
-  dataset_description:
-  accuracy:
+  - tasks:
+    endpoint:
+    api_key:
+    content_type:
+    deployment_platform:
+    endpoint_name:
+    model_name:
+    created_by:
+    creation_date:
+    version:
+    description:
+    job_name:
+    dataset_description:
+    accuracy:
+
 ```
 
 ### Key Description
@@ -270,69 +272,69 @@ This is how the file will be represented in the datastore.
 
 ```json
 {
-  "version": "0.1.0",
-  "date": "2024-02-26",
-  "pipelines":
-  [
-    {
-      "models": ["that_model_name", "other_model_name"],
-      "pipeline_name": "First Pipeline",
-      "created_by": "Avery GoodDataScientist",
-      "creation_date": "2024-01-01",
-      "version": 1,
-      "description": "Pipeline Description",
-      "job_name": "Job Name",
-      "dataset_description": "Dataset Description",
-      "Accuracy": 0.8302,
-      "default": true
-    },
-    {
-      "models": ["that_model_name"],
-      "pipeline_name": "Second Pipeline",
-      "created_by": "Avery GoodDataScientist",
-      "creation_date": "2024-01-02",
-      "version": 2,
-      "description": "Pipeline Description",
-      "job_name": "Job Name",
-      "dataset_description": "Dataset Description",
-      "Accuracy": 0.7989,
-      "default": true
-    },
-  ],
-  "models":
-  [
-    {
-      "task": "classification",
-      "endpoint": "https://that-model.inference.ml.com/score",
-      "api_key": "SeCRetKeys",
-      "content_type": "application/json",
-      "deployment_platform": "azure",
-      "endpoint_name": "that-model-endpoint",
-      "model_name": "that_model_name",
-      "created_by": "Avery GoodDataScientist",
-      "creation_date": "2023-12-02",
-      "version": 5,
-      "description": "Model Description",
-      "job_name": "Job Name",
-      "dataset_description": "Dataset Description",
-      "Accuracy": 0.6908
-    },
-    {
-      "task": "object-detection",
-      "endpoint": "https://other-model.inference.ml.com/score",
-      "api_key": "SeCRetKeys",
-      "content_type": "application/json",
-      "deployment_platform": "aws",
-      "endpoint_name": "other-model-endpoint",
-      "model_name": "other_model_name",
-      "created_by": "Avery GoodDataScientist",
-      "creation_date": "2023-11-25",
-      "version": 3,
-      "description": "Model Description",
-      "job_name": "Job Name",
-      "dataset_description": "Dataset Description",
-      "Accuracy": 0.9205
-    },
-  ]
+    "version": "0.1.0",
+    "date": "2024-02-26",
+    "pipelines":
+    [
+        {
+            "models": ["that_model_name", "other_model_name"],
+            "pipeline_name": "First Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-01",
+            "version": 1,
+            "description": "Pipeline Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.8302,
+            "default": true
+        },
+        {
+            "models": ["that_model_name"],
+            "pipeline_name": "Second Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-02",
+            "version": 2,
+            "description": "Pipeline Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.7989,
+            "default": true
+        },
+    ],
+    "models":
+    [
+        {
+            "task": "classification",
+            "endpoint": "https://that-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "azure",
+            "endpoint_name": "that-model-endpoint",
+            "model_name": "that_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2023-12-02",
+            "version": 5,
+            "description": "Model Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.6908
+        },
+        {
+            "task": "object-detection",
+            "endpoint": "https://other-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "aws",
+            "endpoint_name": "other-model-endpoint",
+            "model_name": "other_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2023-11-25",
+            "version": 3,
+            "description": "Model Description",
+            "job_name": "Job Name",
+            "dataset_description": "Dataset Description",
+            "Accuracy": 0.9205
+        },
+    ]
 }
 ```
