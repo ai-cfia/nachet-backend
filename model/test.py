@@ -1,10 +1,6 @@
 """
-This module contains functions for performing inference using different models.
-
-Functions:
-    request_inference_from_swin: Perform inference using the SWIN model on a list of images.
-    request_inference_from_seed_detector: Requests inference from the seed detector model using the provided previous result.
-    request_inference_from_nachet_six_seed: Requests inference from the Nachet Six Seed model.
+This module contains functions for testing the inference procedure in
+the backend.
 """
 from collections import namedtuple
 from custom_exceptions import ProcessInferenceResultError

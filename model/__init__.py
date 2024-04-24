@@ -1,3 +1,7 @@
+"""
+This module provides functions for requesting inferences from different models.
+"""
+
 from model.swin import request_inference_from_swin
 from model.seed_detector import request_inference_from_seed_detector
 from model.test import request_inference_from_test

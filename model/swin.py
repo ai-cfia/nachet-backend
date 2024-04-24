@@ -1,6 +1,6 @@
 """
-This file contains the function that requests the inference and processes the data from
-the swin model.
+This file contains the function that requests the inference and processes
+the data from the swin model.
 """
 
 import json

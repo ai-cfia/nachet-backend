@@ -1,6 +1,6 @@
 """
-This file contains the function that requests the inference and processes the data from
-the seed detector model.
+This file contains the function that requests the inference and processes
+the data from the seed detector model.
 """
 
 import io
