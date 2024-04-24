@@ -199,7 +199,8 @@ The inference request will return a list with the following information:
 
 *for more look at [nachet-model-documentation](nachet-model-documentation.md#return-value-of-models)*
 
-**topN** contains the top n predictions of a given model. For now, only `Swin` returns a `topN` key with 5 results:
+**topN** contains the top n predictions of a given model. For now, only `Swin`
+returns a `topN` key with 5 results:
 
 ```json
 "topN": [
@@ -290,7 +291,7 @@ async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version,
 
 ### Available Version of the JSON file
 
-**_Careful as major update might change pipeline and model attributes_**
+***Careful as major update might change pipeline and model attributes***
 
 |Version|Creation Date| Pipelines|
 |--|--|--|
