@@ -6,6 +6,6 @@ from model.six_seeds import request_inference_from_nachet_6seeds
 request_function = {
     "swin-endpoint": request_inference_from_swin,
     "seed-detector": request_inference_from_seed_detector,
-    "test": request_inference_from_test,
-    "nachet-6seeds": request_inference_from_nachet_6seeds
+    "nachet-6seeds": request_inference_from_nachet_6seeds,
+    "test": request_inference_from_test
 }
