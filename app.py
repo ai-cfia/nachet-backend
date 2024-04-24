@@ -373,7 +373,7 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
 
-        result_json_string = await record_model(pipeline, processed_result_json)
+        result_json_string = await record_model(pipeline_name, pipeline, processed_result_json)
 
         # upload the inference results to the user's container as async task
         app.add_background_task(
@@ -456,10 +456,24 @@ async def test():
 
     return CACHE["endpoints"], 200
 
-  
-async def record_model(pipeline: namedtuple, result: list):
+
+async def record_model(name: str, pipeline: namedtuple, result: list):
+    """
+    Records the models in the pipeline to the result list.
+
+    Args:
+        name (str): The name of the pipeline.
+        pipeline (namedtuple): The pipeline containing the models.
+        result (list): The result list to update.
+
+    Returns:
+        str: The updated result list as a JSON string.
+    """
     new_entry = [{"name": model.name, "version": model.version} for model in pipeline]
-    result[0]["models"] = new_entry
+    result[0].update({
+        "pipeline": name,
+        "models": new_entry
+    })
     return json.dumps(result, indent=4)
 
 
@@ -494,7 +508,6 @@ async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version,
         app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
         result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
     except (azure_storage_api.AzureAPIErrors) as error:
-        print(error)
         raise ServerError("server errror: could not retrieve the pipelines") from error
 
     models = ()
