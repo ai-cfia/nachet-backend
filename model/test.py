@@ -3,7 +3,8 @@ This module contains functions for testing the inference procedure in
 the backend.
 """
 from collections import namedtuple
-from custom_exceptions import ProcessInferenceResultError
+
+from model.inference import ProcessInferenceResultError
 
 
 async def request_inference_from_test(model: namedtuple, previous_result: str):

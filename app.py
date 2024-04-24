@@ -387,7 +387,7 @@ async def inference_request():
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
         return jsonify(processed_result_json), 200
 
-    except (KeyError, InferenceRequestError) as error:
+    except (KeyError, InferenceRequestError, inference.ProcessInferenceResultError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 

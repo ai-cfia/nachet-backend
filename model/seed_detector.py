@@ -10,7 +10,9 @@ import json
 from PIL import Image
 from collections import namedtuple
 from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import ProcessInferenceResultError
+
+from model.inference import ProcessInferenceResultError
+
 
 def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:
     """

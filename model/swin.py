@@ -7,7 +7,8 @@ import json
 
 from collections import namedtuple
 from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import ProcessInferenceResultError
+
+from model.inference import ProcessInferenceResultError
 
 
 def process_swin_result(img_box:dict, results: dict) -> list:
