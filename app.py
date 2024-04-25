@@ -17,9 +17,11 @@ from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
 
+load_dotenv()
+
 import model.inference as inference
 from model import request_function
-import storage.azure_storage_api as azure_storage_api
+from datastore import azure_storage_api
 import storage.datastore_storage_api as datastore
 
 
@@ -74,7 +76,6 @@ class ImageWarning(APIWarnings):
 class MaxContentLengthWarning(APIWarnings):
     pass
 
-load_dotenv()
 
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
 pipeline_version_regex = r"\d.\d.\d"
@@ -574,9 +575,8 @@ def validate_and_upload_data(email, picture_set, data):
         raise EmailNotSendError("the user email is not provided")
     if not picture_set:
         raise EmptyPictureSetError("no picture set provided")
-    cursor = app.config["DB"].cursor()
-    user_id = datastore.is_user_registered(cursor, email)
-    picture_id = datastore.upload_picture_set(cursor, user_id=user_id, **data)
+    user_id = datastore.validate_user(email)
+    picture_id = datastore.upload_picture_set(user_id=user_id, **data)
     return picture_id
 
 async def fetch_json(repo_URL, key, file_path):
