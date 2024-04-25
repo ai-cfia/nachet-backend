@@ -7,7 +7,6 @@ import base64
 import io
 from PIL import Image, ExifTags
 from dotenv import load_dotenv
-from custom_exceptions import MicroscopeQueryError, ExifNonPresentError
 
 load_dotenv()
 
@@ -16,6 +15,15 @@ METHODS = json.loads(methods_str)
 MICROSCOPE_URL = os.getenv("MICROSCOPE_URL")
 params = {"id": int(uuid.uuid4())}
 HEADERS = {'Content-Type': 'application/json'}
+
+
+class MicroscopeQueryError(Exception):
+    pass
+
+
+class ExifNonPresentError(Exception):
+    pass
+
 
 def post_request(MICROSCOPE_URL, method, params, headers=HEADERS):
     '''
@@ -48,7 +56,7 @@ def is_hex(s):
     '''
     Validate if a value is hexadecimal
 
-    :return: bool True or False    
+    :return: bool True or False
     '''
     try:
         int(s, 16)
@@ -75,7 +83,7 @@ def get_microscope_configuration(METHODS):
                 result = int(result, 16)
 
             config[method] = result
-            
+
         except MicroscopeQueryError as mqe:
             config[method] = None
             logging.error(f"MicroscopeQueryError: {mqe}")
@@ -103,7 +111,7 @@ def get_picture_details(image:bytes) -> dict:
 
     # full_exif = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
     # return full_exif
-   
+
 if __name__ == "__main__":
     try:
         config = get_microscope_configuration(METHODS)
