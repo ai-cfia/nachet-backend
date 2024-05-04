@@ -66,6 +66,7 @@ class TestInferenceRequest(unittest.TestCase):
             "topN",
             "overlapping",
             "overlappingIndices",
+            "pipeline",
             "models"
         }
 

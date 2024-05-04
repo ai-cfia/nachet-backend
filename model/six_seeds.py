@@ -1,12 +1,15 @@
 """
-This file contains the function that requests the inference and processes the data from
-the nachet-6seeds model.
+This file contains the function that requests the inference and processes
+the data from the nachet-6seeds model.
 """
 
 import json
+
 from collections import namedtuple
 from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import ProcessInferenceResultError
+
+from model.inference import ProcessInferenceResultError
+
 
 async def request_inference_from_nachet_6seeds(model: namedtuple, previous_result: str):
     """

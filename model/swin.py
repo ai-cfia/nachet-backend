@@ -1,13 +1,14 @@
 """
-This file contains the function that requests the inference and processes the data from
-the swin model.
+This file contains the function that requests the inference and processes
+the data from the swin model.
 """
 
 import json
 
 from collections import namedtuple
 from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import ProcessInferenceResultError
+
+from model.inference import ProcessInferenceResultError
 
 
 def process_swin_result(img_box:dict, results: dict) -> list:

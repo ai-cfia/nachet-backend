@@ -8,7 +8,7 @@ tasks, including Image Classification, Image Segmentation, and Object Detection.
 
 ## Task
 
-Nachet Interactive's models perfom the following tasks:
+Nachet Interactive's models perform the following tasks:
 
 |Task|Action|Input/Output|
 |:--|:--|:-----|
@@ -23,11 +23,11 @@ Nachet Interactive's models perfom the following tasks:
 
 ## List of models
 
-|Model|Full name|Task|API Call Function|Inference Function|Active|Accuracy|
+|Model|Full name|Task|API endpoint|Process Function|Active|Accuracy|
 |--|--|:--:|:--:|:--:|:--:|:--:|
-|Nachet-6seeds | m-14of15seeds-6seedsmag | Object Detection | nachet_6seeds | None | Yes | - |
-|Seed-detector | seed-detector-1 |  Object Detection | seed_detector | process_image_slicing | Yes | - |
-|Swin | swinv1-base-dataaugv2-1 | Classification | swin | process_swin_result | Yes | - |
+|Nachet-6seeds | m-14of15seeds-6seedsmag | Object Detection | nachet-6seeds | None | Yes | - |
+|Seed-detector | seed-detector-1 | Object Detection | seed-detector | process_image_slicing | Yes | - |
+|Swin | swinv1-base-dataaugv2-1 | Classification | swin-endpoint | process_swin_result | Yes | - |
 
 ### Request Inference Function
 
@@ -37,6 +37,11 @@ data to be readable by the next model in the pipeline. For instance, the
 Seed-detector only returns "seed" as a label, and its inference needs to be
 processed and passed to the next model which assigns the correct label to the
 seeds.
+
+Each request function is mapped with the endpoint of the model. This provides a
+simple way of calling the right request function for a given model.
+
+You can look at the mapping here: [model init file](../model/__init__.py)
 
 ## Return value of models
 
@@ -82,27 +87,38 @@ seeds.
     "labelOccurrence": {
         "seed_name": 1,
     },
-    "totalBoxes": 1
+    "totalBoxes": 1,
+    "pipeline": "pipeline_name",
+    "models": [
+        {
+            "name": "model_name_01",
+            "version": "1"
+        },
+        {
+        "name": "model_name_02",
+        "version": "1"
+        }
+    ]
 }
 ```
 
 ### Why topN
 
-We decided to named the top results property top N because this value can return
-n predictions. Usually in AI, the top 5 result are use to measure the accuracy
+We decided to name the top results property top N because this value can return
+n predictions. Usually in AI, the top 5 results are used to measure the accuracy
 of a model. If the correct result is the top 5, then it is considered that the
 prediction was true.
 
-This is useful in case were the user have is attention on more then 1 result.
+This is useful in cases where the user has attention on more than 1 result.
 
- > "Top N accuracy — Top N accuracy is when you measure how often your predicted
- > class falls in the top N values of your softmax distribution."
- [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*. Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
+ > "Top N accuracy — Top N accuracy is when you measure how often your predicted
+ > class falls in the top N values of your softmax distribution."
+ [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*. Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
 
 ### Box around seed
 
 The `box` key stores the value for a specific box around a seed. This helps the
-frontend application build a red rectangle around every seed on the image.
+frontend application builds a colored rectangle around every seed on the image.
 
 ![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
 
@@ -116,9 +132,9 @@ header is necessary to avoid errors.
 ```python
 # Header for every model should be:
 headers = {
-    'Content-Type': 'application/json',
-    'Authorization': ('Bearer ' + endpoint_api_key),
-    'azureml-model-deployment': model_name
+  'Content-Type': 'application/json',
+  'Authorization': ('Bearer ' + endpoint_api_key),
+  'azureml-model-deployment': model_name
 }
 ```
 
@@ -134,11 +150,11 @@ determined whether a segmentation model requires a different body structure.
 # Object Detection model
 # Example: Nachet-6seeds and seed-detector
 body = {
-    'input_data': {
-        'columns': ['image'],
-        'index': [0],
-        'data': [image_bytes],
-    }
+  'input_data': {
+    'columns': ['image'],
+    'index': [0],
+    'data': [image_bytes],
+  }
 }
 
 # Classification model
@@ -150,8 +166,8 @@ body = b64encode(image)
 
 A list of common error models returns to the backend.
 
-> To access the error from the model, go to the model endpoint in azure and look
-> for the logs : CFIA/ACIA/workspace/endpoint/model/logs
+> To access the error from the model, go to the model endpoint in Azure and look
+> for the logs: CFIA/ACIA/workspace/endpoint/model/logs
 
 |Error|Model|Reason|Message|
 |--|--|--|--|
@@ -159,17 +175,19 @@ A list of common error models returns to the backend.
 
 ## Pipeline and model data
 
-In order to dynamically build the pipeline in the backend from the model, the
-following data structure was designed. For now, the pipelines will have two keys
-for their names (`model_name`, `piepline_name`) to support the frontend code
-until it is changed to get the name of the pipeline with the correct key.
+To dynamically build the pipeline in the backend from the model, the following
+data structure was designed. For now, the pipelines will have two keys for their
+names (`model_name`, `pipeline_name`) to support the frontend code until it is
+changed to get the name of the pipeline with the correct key.
 
 ```yaml
+---
 version:
+
 date:
+
 pipelines:
   - models:
-    model_name:
     pipeline_name:
     created_by:
     creation_date:
@@ -181,7 +199,7 @@ pipelines:
     default:
 
 models:
-  - task:
+  - tasks:
     endpoint:
     api_key:
     content_type:
@@ -195,20 +213,24 @@ models:
     job_name:
     dataset_description:
     accuracy:
+
 ```
 
 ### Key Description
 
-#### File Specific Keys
+:warning: **The following section is subject to change after the implementation
+of the datastore**
+
+#### File-Specific Keys
 
 |Key|Description|Expected Value Format|
 |--|--|--|
 |version|The version of the file|0.0.0|
-|date|The date the file was upload|202x-mm-dd|
-|pipelines|A list of available pipeline||
-|models|A list of available model||
+|date|The date the file was uploaded |202x-mm-dd|
+|pipelines|A list of available pipelines ||
+|models|A list of available models ||
 
-#### Pipeline Specific Keys
+#### Pipeline-Specific Keys
 
 |Key|Description|Expected Value Format|
 |--|--|--|
@@ -222,7 +244,7 @@ models:
 |Accuracy|The prediction accuracy of the pipeline|0.8302|
 |default|Determine if the pipeline is the default one|true or false|
 
-#### Model Specific Keys
+#### Model-Specific Keys
 
 |Key|Description|Expected Value Format|
 |--|--|--|
@@ -243,7 +265,10 @@ models:
 
 #### JSON Representation and Example
 
-This how the file will be represented in the datastore.
+:warning: **The following section is subject to change after the implementation
+of the datastore**
+
+This is how the file will be represented in the datastore.
 
 ```json
 {
