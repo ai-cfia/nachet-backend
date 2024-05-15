@@ -6,9 +6,14 @@ the swin model.
 import json
 
 from collections import namedtuple
+from urllib.error import URLError
 from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import ProcessInferenceResultError
 
+class APIErrors(Exception):
+    pass
+
+class ProcessInferenceResultsError(APIErrors) :
+    pass
 
 def process_swin_result(img_box:dict, results: dict) -> list:
     """
@@ -27,7 +32,7 @@ def process_swin_result(img_box:dict, results: dict) -> list:
     return img_box
 
 
-async def request_inference_from_swin(model: namedtuple, previous_result: list[bytes]):
+async def request_inference_from_swin(model: namedtuple, previous_result: 'list[bytes]'):
     """
     Perform inference using the SWIN model on a list of images.
 
@@ -39,7 +44,7 @@ async def request_inference_from_swin(model: namedtuple, previous_result: list[b
         The result of the inference.
 
     Raises:
-        InferenceRequestError: If an error occurs while processing the request.
+        ProcessInferenceResultsError: If an error occurs while processing the request.
     """
     try:
         results = []
@@ -58,5 +63,6 @@ async def request_inference_from_swin(model: namedtuple, previous_result: list[b
         print(json.dumps(results, indent=4)) #TODO Transform into logging
 
         return process_swin_result(previous_result.get("result_json"), results)
-    except HTTPError as e:
-       raise ProcessInferenceResultError(f"An error occurred while processing the request:\n {str(e)}") from None
+    except (TypeError, IndexError, AttributeError, URLError, json.JSONDecodeError)  as error:
+        print(error)
+        raise ProcessInferenceResultsError(f"An error occurred while processing the request:\n {str(error)}") from error

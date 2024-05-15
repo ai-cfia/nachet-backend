@@ -7,7 +7,7 @@ from model.inference import (
     light_colors,
     mixing_palettes,
     shades_colors,
-    ProcessInferenceResultError
+    ProcessInferenceResultsError
 )
 
 class TestInferenceProcessFunction(unittest.TestCase):
@@ -107,7 +107,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "totalBoxes": 2
         }
 
-        with self.assertRaises(ProcessInferenceResultError):
+        with self.assertRaises(ProcessInferenceResultsError):
             asyncio.run(
                 process_inference_results(data=[data], imageDims=[100, 100]))
 
@@ -116,7 +116,7 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "totalBoxes": 2
         }
 
-        with self.assertRaises(ProcessInferenceResultError):
+        with self.assertRaises(ProcessInferenceResultsError):
             asyncio.run(process_inference_results(data=[data], imageDims=100))
 
         data ={
@@ -124,6 +124,6 @@ class TestInferenceProcessFunction(unittest.TestCase):
             "totalBoxes": 2
         }
 
-        with self.assertRaises(ProcessInferenceResultError):
+        with self.assertRaises(ProcessInferenceResultsError):
             asyncio.run(
                 process_inference_results(data=[data], imageDims=[100, 100]))
