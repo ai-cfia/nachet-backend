@@ -8,11 +8,9 @@ import json
 from collections import namedtuple
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+from model.model_exceptions import ModelAPIErrors
 
-class APIErrors(Exception):
-    pass
-
-class ProcessInferenceResultsError(APIErrors) :
+class SwinModelAPIError(ModelAPIErrors) :
     pass
 
 def process_swin_result(img_box:dict, results: dict) -> list:
@@ -65,4 +63,4 @@ async def request_inference_from_swin(model: namedtuple, previous_result: 'list[
         return process_swin_result(previous_result.get("result_json"), results)
     except (TypeError, IndexError, AttributeError, URLError, json.JSONDecodeError)  as error:
         print(error)
-        raise ProcessInferenceResultsError(f"An error occurred while processing the request:\n {str(error)}") from error
+        raise SwinModelAPIError(f"An error occurred while processing the request:\n {str(error)}") from error

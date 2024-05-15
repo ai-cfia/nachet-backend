@@ -11,11 +11,9 @@ from urllib.error import URLError
 from PIL import Image
 from collections import namedtuple
 from urllib.request import Request, urlopen
+from model.model_exceptions import ModelAPIErrors
 
-class APIErrors(Exception):
-    pass
-
-class ProcessInferenceResultsError(APIErrors) :
+class SeedDetectorModelAPIError(ModelAPIErrors) :
     pass
 
 def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:
@@ -107,4 +105,4 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
         }
     except (KeyError, TypeError, IndexError, ValueError, URLError, json.JSONDecodeError)  as error:
         print(error)
-        raise ProcessInferenceResultsError(f"Error while processing inference results :\n {str(error)}") from error
+        raise SeedDetectorModelAPIError(f"Error while processing inference results :\n {str(error)}") from error

@@ -163,7 +163,7 @@ async def before_serving():
             """
         ) #TODO Transform into logging
 
-    except ServerError as e:
+    except (ServerError, inference.ModelAPIErrors) as e:
         print(e)
         raise
 
@@ -388,7 +388,7 @@ async def inference_request():
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
         return jsonify(processed_result_json), 200
 
-    except (KeyError, TypeError, ValueError, InferenceRequestError, azure_storage_api.MountContainerError) as error:
+    except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage_api.MountContainerError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 

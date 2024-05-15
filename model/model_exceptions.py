@@ -1,0 +1,2 @@
+class ModelAPIErrors(Exception):
+    pass

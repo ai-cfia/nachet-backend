@@ -7,11 +7,9 @@ Functions:
     request_inference_from_nachet_six_seed: Requests inference from the Nachet Six Seed model.
 """
 from collections import namedtuple
+from model.model_exceptions import ModelAPIErrors
 
-class APIErrors(Exception):
-    pass
-
-class ProcessInferenceResultsError(APIErrors) :
+class TestModelAPIError(ModelAPIErrors) :
     pass
 
 async def request_inference_from_test(model: namedtuple, previous_result: str):
@@ -58,4 +56,4 @@ async def request_inference_from_test(model: namedtuple, previous_result: str):
 
     except ValueError as error:
         print(error)
-        raise ProcessInferenceResultsError(f"An error occurred while processing the requests :\n {str(error)}") from error
+        raise TestModelAPIError(f"An error occurred while processing the requests :\n {str(error)}") from error

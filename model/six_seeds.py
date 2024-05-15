@@ -7,11 +7,9 @@ import json
 from collections import namedtuple
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+from model.model_exceptions import ModelAPIErrors
 
-class APIErrors(Exception):
-    pass
-
-class ProcessInferenceResultsError(APIErrors) :
+class SixSeedModelAPIError(ModelAPIErrors) :
     pass
 
 async def request_inference_from_nachet_6seeds(model: namedtuple, previous_result: str):
@@ -55,4 +53,4 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
 
     except (KeyError, TypeError, IndexError, URLError, json.JSONDecodeError)  as error:
         print(error)
-        raise ProcessInferenceResultsError(f"Error while processing inference results :\n {str(error)}") from error
+        raise SixSeedModelAPIError(f"Error while processing inference results :\n {str(error)}") from error
