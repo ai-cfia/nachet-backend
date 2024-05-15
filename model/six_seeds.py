@@ -6,7 +6,7 @@ the nachet-6seeds model.
 import json
 from collections import namedtuple
 from urllib.error import URLError
-from urllib.request import Request, urlopen, HTTPError
+from urllib.request import Request, urlopen
 
 class APIErrors(Exception):
     pass

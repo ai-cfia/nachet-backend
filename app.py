@@ -8,7 +8,7 @@ import magic
 import time
 import warnings
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from datetime import date
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify

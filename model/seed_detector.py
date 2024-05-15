@@ -10,7 +10,7 @@ from urllib.error import URLError
 
 from PIL import Image
 from collections import namedtuple
-from urllib.request import Request, urlopen, HTTPError
+from urllib.request import Request, urlopen
 
 class APIErrors(Exception):
     pass
