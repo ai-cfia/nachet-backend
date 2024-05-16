@@ -2,6 +2,8 @@
 Contains the colors palettes uses to colors the boxes.
 """
 import numpy as np
+from typing import Union
+
 
 # Find color by name or hex code: https://www.color-name.com
 
@@ -74,7 +76,7 @@ def mixing_palettes(dict1: dict, dict2: dict) -> dict:
 
     return {key: dict1[key] + dict2[key] for key in dict1.keys()}
 
-def shades_colors(base_color: str | tuple, num_shades = 5, lighten_factor = 0.15, darken_factor = 0.1) -> tuple:
+def shades_colors(base_color: Union[str, tuple], num_shades = 5, lighten_factor = 0.15, darken_factor = 0.1) -> tuple:
     """
     Generate shades of a color based on the base color.
 

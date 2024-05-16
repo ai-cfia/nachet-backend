@@ -5,8 +5,12 @@ the nachet-6seeds model.
 
 import json
 from collections import namedtuple
-from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import ProcessInferenceResultError
+from urllib.error import URLError
+from urllib.request import Request, urlopen
+from model.model_exceptions import ModelAPIErrors
+
+class SixSeedModelAPIError(ModelAPIErrors) :
+    pass
 
 async def request_inference_from_nachet_6seeds(model: namedtuple, previous_result: str):
     """
@@ -20,7 +24,7 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
         dict: The result of the inference as a JSON object.
 
     Raises:
-        InferenceRequestError: If an error occurs while processing the request.
+        ProcessInferenceResultsError: If an error occurs while processing the request.
     """
     try:
         headers = {
@@ -47,5 +51,6 @@ async def request_inference_from_nachet_6seeds(model: namedtuple, previous_resul
 
         return result_object
 
-    except HTTPError as e:
-        raise ProcessInferenceResultError(f"An error occurred while processing the request:\n {str(e)}") from None
+    except (KeyError, TypeError, IndexError, URLError, json.JSONDecodeError)  as error:
+        print(error)
+        raise SixSeedModelAPIError(f"Error while processing inference results :\n {str(error)}") from error
