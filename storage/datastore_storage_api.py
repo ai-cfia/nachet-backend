@@ -7,6 +7,7 @@ import datastore.bin.deployment_mass_import
 
 import datastore.bin.upload_picture_set
 import datastore.db.queries.seed as seed_queries
+import datastore.db.queries.machine_learning as ml_queries
 # import datastore.db.queries.user as user_queries
 # import datastore.db.queries.picture as picture_queries
 
@@ -16,6 +17,9 @@ class DatastoreError(Exception):
 
 
 class SeedNotFoundError(DatastoreError):
+    pass
+
+class GetPipelinesError(DatastoreError):
     pass
 
 
@@ -53,3 +57,18 @@ def validate_user(email: str) -> datastore.User:
 
 def upload_picture_set(**kwargs):
     return datastore.bin.upload_picture_set.upload_picture_set(get_cursor(), **kwargs)
+
+def get_pipelines() -> list:
+
+    """
+    Retrieves the pipelines from the Datastore
+    """
+    try:
+        pipelines = []
+        active_pipelines = ml_queries.get_active_pipeline(get_cursor())
+        print("pipelines : " + active_pipelines)
+        for pipeline in active_pipelines :
+            print("data : " + pipeline[4])
+            # Peut-être convertir le json
+    except Exception as error: # TODO modify Exception for more specific exception
+        raise GetPipelinesError(error.args[0])

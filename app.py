@@ -165,12 +165,10 @@ async def before_serving():
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        #datastore.get_all_seeds_names() TODO : remplacer le fetch_json par la methode du datastore
-        CACHE["endpoints"] = await get_pipelines(
-            CONNECTION_STRING, PIPELINE_BLOB_NAME,
-            PIPELINE_VERSION, Fernet(FERNET_KEY)
-        )
-        # TODO : remplacer get_pipelines par la bonne methode du datastore
+        #CACHE["seeds"] = datastore.get_all_seeds_names() #TODO : remplacer le fetch_json par la methode du datastore 
+        CACHE["endpoints"] = await get_pipelines(CONNECTION_STRING, PIPELINE_BLOB_NAME,PIPELINE_VERSION, Fernet(FERNET_KEY))
+        #CACHE["endpoints"] = datastore.get_pipelines() # TODO : remplacer get_pipelines par la methode du datastore
+        print(CACHE["endpoints"])
         print(
             f"""Server start with current configuration:\n
                 date: {date.today()}
