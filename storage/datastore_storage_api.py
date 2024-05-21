@@ -20,8 +20,7 @@ class SeedNotFoundError(DatastoreError):
 
 
 def get_cursor():
-    db.connect_db()
-    return db.cursor()
+    return db.cursor(db.connect_db())
 
 
 def get_all_seeds_names() -> list:

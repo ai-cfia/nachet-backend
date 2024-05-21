@@ -65,20 +65,19 @@ sequenceDiagram
     actor Client
     participant Frontend
     participant Backend
+    participant Datastore
     participant Blob storage
     participant Model
 
     Backend-)+Backend: run()
-    Note over Backend,Blob storage: initialisation
-    Backend-)Backend: before_serving()
-    Backend-)Backend: get_pipelines()
-    alt
-    Backend-)+Blob storage: HTTP POST req.
-    Blob storage--)-Backend: return pipelines_models.json
-    else
-    Backend-)Frontend: error 500 Failed to retrieve data from the repository
-    end
-    Note over Backend,Blob storage: end of initialisation
+    Note over Backend,Datastore: initialisation
+    Backend-)+Backend: before_serving()
+    Backend-)+Datastore: get_all_seeds_names()
+    Datastore--)-Backend: return seeds.json
+    Backend-)+Datastore: get_pipelines()
+    Datastore--)-Backend: return pipelines_models.json
+
+    Note over Backend,Datastore: end of initialisation
 
     Client->>+Frontend: applicationStart()
     Frontend-)Backend: HTTP POST req.
@@ -100,19 +99,17 @@ sequenceDiagram
     Backend-)Frontend: Error 400 wrong header on file
     end
 
-    Backend-)Backend: mount_container(connection_string(Environnement Variable, container_name))
-    Backend-)+Blob storage: HTTP POST req.
-    Blob storage--)-Backend: container_client
+    Backend-)+Datastore: mount_container(connection_string(Environnement Variable, container_name))
+    Datastore-)+Blob storage: HTTP POST req.
+    Blob storage--)-Datastore: container_client
+    Datastore--)-Backend: container_client
 
-    Backend-)Backend: Generate Hash(image_bytes)
+    Backend-)Datastore: Generate Hash(image_bytes)
 
-    Backend-)Backend: upload_image(container_client, folder_name, image_bytes, hash_value)
-    Backend-)+Blob storage: HTTP POST req.
-    Blob storage--)-Backend: blob_name
-
-    Backend-)Backend: get_blob(container_client, blob_name)
-    Backend-)+Blob storage: HTTP POST req.
-    Blob storage--)-Backend: blob
+    Backend-)+Datastore: upload_image(container_client, folder_name, image_bytes, hash_value)
+    Datastore-)+Blob storage: HTTP POST req.
+    Blob storage--)-Datastore: blob_name
+    Datastore--)-Backend: blob_name
 
     loop for every model in pipeline
         Backend-)Backend: model.entry_function(model, previous_result)

@@ -165,10 +165,12 @@ async def before_serving():
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
+        #datastore.get_all_seeds_names() TODO : remplacer le fetch_json par la methode du datastore
         CACHE["endpoints"] = await get_pipelines(
             CONNECTION_STRING, PIPELINE_BLOB_NAME,
             PIPELINE_VERSION, Fernet(FERNET_KEY)
         )
+        # TODO : remplacer get_pipelines par la bonne methode du datastore
         print(
             f"""Server start with current configuration:\n
                 date: {date.today()}
@@ -345,7 +347,6 @@ async def inference_request():
 
         print(f"Requested by user: {container_name}") # TODO: Transform into logging
         pipelines_endpoints = CACHE.get("pipelines")
-        blob_service_client = app.config.get("BLOB_CLIENT")
         validators = CACHE.get("validators")
 
         if not (folder_name and container_name and imageDims and image_base64):
