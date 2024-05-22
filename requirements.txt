@@ -10,4 +10,4 @@ cryptography
 pyyaml
 pydantic
 python-magic
-nachet-datastore @git+https://github.com/ai-cfia/nachet-datastore.git@b83327554b82924a5eb81dcfafff274714c72401 #TODO : change the branch to main
+nachet-datastore @git+https://github.com/ai-cfia/nachet-datastore.git@fe0c6379415cd9d43a3eb2602d82d1907f0fd04d #TODO : change the branch to main

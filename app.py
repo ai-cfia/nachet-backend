@@ -165,11 +165,11 @@ async def before_serving():
         if not bool(re.match(pipeline_version_regex, PIPELINE_VERSION)):
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
-        CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        #CACHE["seeds"] = datastore.get_all_seeds_names() #TODO : remplacer le fetch_json par la methode du datastore 
-        CACHE["endpoints"] = await get_pipelines(CONNECTION_STRING, PIPELINE_BLOB_NAME,PIPELINE_VERSION, Fernet(FERNET_KEY))
-        #CACHE["endpoints"] = datastore.get_pipelines() # TODO : remplacer get_pipelines par la methode du datastore
+        # Store the seeds names and ml structure in CACHE
+        CACHE["seeds"] = datastore.get_all_seeds_names() 
+        CACHE["endpoints"] = await get_pipelines(Fernet(FERNET_KEY))
         print(CACHE["endpoints"])
+        
         print(
             f"""Server start with current configuration:\n
                 date: {date.today()}
@@ -598,19 +598,14 @@ async def fetch_json(repo_URL, key, file_path):
         return result_json
 
 
-async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
+async def get_pipelines(cipher_suite):
     """
     Retrieves the pipelines from the Azure storage API.
 
     Returns:
     - list: A list of dictionaries representing the pipelines.
     """
-    try:
-        app.config["BLOB_CLIENT"] = await old_azure_storage_api.get_blob_client(connection_string)
-        result_json = await old_azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
-    except (azure_storage_api.AzureAPIErrors) as error:
-        print(error)
-        raise ServerError("server errror: could not retrieve the pipelines") from error
+    result_json = await datastore.get_pipelines()
 
     models = ()
     for model in result_json.get("models"):

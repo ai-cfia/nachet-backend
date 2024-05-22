@@ -58,17 +58,13 @@ def validate_user(email: str) -> datastore.User:
 def upload_picture_set(**kwargs):
     return datastore.bin.upload_picture_set.upload_picture_set(get_cursor(), **kwargs)
 
-def get_pipelines() -> list:
+async def get_pipelines() -> list:
 
     """
     Retrieves the pipelines from the Datastore
     """
     try:
-        pipelines = []
-        active_pipelines = ml_queries.get_active_pipeline(get_cursor())
-        print("pipelines : " + active_pipelines)
-        for pipeline in active_pipelines :
-            print("data : " + pipeline[4])
-            # Peut-être convertir le json
+        pipelines = await datastore.get_ml_structure(get_cursor())
+        return pipelines
     except Exception as error: # TODO modify Exception for more specific exception
         raise GetPipelinesError(error.args[0])
