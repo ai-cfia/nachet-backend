@@ -22,9 +22,9 @@ load_dotenv()
 from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
 import model.inference as inference
 from model import request_function
-from datastore import azure_storage_api
 import storage.datastore_storage_api as datastore
-
+from datastore import azure_storage_api
+from storage import azure_storage_api as old_azure_storage_api
 
 class APIErrors(Exception):
     pass
@@ -166,11 +166,10 @@ async def before_serving():
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        CACHE["endpoints"] = await get_pipelines(
-            CONNECTION_STRING, PIPELINE_BLOB_NAME,
-            PIPELINE_VERSION, Fernet(FERNET_KEY)
-        )
-
+        #CACHE["seeds"] = datastore.get_all_seeds_names() #TODO : remplacer le fetch_json par la methode du datastore 
+        CACHE["endpoints"] = await get_pipelines(CONNECTION_STRING, PIPELINE_BLOB_NAME,PIPELINE_VERSION, Fernet(FERNET_KEY))
+        #CACHE["endpoints"] = datastore.get_pipelines() # TODO : remplacer get_pipelines par la methode du datastore
+        print(CACHE["endpoints"])
         print(
             f"""Server start with current configuration:\n
                 date: {date.today()}
@@ -195,7 +194,7 @@ async def delete_directory():
         folder_name = data["folder_name"]
         if container_name and folder_name:
             container_client = await azure_storage_api.mount_container(
-                app.config["BLOB_CLIENT"], container_name, create_container=False
+                CONNECTION_STRING, container_name, create_container=True
             )
             if container_client:
                 folder_uuid = await azure_storage_api.get_folder_uuid(
@@ -229,7 +228,7 @@ async def list_directories():
         container_name = data["container_name"]
         if container_name:
             container_client = await azure_storage_api.mount_container(
-                app.config["BLOB_CLIENT"], container_name, create_container=True
+                CONNECTION_STRING, container_name, create_container=True
             )
             response = await azure_storage_api.get_directories(container_client)
             return jsonify(response), 200
@@ -252,7 +251,7 @@ async def create_directory():
         folder_name = data["folder_name"]
         if container_name and folder_name:
             container_client = await azure_storage_api.mount_container(
-                app.config["BLOB_CLIENT"], container_name, create_container=False
+                CONNECTION_STRING, container_name, create_container=True
             )
             response = await azure_storage_api.create_folder(
                 container_client, folder_name
@@ -347,7 +346,6 @@ async def inference_request():
 
         print(f"Requested by user: {container_name}") # TODO: Transform into logging
         pipelines_endpoints = CACHE.get("pipelines")
-        blob_service_client = app.config.get("BLOB_CLIENT")
         validators = CACHE.get("validators")
 
         if not (folder_name and container_name and imageDims and image_base64):
@@ -369,7 +367,7 @@ async def inference_request():
         image_bytes = base64.b64decode(encoded_data)
 
         container_client = await azure_storage_api.mount_container(
-            blob_service_client, container_name, create_container=True
+            CONNECTION_STRING, container_name, create_container=True
         )
         hash_value = await azure_storage_api.generate_hash(image_bytes)
         await azure_storage_api.upload_image(
@@ -608,8 +606,8 @@ async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version,
     - list: A list of dictionaries representing the pipelines.
     """
     try:
-        app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
-        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
+        app.config["BLOB_CLIENT"] = await old_azure_storage_api.get_blob_client(connection_string)
+        result_json = await old_azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
     except (azure_storage_api.AzureAPIErrors) as error:
         print(error)
         raise ServerError("server errror: could not retrieve the pipelines") from error
