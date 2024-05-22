@@ -6,11 +6,15 @@ the seed detector model.
 import io
 import base64
 import json
+from urllib.error import URLError
 
 from PIL import Image
 from collections import namedtuple
-from urllib.request import Request, urlopen, HTTPError
-from custom_exceptions import ProcessInferenceResultError
+from urllib.request import Request, urlopen
+from model.model_exceptions import ModelAPIErrors
+
+class SeedDetectorModelAPIError(ModelAPIErrors) :
+    pass
 
 def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:
     """
@@ -69,7 +73,7 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
         dict: A dictionary containing the result JSON and the images generated from the inference.
 
     Raises:
-        InferenceRequestError: If an error occurs while processing the request.
+        ProcessInferenceResultsError: If an error occurs while processing the request.
     """
     try:
 
@@ -99,5 +103,6 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
             "result_json": result_object,
             "images": process_image_slicing(previous_result, result_object)
         }
-    except HTTPError as e:
-        raise ProcessInferenceResultError(f"An error occurred while processing the request:\n {str(e)}") from None
+    except (KeyError, TypeError, IndexError, ValueError, URLError, json.JSONDecodeError)  as error:
+        print(error)
+        raise SeedDetectorModelAPIError(f"Error while processing inference results :\n {str(error)}") from error

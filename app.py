@@ -9,7 +9,7 @@ import time
 import warnings
 import tempfile
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from datetime import date
 from dotenv import load_dotenv
 from quart import Quart, request, jsonify
@@ -19,6 +19,7 @@ from cryptography.fernet import Fernet
 
 load_dotenv()
 
+from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
 import model.inference as inference
 from model import request_function
 from datastore import azure_storage_api
@@ -178,7 +179,7 @@ async def before_serving():
             """
         ) #TODO Transform into logging
 
-    except ServerError as e:
+    except (ServerError, inference.ModelAPIErrors) as e:
         print(e)
         raise
 
@@ -207,15 +208,15 @@ async def delete_directory():
                             container_client.delete_blob(blob.name)
                     return jsonify([True]), 200
                 else:
-                    return jsonify(["directory does not exist"]), 400
+                    raise DeleteDirectoryRequestError("directory does not exist")
             else:
-                return jsonify(["failed to mount container"]), 400
+                raise DeleteDirectoryRequestError("failed to mount container")
         else:
-            return jsonify(["missing container or directory name"]), 400
+            raise DeleteDirectoryRequestError("missing container or directory name")
 
-    except DeleteDirectoryRequestError as error:
+    except (KeyError, TypeError, azure_storage_api.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
         print(error)
-        return jsonify(["DeleteDirectoryRequestError: " + str(error)]), 400
+        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
 
 
 @app.post("/dir")
@@ -233,11 +234,11 @@ async def list_directories():
             response = await azure_storage_api.get_directories(container_client)
             return jsonify(response), 200
         else:
-            return jsonify(["Missing container name"]), 400
+            raise ListDirectoriesRequestError("Missing container name")
 
-    except ListDirectoriesRequestError as error:
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage_api.MountContainerError) as error:
         print(error)
-        return jsonify(["ListDirectoriesRequestError: " + str(error)]), 400
+        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
 
 
 @app.post("/create-dir")
@@ -259,13 +260,13 @@ async def create_directory():
             if response:
                 return jsonify([True]), 200
             else:
-                return jsonify(["directory already exists"]), 400
+                raise CreateDirectoryRequestError("directory already exists")
         else:
-            return jsonify(["missing container or directory name"]), 400
+            raise CreateDirectoryRequestError("missing container or directory name")
 
-    except CreateDirectoryRequestError as error:
+    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage_api.MountContainerError) as error:
         print(error)
-        return jsonify(["CreateDirectoryRequestError: " + str(error)]), 400
+        return jsonify([f"CreateDirectoryRequestError: {str(error)}"]), 400
 
 
 @app.post("/image-validation")
@@ -318,9 +319,9 @@ async def image_validation():
 
         return jsonify([validator]), 200
 
-    except (UnidentifiedImageError, ImageValidationError) as error:
+    except (KeyError, TypeError, ValueError, ImageValidationError) as error:
         print(error)
-        return jsonify([error.args[0]]), 400
+        return jsonify([f"ImageValidationError: {str(error)}"]), 400
 
 
 @app.post("/inf")
@@ -403,7 +404,7 @@ async def inference_request():
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
         return jsonify(processed_result_json), 200
 
-    except (KeyError, InferenceRequestError) as error:
+    except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage_api.MountContainerError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 

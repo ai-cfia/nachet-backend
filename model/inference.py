@@ -10,9 +10,11 @@ The colors can be returned in HEX or RGB format depending on the frontend prefer
 
 import numpy as np
 
-from custom_exceptions import ProcessInferenceResultError
 from model.color_palette import primary_colors, light_colors, mixing_palettes, shades_colors
+from model.model_exceptions import ModelAPIErrors
 
+class ProcessInferenceResultsModelAPIError(ModelAPIErrors) :
+    pass
 
 def generator(list_length):
     for i in range(list_length):
@@ -21,7 +23,7 @@ def generator(list_length):
 
 async def process_inference_results(
         data: dict,
-        imageDims: list[int, int],
+        imageDims: 'list[int, int]',
         area_ratio: float = 0.5,
         color_format: str = "hex"
 ) -> dict:
@@ -138,6 +140,6 @@ async def process_inference_results(
 
         return data
 
-    except (KeyError, TypeError, IndexError) as error:
+    except (KeyError, TypeError, IndexError, ValueError, ZeroDivisionError) as error:
         print(error)
-        raise ProcessInferenceResultError("Error processing inference results") from error
+        raise ProcessInferenceResultsModelAPIError(f"Error while processing inference results :\n {str(error)}") from error
