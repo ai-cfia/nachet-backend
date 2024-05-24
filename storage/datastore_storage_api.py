@@ -68,3 +68,6 @@ async def get_pipelines() -> list:
         return pipelines
     except Exception as error: # TODO modify Exception for more specific exception
         raise GetPipelinesError(error.args[0])
+
+async def save_inference_result(user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
+    return await datastore.register_inference_result(get_cursor(), user_id, inference_dict, picture_id, pipeline_id, type)

@@ -168,7 +168,6 @@ async def before_serving():
         # Store the seeds names and ml structure in CACHE
         CACHE["seeds"] = datastore.get_all_seeds_names() 
         CACHE["endpoints"] = await get_pipelines(Fernet(FERNET_KEY))
-        print(CACHE["endpoints"])
         
         print(
             f"""Server start with current configuration:\n
@@ -398,9 +397,11 @@ async def inference_request():
             result_json_string,
             hash_value,
         )
+        saved_result_json = await datastore.save_inference_result("user_id", processed_result_json, hash_value, pipeline_name, 1)
+        
         # return the inference results to the client
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
-        return jsonify(processed_result_json), 200
+        return jsonify(saved_result_json), 200
 
     except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage_api.MountContainerError) as error:
         print(error)
