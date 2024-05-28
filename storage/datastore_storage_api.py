@@ -54,6 +54,11 @@ def validate_user(email: str) -> datastore.User:
     if user.is_user_registered(cursor, email):
         return datastore.get_User(email, cursor)
 
+def get_picture_id(container_client, folder_name, image_bytes, image_hash_value) :
+    """
+    Return the picture_id of the image
+    """
+    return datastore.get_picture_id(container_client, folder_name, image_bytes, image_hash_value)
 
 def upload_picture_set(**kwargs):
     return datastore.bin.upload_picture_set.upload_picture_set(get_cursor(), **kwargs)
@@ -70,4 +75,15 @@ async def get_pipelines() -> list:
         raise GetPipelinesError(error.args[0])
 
 async def save_inference_result(user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
+    print(user_id)
+    print(picture_id)
     return await datastore.register_inference_result(get_cursor(), user_id, inference_dict, picture_id, pipeline_id, type)
+
+async def save_perfect_feedback(inference_id:str, user_id:str):
+    # peut-être --> user_id = user.get_user_id(cursor, email) (genre j'ai l'email et pas le id direct)
+    await datastore.register_perfect_inference_feeback(inference_id, user_id, get_cursor())
+    
+async def save_annoted_feedback(inference_id:str, user_id:str, inference_feedback:dict):
+    # peut-être --> user_id = user.get_user_id(cursor, email) (genre j'ai l'email et pas le id direct)
+    await datastore.register_annoted_inference_feeback(inference_id, user_id, inference_feedback, get_cursor())
+    

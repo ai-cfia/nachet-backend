@@ -1,3 +1,4 @@
+from unittest.main import MODULE_EXAMPLES
 import urllib.request
 import json
 import os
@@ -23,7 +24,7 @@ from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
 import model.inference as inference
 from model import request_function
 import storage.datastore_storage_api as datastore
-from datastore import azure_storage_api
+from datastore import azure_storage
 from storage import azure_storage_api as old_azure_storage_api
 
 class APIErrors(Exception):
@@ -167,7 +168,7 @@ async def before_serving():
 
         # Store the seeds names and ml structure in CACHE
         CACHE["seeds"] = datastore.get_all_seeds_names() 
-        CACHE["endpoints"] = await get_pipelines(Fernet(FERNET_KEY))
+        CACHE["endpoints"] = await get_pipelines()
         
         print(
             f"""Server start with current configuration:\n
@@ -192,11 +193,11 @@ async def delete_directory():
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
-            container_client = await azure_storage_api.mount_container(
+            container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
             )
             if container_client:
-                folder_uuid = await azure_storage_api.get_folder_uuid(
+                folder_uuid = await azure_storage.get_folder_uuid(
                     container_client, folder_name
                 )
                 if folder_uuid:
@@ -212,7 +213,7 @@ async def delete_directory():
         else:
             raise DeleteDirectoryRequestError("missing container or directory name")
 
-    except (KeyError, TypeError, azure_storage_api.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
+    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
 
@@ -226,15 +227,15 @@ async def list_directories():
         data = await request.get_json()
         container_name = data["container_name"]
         if container_name:
-            container_client = await azure_storage_api.mount_container(
+            container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
             )
-            response = await azure_storage_api.get_directories(container_client)
+            response = await azure_storage.get_directories(container_client)
             return jsonify(response), 200
         else:
             raise ListDirectoriesRequestError("Missing container name")
 
-    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage_api.MountContainerError) as error:
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
 
@@ -249,10 +250,10 @@ async def create_directory():
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
-            container_client = await azure_storage_api.mount_container(
+            container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
             )
-            response = await azure_storage_api.create_folder(
+            response = await azure_storage.create_folder(
                 container_client, folder_name
             )
             if response:
@@ -262,7 +263,7 @@ async def create_directory():
         else:
             raise CreateDirectoryRequestError("missing container or directory name")
 
-    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage_api.MountContainerError) as error:
+    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify([f"CreateDirectoryRequestError: {str(error)}"]), 400
 
@@ -312,7 +313,7 @@ async def image_validation():
         if header.lower() != expected_header:
             raise ImageValidationError(f"invalid file header: {header}")
 
-        validator = await azure_storage_api.generate_hash(image_bytes)
+        validator = await azure_storage.generate_hash(image_bytes)
         CACHE['validators'].append(validator)
 
         return jsonify([validator]), 200
@@ -365,14 +366,15 @@ async def inference_request():
         cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
-        container_client = await azure_storage_api.mount_container(
+        container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
-        hash_value = await azure_storage_api.generate_hash(image_bytes)
-        await azure_storage_api.upload_image(
-            container_client, folder_name, image_bytes, hash_value
+        image_hash_value = await azure_storage.generate_hash(image_bytes)
+        picture_id = await datastore.get_picture_id(
+            container_client, folder_name, image_bytes, image_hash_value
         )
-
+        print(picture_id)
+        
         pipeline = pipelines_endpoints.get(pipeline_name)
 
         for idx, model in enumerate(pipeline):
@@ -391,19 +393,19 @@ async def inference_request():
 
         # upload the inference results to the user's container as async task
         app.add_background_task(
-            azure_storage_api.upload_inference_result,
+            azure_storage.upload_inference_result,
             container_client,
             folder_name,
             result_json_string,
-            hash_value,
+            image_hash_value,
         )
-        saved_result_json = await datastore.save_inference_result("user_id", processed_result_json, hash_value, pipeline_name, 1)
+        saved_result_json = await datastore.save_inference_result(container_name, processed_result_json[0], picture_id, pipeline_name, 1)
         
         # return the inference results to the client
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
         return jsonify(saved_result_json), 200
 
-    except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage_api.MountContainerError) as error:
+    except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 
@@ -599,7 +601,7 @@ async def fetch_json(repo_URL, key, file_path):
         return result_json
 
 
-async def get_pipelines(cipher_suite):
+async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
     """
     Retrieves the pipelines from the Azure storage API.
 
@@ -611,7 +613,7 @@ async def get_pipelines(cipher_suite):
     models = ()
     for model in result_json.get("models"):
         m = Model(
-            request_function.get(model.get("endpoint_name")),
+            request_function.get(model.get("model_name")),
             model.get("model_name"),
             model.get("version"),
             # To protect sensible data (API key and model endpoint), we encrypt it when
