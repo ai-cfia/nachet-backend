@@ -1,8 +1,10 @@
 """
 This module provide an absraction to the nachet-datastore interface.
 """
+from hmac import new
 import datastore
-from datastore import db, user
+from datastore import db
+from datastore import user as user_datastore
 import datastore.bin.deployment_mass_import
 
 import datastore.bin.upload_picture_set
@@ -27,6 +29,17 @@ def get_cursor():
      return db.cursor(db.connect_db())
 
 
+def get_all_seeds() -> list:
+
+    """
+    Return all seeds name register in the Datastore.
+    """
+    try:
+        return seed_queries.get_all_seeds(get_cursor())
+    except Exception as error: # TODO modify Exception for more specific exception
+        raise SeedNotFoundError(error.args[0])
+
+
 def get_all_seeds_names() -> list:
 
     """
@@ -45,20 +58,28 @@ def get_seeds(expression: str) -> list:
     return list(filter(lambda x: expression in x, get_all_seeds_names(get_cursor())))
 
 
-def validate_user(email: str) -> datastore.User:
+async def validate_user(email: str, connection_string) -> datastore.User:
     """
     Return True if user is valid, False otherwise
     """
 
     cursor = get_cursor()
-    if user.is_user_registered(cursor, email):
-        return datastore.get_User(email, cursor)
+    if user_datastore.is_user_registered(cursor, email):
+        user = datastore.get_User(email, cursor)
+    else :
+        user = await datastore.new_user(cursor, email, connection_string)
+    return user
 
-def get_picture_id(container_client, folder_name, image_bytes, image_hash_value) :
+
+async def get_picture_id(user_id, image_hash_value, container_client) :
     """
     Return the picture_id of the image
     """
-    return datastore.get_picture_id(container_client, folder_name, image_bytes, image_hash_value)
+    cursor = get_cursor()
+    print("sfbvfvzs")
+    picture_id = await datastore.upload_picture(cursor, str(user_id), image_hash_value, container_client)
+    print(picture_id)
+    return picture_id
 
 def upload_picture_set(**kwargs):
     return datastore.bin.upload_picture_set.upload_picture_set(get_cursor(), **kwargs)

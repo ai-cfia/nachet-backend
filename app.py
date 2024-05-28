@@ -168,6 +168,8 @@ async def before_serving():
 
         # Store the seeds names and ml structure in CACHE
         CACHE["seeds"] = datastore.get_all_seeds_names() 
+        seeds = datastore.get_all_seeds()
+        print(jsonify(seeds))
         CACHE["endpoints"] = await get_pipelines()
         
         print(
@@ -340,7 +342,9 @@ async def inference_request():
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
-
+        #email = data.get["email"]
+        email = "example@gmail.com"
+        
         area_ratio = data.get("area_ratio", 0.5)
         color_format = data.get("color_format", "hex")
 
@@ -369,11 +373,13 @@ async def inference_request():
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
+        
+        user_id = await datastore.validate_user(email, CONNECTION_STRING)
+
         image_hash_value = await azure_storage.generate_hash(image_bytes)
         picture_id = await datastore.get_picture_id(
-            container_client, folder_name, image_bytes, image_hash_value
+            user_id, image_hash_value, container_client
         )
-        print(picture_id)
         
         pipeline = pipelines_endpoints.get(pipeline_name)
 
@@ -485,6 +491,19 @@ async def get_model_endpoints_metadata():
         return jsonify("Error retrieving model endpoints metadata.", 404)
 
 
+@app.get("/seeds")
+async def get_seeds():
+    """
+    Returns JSON containing the model seeds metadata
+    """
+    seeds = await datastore.get_all_seeds()
+    print(jsonify(seeds))
+    if seeds :
+        return jsonify(seeds), 200
+    else:
+        return jsonify("Error retrieving seeds", 404)
+
+
 @app.get("/health")
 async def health():
     return "ok", 200
@@ -531,12 +550,14 @@ async def upload_and_chunk_file(request):
         A list of file paths representing the chunks of the uploaded file.
     """
     temp_dir = tempfile.TemporaryDirectory()
-    async with request.stream() as upload_stream:
-        chunk_filename = os.path.join(temp_dir.name, f"chunck_{len(temp_dir.files)}")
-        with open(chunk_filename, "wb") as chunk_file:
-            async for chunk in upload_stream:
-                chunk_file.write(chunk)
-    return temp_dir.files
+    
+    upload_stream = await request.stream()    
+    chunk_filename = os.path.join(temp_dir.name, f"chunk_{len(os.listdir(temp_dir.name))}")
+    with open(chunk_filename, "wb") as chunk_file:
+        async for chunk in upload_stream:
+            chunk_file.write(chunk)
+
+    return [os.path.join(temp_dir.name, f) for f in os.listdir(temp_dir.name)]
 
 def reconstruct_file_and_extract_data(temp_files):
     """
