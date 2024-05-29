@@ -38,6 +38,16 @@ def get_all_seeds_names() -> list:
         raise SeedNotFoundError(error.args[0])
 
 
+def get_all_seeds() -> list:
+
+    """
+    Return all seeds register in the Datastore.
+    """
+    try:
+        return seed_queries.get_all_seeds(get_cursor())
+    except Exception as error: # TODO modify Exception for more specific exception
+        raise SeedNotFoundError(error.args[0])
+
 def get_seeds(expression: str) -> list:
     """
     Return a list of all seed that contains the expression
