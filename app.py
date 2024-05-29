@@ -7,6 +7,7 @@ import io
 import magic
 import time
 import warnings
+import tempfile
 
 from PIL import Image
 from datetime import date
@@ -16,10 +17,13 @@ from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
 
-import azure_storage.azure_storage_api as azure_storage_api
+load_dotenv()
+
 from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
 import model.inference as inference
 from model import request_function
+import storage.datastore_storage_api as datastore
+from datastore import azure_storage
 
 class APIErrors(Exception):
     pass
@@ -49,6 +53,18 @@ class ImageValidationError(APIErrors):
     pass
 
 
+class ValidateEnvVariablesError(APIErrors):
+    pass
+
+
+class EmailNotSendError(APIErrors):
+    pass
+
+
+class EmptyPictureSetError(APIErrors):
+    pass
+
+
 class APIWarnings(UserWarning):
     pass
 
@@ -60,7 +76,6 @@ class ImageWarning(APIWarnings):
 class MaxContentLengthWarning(APIWarnings):
     pass
 
-load_dotenv()
 
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
 pipeline_version_regex = r"\d.\d.\d"
@@ -149,11 +164,9 @@ async def before_serving():
         if not bool(re.match(pipeline_version_regex, PIPELINE_VERSION)):
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
-        CACHE["seeds"] = await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
-        CACHE["endpoints"] = await get_pipelines(
-            CONNECTION_STRING, PIPELINE_BLOB_NAME,
-            PIPELINE_VERSION, Fernet(FERNET_KEY)
-        )
+        # Store the seeds names and ml structure in CACHE
+        CACHE["seeds"] = datastore.get_all_seeds_names() 
+        CACHE["endpoints"] = await get_pipelines(Fernet(FERNET_KEY))
 
         print(
             f"""Server start with current configuration:\n
@@ -178,11 +191,11 @@ async def delete_directory():
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
-            container_client = await azure_storage_api.mount_container(
-                app.config["BLOB_CLIENT"], container_name, create_container=False
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
             )
             if container_client:
-                folder_uuid = await azure_storage_api.get_folder_uuid(
+                folder_uuid = await azure_storage.get_folder_uuid(
                     container_client, folder_name
                 )
                 if folder_uuid:
@@ -198,7 +211,7 @@ async def delete_directory():
         else:
             raise DeleteDirectoryRequestError("missing container or directory name")
 
-    except (KeyError, TypeError, azure_storage_api.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
+    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
 
@@ -212,15 +225,15 @@ async def list_directories():
         data = await request.get_json()
         container_name = data["container_name"]
         if container_name:
-            container_client = await azure_storage_api.mount_container(
-                app.config["BLOB_CLIENT"], container_name, create_container=True
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
             )
-            response = await azure_storage_api.get_directories(container_client)
+            response = await azure_storage.get_directories(container_client)
             return jsonify(response), 200
         else:
             raise ListDirectoriesRequestError("Missing container name")
 
-    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage_api.MountContainerError) as error:
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
 
@@ -235,10 +248,10 @@ async def create_directory():
         container_name = data["container_name"]
         folder_name = data["folder_name"]
         if container_name and folder_name:
-            container_client = await azure_storage_api.mount_container(
-                app.config["BLOB_CLIENT"], container_name, create_container=False
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
             )
-            response = await azure_storage_api.create_folder(
+            response = await azure_storage.create_folder(
                 container_client, folder_name
             )
             if response:
@@ -248,7 +261,7 @@ async def create_directory():
         else:
             raise CreateDirectoryRequestError("missing container or directory name")
 
-    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage_api.MountContainerError) as error:
+    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify([f"CreateDirectoryRequestError: {str(error)}"]), 400
 
@@ -298,7 +311,7 @@ async def image_validation():
         if header.lower() != expected_header:
             raise ImageValidationError(f"invalid file header: {header}")
 
-        validator = await azure_storage_api.generate_hash(image_bytes)
+        validator = await azure_storage.generate_hash(image_bytes)
         CACHE['validators'].append(validator)
 
         return jsonify([validator]), 200
@@ -331,7 +344,6 @@ async def inference_request():
 
         print(f"Requested by user: {container_name}") # TODO: Transform into logging
         pipelines_endpoints = CACHE.get("pipelines")
-        blob_service_client = app.config.get("BLOB_CLIENT")
         validators = CACHE.get("validators")
 
         if not (folder_name and container_name and imageDims and image_base64):
@@ -352,11 +364,11 @@ async def inference_request():
         cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
-        container_client = await azure_storage_api.mount_container(
-            blob_service_client, container_name, create_container=True
+        container_client = await azure_storage.mount_container(
+            CONNECTION_STRING, container_name, create_container=True
         )
-        hash_value = await azure_storage_api.generate_hash(image_bytes)
-        await azure_storage_api.upload_image(
+        hash_value = await azure_storage.generate_hash(image_bytes)
+        await azure_storage.upload_image(
             container_client, folder_name, image_bytes, hash_value
         )
 
@@ -378,7 +390,7 @@ async def inference_request():
 
         # upload the inference results to the user's container as async task
         app.add_background_task(
-            azure_storage_api.upload_inference_result,
+            azure_storage.upload_inference_result,
             container_client,
             folder_name,
             result_json_string,
@@ -388,10 +400,50 @@ async def inference_request():
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
         return jsonify(processed_result_json), 200
 
-    except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage_api.MountContainerError) as error:
+    except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
 
+@app.get("/picture-form")
+async def get_picture_form_info():
+    """
+    Retrieves the names of seeds from the database and returns them as a JSON
+    response.
+
+    Returns:
+        A JSON response containing the names of seeds.
+
+    Raises:
+        APIErrors: If there is an error while retrieving the seeds names from
+        the database.
+    """
+    try:
+        seeds_names = datastore.get_all_seeds_names()
+        return jsonify(seeds_names), 200
+    except datastore.DatastoreError as error:
+        return jsonify([error.args[0]]), 400
+
+@app.put("/upload-pictures")
+async def picture_batch_import():
+    """
+    This function handles the batch import of pictures.
+
+    It performs the following steps:
+    1. Uploads and chunks the file.
+    2. Reconstructs the file and extracts data.
+    3. Validates and uploads the data.
+
+    Returns:
+    - If successful, returns a JSON response with the picture ID and a status code of 200.
+    - If an error occurs, returns a JSON response with the error message and a status code of 400.
+    """
+    try:
+        temp_files = await upload_and_chunk_file(request)
+        email, picture_set, data = reconstruct_file_and_extract_data(temp_files)
+        picture_id = validate_and_upload_data(email, picture_set, data)
+        return jsonify([picture_id]), 200
+    except APIErrors as error:
+        return jsonify([error.args[0]]), 400
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -428,6 +480,17 @@ async def get_model_endpoints_metadata():
         return jsonify("Error retrieving model endpoints metadata.", 404)
 
 
+@app.get("/seeds")
+async def get_seeds():
+    """
+    Returns JSON containing the model seeds metadata
+    """
+    seeds = datastore.get_all_seeds()
+    if seeds:
+        return jsonify(seeds), 200
+    else:
+        return jsonify("Error retrieving seeds", 404)
+
 @app.get("/health")
 async def health():
     return "ok", 200
@@ -457,12 +520,72 @@ async def test():
 
     return CACHE["endpoints"], 200
 
-  
+
 async def record_model(pipeline: namedtuple, result: list):
     new_entry = [{"name": model.name, "version": model.version} for model in pipeline]
     result[0]["models"] = new_entry
     return json.dumps(result, indent=4)
 
+async def upload_and_chunk_file(request):
+    """
+    Uploads a file and chunks it into smaller parts.
+
+    Args:
+        request: The request object containing the file to be uploaded.
+
+    Returns:
+        A list of file paths representing the chunks of the uploaded file.
+    """
+    temp_dir = tempfile.TemporaryDirectory()
+    async with request.stream() as upload_stream:
+        chunk_filename = os.path.join(temp_dir.name, f"chunck_{len(temp_dir.files)}")
+        with open(chunk_filename, "wb") as chunk_file:
+            async for chunk in upload_stream:
+                chunk_file.write(chunk)
+    return temp_dir.files
+
+def reconstruct_file_and_extract_data(temp_files):
+    """
+    Reconstructs a file from multiple chunks and extracts data from it.
+
+    Args:
+        temp_files (list): A list of file paths to the temporary chunk files.
+
+    Returns:
+        tuple: A tuple containing the extracted email, picture_set, and the original data.
+    """
+    full_file = b''
+    for chunk_filename in temp_files:
+        with open(chunk_filename, "rb") as chunk_file:
+            full_file += chunk_file.read()
+    data = json.loads(full_file)
+    email = data.get("email")
+    picture_set = data.get("picture_set")
+    return email, picture_set, data
+
+def validate_and_upload_data(email, picture_set, data):
+    """
+    Validates the input parameters and uploads the picture set data to the database.
+
+    Args:
+        email (str): The user's email address.
+        picture_set (list): The list of pictures in the picture set.
+        data (dict): Additional data for the picture set.
+
+    Returns:
+        int: The ID of the uploaded picture set.
+
+    Raises:
+        EmailNotSendError: If the user email is not provided.
+        EmptyPictureSetError: If no picture set is provided.
+    """
+    if email is None:
+        raise EmailNotSendError("the user email is not provided")
+    if not picture_set:
+        raise EmptyPictureSetError("no picture set provided")
+    user_id = datastore.validate_user(email)
+    picture_id = datastore.upload_picture_set(user_id=user_id, **data)
+    return picture_id
 
 async def fetch_json(repo_URL, key, file_path):
     """
@@ -484,19 +607,14 @@ async def fetch_json(repo_URL, key, file_path):
         return result_json
 
 
-async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
+async def get_pipelines(cipher_suite):
     """
     Retrieves the pipelines from the Azure storage API.
 
     Returns:
     - list: A list of dictionaries representing the pipelines.
     """
-    try:
-        app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
-        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
-    except (azure_storage_api.AzureAPIErrors) as error:
-        print(error)
-        raise ServerError("server errror: could not retrieve the pipelines") from error
+    result_json = await datastore.get_pipelines()
 
     models = ()
     for model in result_json.get("models"):

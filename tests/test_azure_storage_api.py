@@ -2,7 +2,7 @@ import json
 import unittest
 import asyncio
 from unittest.mock import patch, Mock, MagicMock
-from azure_storage.azure_storage_api import (
+from storage.azure_storage_api import (
     mount_container,
     get_blob,
     get_pipeline_info,
