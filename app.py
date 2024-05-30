@@ -185,6 +185,23 @@ async def before_serving():
         raise
 
 
+@app.get("/get-user-id")
+async def get_user_id() :
+    """
+    Returns the user id
+    """
+    try:
+        data = await request.get_json()
+        email = data["email"]
+        
+        user_id = datastore.get_user_id(email)
+        
+        return jsonify(user_id), 200
+    except (KeyError, TypeError, ValueError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"GetUserIdError: {str(error)}"]), 400
+
+
 @app.post("/del")
 async def delete_directory():
     """
@@ -342,8 +359,7 @@ async def inference_request():
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
-        #user_id = data.get["user_id"]
-        email = "example@gmail.com"
+        user_id = data["userId"]
         
         area_ratio = data.get("area_ratio", 0.5)
         color_format = data.get("color_format", "hex")
@@ -377,12 +393,10 @@ async def inference_request():
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
-        
-        user = await datastore.validate_user(cursor, email, CONNECTION_STRING)
 
         image_hash_value = await azure_storage.generate_hash(image_bytes)
         picture_id = await datastore.get_picture_id(
-            cursor, user.id, image_hash_value, container_client
+            cursor, user_id, image_hash_value, container_client
         )
         
         pipeline = pipelines_endpoints.get(pipeline_name)
@@ -409,7 +423,7 @@ async def inference_request():
             result_json_string,
             image_hash_value,
         )
-        saved_result_json = await datastore.save_inference_result(cursor, user.id, processed_result_json[0], picture_id, pipeline_name, 1)
+        saved_result_json = await datastore.save_inference_result(cursor, user_id, processed_result_json[0], picture_id, pipeline_name, 1)
         
         datastore.end_query(connection, cursor)
         

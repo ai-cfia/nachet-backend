@@ -24,6 +24,9 @@ class SeedNotFoundError(DatastoreError):
 class GetPipelinesError(DatastoreError):
     pass
 
+class UserNotFoundError(DatastoreError):
+    pass
+
 def get_connection() :
     return db.connect_db()
 
@@ -58,7 +61,6 @@ def get_all_seeds_names() -> list:
     except Exception as error: # TODO modify Exception for more specific exception
         raise SeedNotFoundError(error.args[0])
 
-
 def get_seeds(expression: str) -> list:
     """
     Return a list of all seed that contains the expression
@@ -67,7 +69,17 @@ def get_seeds(expression: str) -> list:
     cursor = get_cursor(connection)
     return list(filter(lambda x: expression in x, get_all_seeds_names(cursor)))
 
-
+def get_user_id(email: str) -> str:
+    """
+    Return the user_id of the user
+    """
+    connection = get_connection()
+    cursor = get_cursor(connection)
+    if user_datastore.is_user_registered(cursor, email):
+        return user_datastore.get_user_id(cursor, email)
+    else :
+        raise UserNotFoundError("User not found")
+                                      
 async def validate_user(cursor, email: str, connection_string) -> datastore.User:
     """
     Return True if user is valid, False otherwise
