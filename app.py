@@ -342,7 +342,7 @@ async def inference_request():
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
-        #email = data.get["email"]
+        #user_id = data.get["user_id"]
         email = "example@gmail.com"
         
         area_ratio = data.get("area_ratio", 0.5)
@@ -374,11 +374,15 @@ async def inference_request():
             CONNECTION_STRING, container_name, create_container=True
         )
         
-        user_id = await datastore.validate_user(email, CONNECTION_STRING)
+        # Open db connection
+        connection = datastore.get_connection()
+        cursor = datastore.get_cursor(connection)
+        
+        user = await datastore.validate_user(cursor, email, CONNECTION_STRING)
 
         image_hash_value = await azure_storage.generate_hash(image_bytes)
         picture_id = await datastore.get_picture_id(
-            user_id, image_hash_value, container_client
+            cursor, user.id, image_hash_value, container_client
         )
         
         pipeline = pipelines_endpoints.get(pipeline_name)
@@ -405,7 +409,9 @@ async def inference_request():
             result_json_string,
             image_hash_value,
         )
-        saved_result_json = await datastore.save_inference_result(container_name, processed_result_json[0], picture_id, pipeline_name, 1)
+        saved_result_json = await datastore.save_inference_result(cursor, user.id, processed_result_json[0], picture_id, pipeline_name, 1)
+        
+        datastore.end_query(connection, cursor)
         
         # return the inference results to the client
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
