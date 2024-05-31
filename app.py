@@ -7,8 +7,6 @@ import io
 import magic
 import time
 import warnings
-import model.inference as inference
-import storage.datastore_storage_api as datastore
 
 from PIL import Image
 from datetime import date
@@ -17,11 +15,14 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
-from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
-from model import request_function
-from datastore import azure_storage
 
-load_dotenv()
+load_dotenv() # noqa: E402
+
+import model.inference as inference # noqa: E402
+import storage.datastore_storage_api as datastore # noqa: E402
+from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError # noqa: E402
+from model import request_function # noqa: E402
+from datastore import azure_storage # noqa: E402
 
 
 class APIErrors(Exception):
