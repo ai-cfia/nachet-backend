@@ -7,8 +7,6 @@ import io
 import magic
 import time
 import warnings
-import model.inference as inference
-import storage.datastore_storage_api as datastore
 
 from PIL import Image
 from datetime import date
@@ -17,11 +15,14 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
+
+load_dotenv() # noqa: E402
+
+import model.inference as inference
+import storage.datastore_storage_api as datastore
 from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
 from model import request_function
 from datastore import azure_storage
-
-load_dotenv()
 
 
 class APIErrors(Exception):
@@ -484,6 +485,59 @@ async def get_seeds():
     else:
         return jsonify("Error retrieving seeds", 404)
 
+
+@app.post("/feedback-positive")
+async def feedback_positive():
+    """
+    Receives inference feedback from the user and stores it in the database.
+    --> Perfect Inference Feedback :
+            - send the user_id and the inference_id to the datastore so the inference will be verified and not modified
+ Params :
+    - user_id : the user id that send the feedback
+    - inference_id : the inference id that the user want to modify
+    - boxes_id : the boxes id that the user want to modify
+    """
+    try:
+        data = await request.get_json()
+        user_id = data["userId"]
+        inference_id = data["inferenceId"]
+        boxes_id = data["boxes"][0] #?? --> c¸récupère {boxID} comment le transformer juste en liste
+        #number of boxe ?
+        if inference_id and user_id and boxes_id:
+            await datastore.save_perfect_feedback(inference_id, user_id, boxes_id)
+            return jsonify([True]), 200
+        else:
+            raise APIErrors("missing argument(s)")
+    except (KeyError, TypeError, APIErrors) as error:
+        return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
+
+@app.post("/feedback-negative")
+async def feedback_negative():
+    """
+    Receives inference feedback from the user and stores it in the database.
+    --> Annoted Inference Feedback :
+            - send the user_id and the inference_id to the datastore so the inference will be verified
+            - also send the feedback to the datastore to modified the inference
+        
+    Params :
+    - inference_feedback : correction of the inference from the user if not a perfect inference
+    - user_id : the user id that send the feedback
+    - inference_id : the inference id that the user want to modify
+    - boxes_id : the boxes id that the user want to modify
+    """
+    try:
+        data = await request.get_json()
+        inference_feedback = data["inferenceFeedback"]
+        user_id = data["userId"]
+        inference_id = data["inferenceId"]
+        boxes_id = data["boxes"][0] #?? --> c¸récupère {boxID} comment le transformer juste en liste
+        #number of boxe ?
+        if inference_id and user_id and boxes_id and inference_feedback :
+            await datastore.save_annoted_feedback(inference_id, user_id, boxes_id, inference_feedback)
+        else:
+            raise APIErrors("missing argument(s)")
+    except (KeyError, TypeError, APIErrors) as error:
+        return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
 
 @app.get("/health")
 async def health():
