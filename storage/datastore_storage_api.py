@@ -117,10 +117,6 @@ async def get_pipelines() -> list:
         raise GetPipelinesError(error.args[0])
 
 async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
-    nb_object = int(inference_dict["totalBoxes"])
-    for box_index in range(nb_object):
-        print(inference_dict["boxes"][box_index]["label"])
-    print(get_all_seeds())
     return await datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
 
 async def save_perfect_feedback(inference_id:str, user_id:str):

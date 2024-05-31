@@ -169,7 +169,6 @@ async def before_serving():
         # Store the seeds names and ml structure in CACHE
         CACHE["seeds"] = datastore.get_all_seeds_names() 
         seeds = datastore.get_all_seeds()
-        print(jsonify(seeds))
         CACHE["endpoints"] = await get_pipelines()
         
         print(
@@ -398,6 +397,8 @@ async def inference_request():
         picture_id = await datastore.get_picture_id(
             cursor, user_id, image_hash_value, container_client
         )
+        # Close connection
+        datastore.end_query(connection, cursor)
         
         pipeline = pipelines_endpoints.get(pipeline_name)
 
@@ -423,8 +424,14 @@ async def inference_request():
             result_json_string,
             image_hash_value,
         )
+        
+        # Open db connection
+        connection = datastore.get_connection()
+        cursor = datastore.get_cursor(connection)
+        
         saved_result_json = await datastore.save_inference_result(cursor, user_id, processed_result_json[0], picture_id, pipeline_name, 1)
         
+        # Close connection
         datastore.end_query(connection, cursor)
         
         # return the inference results to the client
@@ -434,47 +441,6 @@ async def inference_request():
     except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
-
-@app.get("/picture-form")
-async def get_picture_form_info():
-    """
-    Retrieves the names of seeds from the database and returns them as a JSON
-    response.
-
-    Returns:
-        A JSON response containing the names of seeds.
-
-    Raises:
-        APIErrors: If there is an error while retrieving the seeds names from
-        the database.
-    """
-    try:
-        seeds_names = datastore.get_all_seeds_names()
-        return jsonify(seeds_names), 200
-    except datastore.DatastoreError as error:
-        return jsonify([error.args[0]]), 400
-
-@app.put("/upload-pictures")
-async def picture_batch_import():
-    """
-    This function handles the batch import of pictures.
-
-    It performs the following steps:
-    1. Uploads and chunks the file.
-    2. Reconstructs the file and extracts data.
-    3. Validates and uploads the data.
-
-    Returns:
-    - If successful, returns a JSON response with the picture ID and a status code of 200.
-    - If an error occurs, returns a JSON response with the error message and a status code of 400.
-    """
-    try:
-        temp_files = await upload_and_chunk_file(request)
-        email, picture_set, data = reconstruct_file_and_extract_data(temp_files)
-        picture_id = validate_and_upload_data(email, picture_set, data)
-        return jsonify([picture_id]), 200
-    except APIErrors as error:
-        return jsonify([error.args[0]]), 400
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -517,7 +483,6 @@ async def get_seeds():
     Returns JSON containing the model seeds metadata
     """
     seeds = await datastore.get_all_seeds()
-    print(jsonify(seeds))
     if seeds :
         return jsonify(seeds), 200
     else:
@@ -558,69 +523,6 @@ async def record_model(pipeline: namedtuple, result: list):
     new_entry = [{"name": model.name, "version": model.version} for model in pipeline]
     result[0]["models"] = new_entry
     return json.dumps(result, indent=4)
-
-async def upload_and_chunk_file(request):
-    """
-    Uploads a file and chunks it into smaller parts.
-
-    Args:
-        request: The request object containing the file to be uploaded.
-
-    Returns:
-        A list of file paths representing the chunks of the uploaded file.
-    """
-    temp_dir = tempfile.TemporaryDirectory()
-    
-    upload_stream = await request.stream()    
-    chunk_filename = os.path.join(temp_dir.name, f"chunk_{len(os.listdir(temp_dir.name))}")
-    with open(chunk_filename, "wb") as chunk_file:
-        async for chunk in upload_stream:
-            chunk_file.write(chunk)
-
-    return [os.path.join(temp_dir.name, f) for f in os.listdir(temp_dir.name)]
-
-def reconstruct_file_and_extract_data(temp_files):
-    """
-    Reconstructs a file from multiple chunks and extracts data from it.
-
-    Args:
-        temp_files (list): A list of file paths to the temporary chunk files.
-
-    Returns:
-        tuple: A tuple containing the extracted email, picture_set, and the original data.
-    """
-    full_file = b''
-    for chunk_filename in temp_files:
-        with open(chunk_filename, "rb") as chunk_file:
-            full_file += chunk_file.read()
-    data = json.loads(full_file)
-    email = data.get("email")
-    picture_set = data.get("picture_set")
-    return email, picture_set, data
-
-def validate_and_upload_data(email, picture_set, data):
-    """
-    Validates the input parameters and uploads the picture set data to the database.
-
-    Args:
-        email (str): The user's email address.
-        picture_set (list): The list of pictures in the picture set.
-        data (dict): Additional data for the picture set.
-
-    Returns:
-        int: The ID of the uploaded picture set.
-
-    Raises:
-        EmailNotSendError: If the user email is not provided.
-        EmptyPictureSetError: If no picture set is provided.
-    """
-    if email is None:
-        raise EmailNotSendError("the user email is not provided")
-    if not picture_set:
-        raise EmptyPictureSetError("no picture set provided")
-    user_id = datastore.validate_user(email)
-    picture_id = datastore.upload_picture_set(user_id=user_id, **data)
-    return picture_id
 
 async def fetch_json(repo_URL, key, file_path):
     """
