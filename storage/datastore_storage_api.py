@@ -9,14 +9,9 @@ import datastore.bin.deployment_mass_import
 
 import datastore.bin.upload_picture_set
 import datastore.db.queries.seed as seed_queries
-import datastore.db.queries.machine_learning as ml_queries
-# import datastore.db.queries.user as user_queries
-# import datastore.db.queries.picture as picture_queries
-
 
 class DatastoreError(Exception):
     pass
-
 
 class SeedNotFoundError(DatastoreError):
     pass
@@ -130,4 +125,3 @@ async def save_annoted_feedback(inference_id:str, user_id:str, inference_feedbac
     connection = get_connection()
     cursor = get_cursor(connection)
     await datastore.register_annoted_inference_feeback(inference_id, user_id, inference_feedback, cursor)
-    

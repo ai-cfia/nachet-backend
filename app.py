@@ -1,4 +1,3 @@
-from unittest.main import MODULE_EXAMPLES
 import urllib.request
 import json
 import os
@@ -8,7 +7,8 @@ import io
 import magic
 import time
 import warnings
-import tempfile
+import model.inference as inference
+import storage.datastore_storage_api as datastore
 
 from PIL import Image
 from datetime import date
@@ -17,15 +17,12 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
+from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
+from model import request_function
+from datastore import azure_storage
 
 load_dotenv()
 
-from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError
-import model.inference as inference
-from model import request_function
-import storage.datastore_storage_api as datastore
-from datastore import azure_storage
-from storage import azure_storage_api as old_azure_storage_api
 
 class APIErrors(Exception):
     pass
@@ -168,7 +165,6 @@ async def before_serving():
 
         # Store the seeds names and ml structure in CACHE
         CACHE["seeds"] = datastore.get_all_seeds_names() 
-        seeds = datastore.get_all_seeds()
         CACHE["endpoints"] = await get_pipelines()
         
         print(
