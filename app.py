@@ -501,9 +501,10 @@ async def feedback_positive():
         data = await request.get_json()
         user_id = data["userId"]
         inference_id = data["inferenceId"]
-        boxes_id = data["boxes"][0] #?? --> c¸récupère {boxID} comment le transformer juste en liste
+        boxes_id = data["boxes"]
         #number of boxe ?
         if inference_id and user_id and boxes_id:
+            print(user_id, inference_id, boxes_id)
             await datastore.save_perfect_feedback(inference_id, user_id, boxes_id)
             return jsonify([True]), 200
         else:
