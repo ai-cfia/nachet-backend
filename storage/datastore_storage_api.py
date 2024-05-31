@@ -1,7 +1,6 @@
 """
 This module provide an absraction to the nachet-datastore interface.
 """
-from hmac import new
 import datastore
 from datastore import db
 from datastore import user as user_datastore
