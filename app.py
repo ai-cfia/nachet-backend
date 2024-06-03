@@ -504,8 +504,10 @@ async def feedback_positive():
         boxes_id = data["boxes"]
         #number of boxe ?
         if inference_id and user_id and boxes_id:
-            print(user_id, inference_id, boxes_id)
-            await datastore.save_perfect_feedback(inference_id, user_id, boxes_id)
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+            await datastore.save_perfect_feedback(cursor, inference_id, user_id, boxes_id)
+            datastore.end_query(connection, cursor)
             return jsonify([True]), 200
         else:
             raise APIErrors("missing argument(s)")
@@ -532,7 +534,11 @@ async def feedback_negative():
         inference_id = data["inferenceId"]
         boxes = data["boxes"]
         if inference_id and user_id and boxes :
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
             await datastore.save_annoted_feedback(inference_id, user_id, boxes)
+            datastore.end_query(connection, cursor)
+            return jsonify([True]), 200
         else:
             raise APIErrors("missing argument(s)")
     except (KeyError, TypeError, APIErrors) as error:
