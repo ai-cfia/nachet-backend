@@ -528,13 +528,11 @@ async def feedback_negative():
     """
     try:
         data = await request.get_json()
-        inference_feedback = data["inferenceFeedback"]
         user_id = data["userId"]
         inference_id = data["inferenceId"]
-        boxes_id = data["boxes"][0] #?? --> c¸récupère {boxID} comment le transformer juste en liste
-        #number of boxe ?
-        if inference_id and user_id and boxes_id and inference_feedback :
-            await datastore.save_annoted_feedback(inference_id, user_id, boxes_id, inference_feedback)
+        boxes = data["boxes"]
+        if inference_id and user_id and boxes :
+            await datastore.save_annoted_feedback(inference_id, user_id, boxes)
         else:
             raise APIErrors("missing argument(s)")
     except (KeyError, TypeError, APIErrors) as error:

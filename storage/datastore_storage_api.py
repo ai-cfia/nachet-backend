@@ -113,14 +113,12 @@ async def get_pipelines() -> list:
 async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
     return await datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
 
-async def save_perfect_feedback(inference_id:str, user_id:str, boxes_id):
-    # peut-être --> user_id = user.get_user_id(cursor, email) (genre j'ai l'email et pas le id direct)
+async def save_perfect_feedback(inference_id:str, user_id:str, boxes):
     connection = get_connection()
     cursor = get_cursor(connection)
-    await datastore.register_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
+    await datastore.register_perfect_inference_feeback(cursor, inference_id, user_id, boxes)
     
-async def save_annoted_feedback(inference_id:str, user_id:str, inference_feedback:dict):
-    # peut-être --> user_id = user.get_user_id(cursor, email) (genre j'ai l'email et pas le id direct)
+async def save_annoted_feedback(inference_id:str, user_id:str, boxes):
     connection = get_connection()
     cursor = get_cursor(connection)
-    await datastore.register_annoted_inference_feeback(inference_id, user_id, inference_feedback, cursor)
+    await datastore.register_annoted_inference_feeback(cursor, inference_id, user_id, boxes)
