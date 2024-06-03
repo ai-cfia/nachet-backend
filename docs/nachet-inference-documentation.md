@@ -177,8 +177,10 @@ in the pipeline. Each model specifies their `request_function` (how to call and
 retrieve data) and whether they have a `process_inference` function. Based on
 these indications, the results are returned and stored in the cache.
 
-If no other model is called, the last result is then processed and register by the datastore. The inferences are saved so the users could give feedback for training and statistics purposes.
-The inference result is then sent to the frontend.
+If no other model is called, the last result is then processed and register by
+the datastore. The inferences are saved so the users could give feedback for
+training and statistics purposes. The inference result is then sent to the
+frontend.
 
 ### Input and Output for inference request
 
@@ -218,7 +220,8 @@ The inference request will return a list with the following information:
 |bottomX | 2 | The bottom x value of the box around a seed|
 |bottomY| 2 | The bottom y value of the box around a seed|
 
-*for more look at [nachet-model-documentation](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-model-documentation.md#return-value-of-models)*
+*for more look at
+[nachet-model-documentation](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-model-documentation.md#return-value-of-models)*
 
 **topN** contains the top 5 predictions of the models:
 
@@ -255,9 +258,9 @@ The inference request will return a list with the following information:
 ### Blob storage and Pipeline versioning
 
 To keep track of the various pipeline iterations and versions, JSON files are
-stored in the blob storage. Users can add the JSON to the blob storage
-using the `pipelines_version_insertion.py` script. This allows for easy
-management of model and pipeline history.
+stored in the blob storage. Users can add the JSON to the blob storage using the
+`pipelines_version_insertion.py` script. This allows for easy management of
+model and pipeline history.
 
 To use the script, 3 environment variables are necessary:
 
@@ -266,16 +269,19 @@ To use the script, 3 environment variables are necessary:
 * NACHET_BLOB_PIPELINE_VERSION
   * Containing the version the user wants to select
 * NACHET_BLOB_PIPELINE_DECRYPTION_KEY
-  * The key to decrypt sensible data such as the API key and the endpoint of a model.
+  * The key to decrypt sensible data such as the API key and the endpoint of a
+    model.
 
 #### In the code
 
-In the backend, the pipelines are retrieved using the `get_pipelines` function which call the get_ml_structure of the datastore.
-This function retrieves the data from the database. Then the pipelines are stored in
-the `CACHE["endpoint"]` variable. This is the variable that feeds the `models`
-information and metadata to the frontend.
+In the backend, the pipelines are retrieved using the `get_pipelines` function
+which call the get_ml_structure of the datastore. This function retrieves the
+data from the database. Then the pipelines are stored in the `CACHE["endpoint"]`
+variable. This is the variable that feeds the `models` information and metadata
+to the frontend.
 
 In the `app.py`
+
 ```python
 async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
     """
@@ -310,6 +316,7 @@ async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
 ```
 
 Then in the datastore module that call the datastore repo
+
 ```python
 async def get_pipelines() -> list:
 
