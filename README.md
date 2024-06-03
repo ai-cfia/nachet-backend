@@ -55,7 +55,7 @@ If you want to run the program as a Docker container (e.g., for production), use
 
 ```bash
 docker build -t nachet-backend .
-docker run -p 8080:8080 -v $(pwd):/app nachet-backend
+docker run -p 8080:8080 -e PORT=8080 -v $(pwd):/app nachet-backend
 ```
 
 ### TESTING NACHET-BACKEND
