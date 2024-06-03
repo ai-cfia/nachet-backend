@@ -80,15 +80,19 @@ sequenceDiagram
     Note over Backend,Datastore: end of initialisation
 
     Client->>+Frontend: applicationStart()
-    Frontend-)Backend: HTTP POST req.
+    Frontend-)Backend: HTTP GET req. "/model-endpoints-metadata"
     Backend-)Backend: get_model_endpoints_metadata()
     Backend--)Frontend: Pipelines names res.
     Note left of Backend: return pipelines names and metadata
+    Frontend-)Backend: HTTP GET req. "/get-user-id"
+    Backend-)Backend: get_user_id()
+    Backend--)Frontend: user_id
+    Note left of Backend: return user_id from given email
 
     Frontend->>Client: application is ready
     Client-->>Frontend: client ask action from specific pipeline
-    Frontend-)Backend: HTTP POST req.
-    Backend-)Backend: inference_request(pipeline_name, folder_name, container_name, imageDims, image)
+    Frontend-)Backend: HTTP POST req. "/inf"
+    Backend-)Backend: inference_request(model_name, validator, folder_name, container_name, imageDims, image, userId)
     alt missing arguments
     Backend-)Frontend: Error 400 missing arguments
     end
@@ -104,16 +108,26 @@ sequenceDiagram
     Blob storage--)-Datastore: container_client
     Datastore--)-Backend: container_client
 
+    Note over Backend,Datastore: Open db connection
+    Backend-)+Datastore: get_connection()
+    Datastore--)-Backend: connection
+    Backend-)+Datastore: get_cursor(connection)
+    Datastore--)-Backend: cursor
+
+    Note over Backend,Datastore: Send picture to the datastore to upload it
     Backend-)Datastore: Generate Hash(image_bytes)
 
-    Backend-)+Datastore: upload_image(container_client, folder_name, image_bytes, hash_value)
+    Backend-)+Datastore: upload_picture(cursor, user_id, image_hash_value, container_client)
     Datastore-)+Blob storage: HTTP POST req.
-    Blob storage--)-Datastore: blob_name
-    Datastore--)-Backend: blob_name
+    Blob storage--)-Datastore: picture_id
+    Datastore--)-Backend: picture_id
+
+    Note over Backend,Datastore:Commit query and close db connection
+    Backend-)Datastore: end_query()
 
     loop for every model in pipeline
-        Backend-)Backend: model.entry_function(model, previous_result)
-        note over Backend, Blob storage: Every model has is own entry_function
+        Backend-)Backend: model.request_function(model, previous_result)
+        note over Backend, Blob storage: Every model has is own request_function
         Backend-)Backend: request_factory(previous_result, model)
         Backend-)Backend: urllib.request.Request(endpoint_url, body, header)
         Backend-)+Model: HTTP POST req.
@@ -123,15 +137,27 @@ sequenceDiagram
         end
     end
     note over Backend, Blob storage: End of the loop
-    par Backend to Frontend
-        Backend-)Backend: inference.process_inference_results(result_json, imageDims)
-        Backend--)Frontend: Processed result res.
-        Frontend--)-Client: display result
-    and Backend to Blob storage
-        note over Backend, Blob storage: record the result produced by the model
-        Backend-)Backend: upload_inference_result(container_client, folder_name, result_json_string, hash_value)
-        Backend-)-Blob storage: HTTP POST req.
-    end
+    
+    Backend-)Backend: inference.process_inference_results(result_json, imageDims)
+    
+    note over Backend, Blob storage: record the result produced by the model
+    Backend-)Backend: upload_inference_result(container_client, folder_name, result_json_string, hash_value)
+    Backend-)-Blob storage: HTTP POST req.
+
+    Note over Backend,Datastore: Open db connection
+    Backend-)+Datastore: get_connection()
+    Datastore--)-Backend: connection
+    Backend-)+Datastore: get_cursor(connection)
+    Datastore--)-Backend: cursor
+    note over Backend, Datastore : send inference result to datastore to save it
+    Backend-)+Datastore : register_inference_result(cursor, user_id,processed_result_json, picture_id, pipeline_name)
+    Datastore--)-Backend :save_result_json
+    Note over Backend,Datastore:Commit query and close db connection
+    Backend-)Datastore: end_query()
+
+    Backend--)Frontend: Send the saved result
+    Frontend--)-Client: display result
+    
 ```
 
 ![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
@@ -147,11 +173,14 @@ and if the image sent for analysis has a valid header.
 
 If all the above checks pass, the function initializes or finds the user blob
 container and uploads the image. Next, it requests an inference from every model
-in the pipeline. Each model specifies their `entry_function` (how to call and
+in the pipeline. Each model specifies their `request_function` (how to call and
 retrieve data) and whether they have a `process_inference` function. Based on
 these indications, the results are returned and stored in the cache.
 
-If no other model is called, the last result is then processed and sent to the frontend.
+If no other model is called, the last result is then processed and register by
+the datastore. The inferences are saved so the users could give feedback for
+training and statistics purposes. The inference result is then sent to the
+frontend.
 
 ### Input and Output for inference request
 
@@ -164,6 +193,7 @@ The inference request will process the following parameters:
 |container_name | The user's container|
 |imageDims | The dimension of the image|
 |image | The image encoded in b64 (ASCII)|
+|userId | The user's id in db
 
 Note that since the information is received from the frontend, the model_name is
 an abstraction for a pipeline.
@@ -171,14 +201,18 @@ an abstraction for a pipeline.
 The inference request will return a list with the following information:
 |key parameters | hierarchy Levels | Return Value |
 |--|--|--|
-|Filename| 0 | Contains the filename of the image|
 |Boxes | 0 | Contains all the boxes returned by the inference request|
+|Filename| 0 | Contains the filename of the image|
+|inference_id| 0 | Inference id after it has been saved in the database|
 |labelOccurence | 0 | Contains the number of label occurence|
 |totalBoxes | 0 | Boxes total number|
+|models | 0 | Models of the pipeline|
 |Box | 1 | Contains all the information of one seed in the image|
+|box_id | 1 | box id after it has been saved in the database|
 |label | 1 | Contains the top label for the seed|
 |score | 1 | Contains the top score for the seed|
 |topN | 1 | Contains the top N scores for the seed|
+|top_id | 1 | id of the top result|
 |overlapping | 1 | Contains a boolean to tell if the box overlap with another one|
 |overlappingIndices | 1 | Contains the index of the overlapping box|
 |topX | 2 | The top x value of the box around a seed|
@@ -186,7 +220,8 @@ The inference request will return a list with the following information:
 |bottomX | 2 | The bottom x value of the box around a seed|
 |bottomY| 2 | The bottom y value of the box around a seed|
 
-*for more look at [nachet-model-documentation](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-model-documentation.md#return-value-of-models)*
+*for more look at
+[nachet-model-documentation](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-model-documentation.md#return-value-of-models)*
 
 **topN** contains the top 5 predictions of the models:
 
@@ -194,22 +229,27 @@ The inference request will return a list with the following information:
 "topN": [
     {
         "label": "seed_name",
+        "object_id":"xxxx-xxxx-xxxx",
         "score": 0.75
     }
     {
         "label": "seed_name",
+        "object_id":"xxxx-xxxx-xxxx",
         "score": 0.18
     }
     {
         "label": "seed_name",
+        "object_id":"xxxx-xxxx-xxxx",
         "score": 0.05
     }
     {
         "label": "seed_name",
+        "object_id":"xxxx-xxxx-xxxx",
         "score": 0.019
     }
     {
         "label": "seed_name",
+        "object_id":"xxxx-xxxx-xxxx",
         "score": 0.001
     }
 ]
@@ -218,9 +258,9 @@ The inference request will return a list with the following information:
 ### Blob storage and Pipeline versioning
 
 To keep track of the various pipeline iterations and versions, JSON files are
-stored in the blob storage. Users can add the JSON to the blob storage
-using the `pipelines_version_insertion.py` script. This allows for easy
-management of model and pipeline history.
+stored in the blob storage. Users can add the JSON to the blob storage using the
+`pipelines_version_insertion.py` script. This allows for easy management of
+model and pipeline history.
 
 To use the script, 3 environment variables are necessary:
 
@@ -229,35 +269,35 @@ To use the script, 3 environment variables are necessary:
 * NACHET_BLOB_PIPELINE_VERSION
   * Containing the version the user wants to select
 * NACHET_BLOB_PIPELINE_DECRYPTION_KEY
-  * The key to decrypt sensible data such as the API key and the endpoint of a model.
+  * The key to decrypt sensible data such as the API key and the endpoint of a
+    model.
 
 #### In the code
 
-In the backend, the pipelines are retrieved using the `get_pipelines` function.
-This function retrieves the data from the blob storage and stores the pipeline in
-the `CACHE["endpoint"]` variable. This is the variable that feeds the `models`
-information and metadata to the frontend.
+In the backend, the pipelines are retrieved using the `get_pipelines` function
+which call the get_ml_structure of the datastore. This function retrieves the
+data from the database. Then the pipelines are stored in the `CACHE["endpoint"]`
+variable. This is the variable that feeds the `models` information and metadata
+to the frontend.
+
+In the `app.py`
 
 ```python
-async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version, cipher_suite):
+async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
     """
     Retrieves the pipelines from the Azure storage API.
 
     Returns:
     - list: A list of dictionaries representing the pipelines.
     """
-    try:
-        app.config["BLOB_CLIENT"] = await azure_storage_api.get_blob_client(connection_string)
-        result_json = await azure_storage_api.get_pipeline_info(app.config["BLOB_CLIENT"], pipeline_blob_name, pipeline_version)
-    except (azure_storage_api.AzureAPIErrors) as error:
-        print(error)
-        raise ServerError("server errror: could not retrieve the pipelines") from error
+    result_json = await datastore.get_pipelines()
 
     models = ()
     for model in result_json.get("models"):
         m = Model(
-            request_function.get(model.get("api_call_function")),
+            request_function.get(model.get("model_name")),
             model.get("model_name"),
+            model.get("version"),
             # To protect sensible data (API key and model endpoint), we encrypt it when
             # it's pushed into the blob storage. Once we retrieve the data here in the
             # backend, we need to decrypt the byte format to recover the original
@@ -273,6 +313,24 @@ async def get_pipelines(connection_string, pipeline_blob_name, pipeline_version,
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
 
     return result_json.get("pipelines")
+```
+
+Then in the datastore module that call the datastore repo
+
+```python
+async def get_pipelines() -> list:
+
+    """
+    Retrieves the pipelines from the Datastore
+    """
+    try:
+        connection = get_connection()
+        cursor = get_cursor(connection)
+        pipelines = await datastore.get_ml_structure(cursor)
+        return pipelines
+    except Exception as error: # TODO modify Exception for more specific exception
+        raise GetPipelinesError(error.args[0])
+
 ```
 
 ### Available Version of the JSON file
