@@ -501,8 +501,7 @@ async def feedback_positive():
         data = await request.get_json()
         user_id = data["userId"]
         inference_id = data["inferenceId"]
-        boxes_id = data["boxes"][0] #?? --> c¸récupère {boxID} comment le transformer juste en liste
-        #number of boxe ?
+        boxes_id = data["boxes"][0]
         if inference_id and user_id and boxes_id:
             await datastore.save_perfect_feedback(inference_id, user_id, boxes_id)
             return jsonify([True]), 200
@@ -530,8 +529,7 @@ async def feedback_negative():
         inference_feedback = data["inferenceFeedback"]
         user_id = data["userId"]
         inference_id = data["inferenceId"]
-        boxes_id = data["boxes"][0] #?? --> c¸récupère {boxID} comment le transformer juste en liste
-        #number of boxe ?
+        boxes_id = data["boxes"][0]
         if inference_id and user_id and boxes_id and inference_feedback :
             await datastore.save_annoted_feedback(inference_id, user_id, boxes_id, inference_feedback)
         else:
