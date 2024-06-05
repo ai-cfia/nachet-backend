@@ -92,10 +92,10 @@ async def get_picture_id(cursor, user_id, image_hash_value, container_client) :
     picture_id = await datastore.upload_picture(cursor, str(user_id), image_hash_value, container_client)
     return picture_id
 
-def upload_picture_set(**kwargs):
+def upload_picture_set(container_client, pictures, user_id: str, seed_name: str, zoom_level: float, nb_seeds: int,):
     connection = get_connection()
     cursor = get_cursor(connection)
-    return datastore.bin.upload_picture_set.upload_picture_set(cursor, **kwargs)
+    return datastore.bin.upload_picture_set.upload_picture_set(cursor, container_client, pictures, user_id, seed_name, zoom_level, nb_seeds)
 
 async def get_pipelines() -> list:
 
