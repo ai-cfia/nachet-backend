@@ -38,7 +38,7 @@ def get_all_seeds() -> list:
     try:
         connection = get_connection()
         cursor = get_cursor(connection)
-        return seed_queries.get_all_seeds(cursor)
+        return datastore.get_seed_info(cursor)
     except Exception as error: # TODO modify Exception for more specific exception
         raise SeedNotFoundError(error.args[0])
 
