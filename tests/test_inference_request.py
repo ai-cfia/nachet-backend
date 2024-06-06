@@ -20,7 +20,7 @@ class TestInferenceRequest(unittest.TestCase):
         )
         self.pipeline = json.loads(asyncio.run(response.get_data()))[0]
         current_dir = os.path.dirname(__file__)
-        image_path = os.path.join(current_dir, '1310_1.png')
+        image_path = os.path.join(current_dir, 'img/1310_1.png')
         self.endpoints = "/model-endpoints-metadata"
         self.inference = "/inf"
         self.container_name = "bab1da84-5937-4016-965e-67e1ea6e29c4"
@@ -36,7 +36,7 @@ class TestInferenceRequest(unittest.TestCase):
         self.image_src = None
         self.test = None
 
-    @patch("azure_storage.azure_storage_api.mount_container")
+    @patch("storage.azure_storage_api.mount_container")
     def test_inference_request_successful(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
@@ -78,6 +78,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
+                    "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
                     "image": self.image_header + self.image_src,
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
@@ -94,7 +95,7 @@ class TestInferenceRequest(unittest.TestCase):
         print(expected_keys == responses)
         self.assertEqual(responses, expected_keys)
 
-    @patch("azure_storage.azure_storage_api.mount_container")
+    @patch("storage.azure_storage_api.mount_container")
     def test_inference_request_unsuccessfull(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
@@ -123,6 +124,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
+                    "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
                     "image": self.image_header,
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
@@ -140,6 +142,7 @@ class TestInferenceRequest(unittest.TestCase):
         expected = ("InferenceRequestError: missing request arguments: either folder_name, container_name, imageDims or image is missing")
 
         data = {
+            "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
             "image": self.image_header,
             "imageDims": [720,540],
             "folder_name": self.folder_name,
@@ -189,6 +192,7 @@ class TestInferenceRequest(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
+                    "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
                     "image": self.image_src,
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
