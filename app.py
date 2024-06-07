@@ -501,8 +501,7 @@ async def feedback_positive():
         data = await request.get_json()
         user_id = data["userId"]
         inference_id = data["inferenceId"]
-        boxes_id = data["boxes"]
-        #number of boxe ?
+        boxes_id = [item['boxId'] for item in data["boxes"]]
         if inference_id and user_id and boxes_id:
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
