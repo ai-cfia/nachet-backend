@@ -74,14 +74,14 @@ def get_user_id(email: str) -> str:
     else :
         raise UserNotFoundError("User not found")
                                       
-async def validate_user(cursor, email: str, connection_string) -> datastore.User:
+async def create_user(email: str, connection_string) -> datastore.User:
     """
     Return True if user is valid, False otherwise
     """
-    if user_datastore.is_user_registered(cursor, email):
-        user = datastore.get_User(email, cursor)
-    else :
-        user = await datastore.new_user(cursor, email, connection_string)
+    connection = get_connection()
+    cursor = get_cursor(connection)
+    user = await datastore.new_user(cursor, email, connection_string)
+    end_query(connection, cursor)
     return user
 
 
@@ -113,8 +113,8 @@ async def get_pipelines() -> list:
 async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
     return await datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
 
-async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes):
-    await datastore.register_perfect_inference_feeback(cursor, inference_id, user_id, boxes)
+async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes_id):
+    await datastore.new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
     
 async def save_annoted_feedback(cursor, inference_id:str, user_id:str, boxes):
-    await datastore.register_annoted_inference_feeback(cursor, inference_id, user_id, boxes)
+    await datastore.new_annoted_inference_feeback(cursor, inference_id, user_id, boxes)
