@@ -31,17 +31,23 @@ sequenceDiagram;
 
     User ->>+Frontend: Upload session request
     Frontend->>+Backend: HTTP Post Req.
-    Backend->>+Datastore: get_all_seeds_names(cursor)
-    Datastore-->>-Backend: seed_names res.
-    Backend-->>-Frontend: seedNames res.
+    Backend->>+Datastore: get_all_seeds(cursor)
+    Datastore-->>-Backend: seeds res.
+    Backend-->>-Frontend: seeds res.
     Frontend -->>-User: Show session form
     User -) User: Fill form :<br> Seed selection, nb Seeds/Pic, Zoom
-    User -)+Frontend: Upload: session folder
+    User -)+Frontend: Upload: folder of pictures
     Frontend ->>+Backend: HTTP Post Req.
-    Backend->>+Datastore: is_user_registered(cursor, email)
-    Datastore-->>-Backend: user_id res.
-    Backend -)Datastore: upload_picture_set (cursor, pictures, user_id, **data)
-    Note over Backend, Datastore: data contains at least the <br> following value: seed_name, zoom_level, nb_seeds
+    Backend -)+ Datastore: create_picture_set (cursor, user_id, container_client, nb_pictures)
+    Datastore --)- Backend : picture_set_id
+    Backend -)Datastore: upload_picture(cursor, container_client, encoded_picture, picture_set_id, **data)
+    Note over Backend, Datastore: data contains at least the following <br>  value: seed_name, zoom_level, nb_seeds
+    Backend -->>- Frontend : picture_set_id
+    loop for each picture to upload
+    Frontend ->>+Backend: HTTP Post Req. (with picture_set_id)
+    Backend -)Datastore: upload_picture(cursor, container_client, encoded_picture, picture_set_id, **data)
+    Note over Backend, Datastore: data contains at least the following <br>  value: seed_name, zoom_level, nb_seeds
+    end
 ```
 
 The complete diagram is part of the datastore documentation. You can see it
@@ -60,7 +66,12 @@ The `get-user-id` route retrieve the user-id for a given email.
 The `seeds` is the route to call to get the all the seeds names needed for
 the frontend to build the form to upload the pictures to the database.
 
-#### /upload-pictures
+#### /batch-import
+
+The `/batch-import` route is the endpoint that the frontend call to start a batch import.
+It need save the number of pictures of the import and it return the picture_set_id as a session id
+
+#### /upload-picture
 
 The `/upload-pictures` route is the API endpoint responsible to assure the transit
-of the picture to the database.
+of the picture to the database. The frontend might send the session id so the picture is associate to the right picture_set

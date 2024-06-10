@@ -97,6 +97,8 @@ def upload_picture_set(container_client, pictures, user_id: str, seed_name: str,
     cursor = get_cursor(connection)
     return datastore.bin.upload_picture_set.upload_picture_set(cursor, container_client, pictures, user_id, seed_name, zoom_level, nb_seeds)
 
+async def create_picture_set(cursor, container_client, user_id: str, nb_pictures: int):
+    return await datastore.bin.upload_picture_set.create_picture_set(cursor, container_client, nb_pictures, user_id)
 async def get_pipelines() -> list:
 
     """

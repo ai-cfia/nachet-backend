@@ -165,7 +165,7 @@ async def before_serving():
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         # Store the seeds names and ml structure in CACHE
-        CACHE["seeds"] = datastore.get_all_seeds_names() 
+        CACHE["seeds"] = datastore.get_all_seeds() 
         CACHE["endpoints"] = await get_pipelines()
         
         print(
@@ -480,6 +480,7 @@ async def get_seeds():
     Returns JSON containing the model seeds metadata
     """
     seeds = await datastore.get_all_seeds()
+    CACHE["seeds"] = seeds
     if seeds :
         return jsonify(seeds), 200
     else:
@@ -543,8 +544,39 @@ async def feedback_negative():
     except (KeyError, TypeError, APIErrors) as error:
         return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
 
-@app.get("/upload-pictures")
-async def upload_pictures():
+
+@app.get("/new-batch-import")
+async def new_batch_import():
+    """
+    Uploads pictures to the user's container
+    """
+    try:
+        data = await request.get_json()
+        container_name = data["container_name"]
+        user_id = data["userId"]
+        nb_pictures = data["nb_pictures"]
+        
+        if not (container_name and user_id and nb_pictures):
+            raise InferenceRequestError(
+                "missing request arguments: either container_name, user_id or nb_pictures is missing")
+            
+        container_client = await azure_storage.mount_container(
+            CONNECTION_STRING, container_name, create_container=True
+        )
+        
+        connection = datastore.get_connection()
+        cursor = datastore.get_cursor(connection)
+        picture_set_id = await datastore.create_picture_set(cursor, container_client, user_id, nb_pictures)
+        if picture_set_id:
+            return jsonify({"session_id" : picture_set_id}), 200
+        else:
+            raise APIErrors("failed to upload pictures")
+    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError) as error:
+        return jsonify([f"APIErrors while initiating the batch import: {str(error)}"]), 400
+
+
+@app.get("/upload-picture")
+async def upload_picture():
     """
     Uploads pictures to the user's container
     """
@@ -555,16 +587,19 @@ async def upload_pictures():
         seed_name = data["seed_name"]
         zoom_level = data["zoom_level"]
         nb_seeds = data["nb_seeds"]
-        pictures = data["pictures"]
-        if not (container_name and user_id and seed_name and zoom_level and nb_seeds and pictures):
+        image_base64 = data["image"]
+        location_id = data["location_id"]
+        
+        if not (container_name and user_id and seed_name and zoom_level and nb_seeds and image_base64):
             raise InferenceRequestError(
                 "missing request arguments: either folder_name, container_name, imageDims or image is missing")
+            
+            
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
-        response = await datastore.upload_picture_set(
-            container_client, pictures, user_id, seed_name, zoom_level, nb_seeds
-        )
+        
+        return jsonify([True]), 200
         if response:
             return jsonify([True]), 200
         else:
