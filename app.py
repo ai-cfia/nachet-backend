@@ -7,6 +7,7 @@ import io
 import magic
 import time
 import warnings
+import time
 
 from PIL import Image
 from datetime import date
@@ -545,7 +546,7 @@ async def feedback_negative():
         return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
 
 
-@app.get("/new-batch-import")
+@app.post("/new-batch-import")
 async def new_batch_import():
     """
     Uploads pictures to the user's container
@@ -567,6 +568,7 @@ async def new_batch_import():
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
         picture_set_id = await datastore.create_picture_set(cursor, container_client, user_id, nb_pictures)
+        datastore.end_query(connection, cursor)
         if picture_set_id:
             return jsonify({"session_id" : picture_set_id}), 200
         else:
@@ -575,7 +577,7 @@ async def new_batch_import():
         return jsonify([f"APIErrors while initiating the batch import: {str(error)}"]), 400
 
 
-@app.get("/upload-picture")
+@app.post("/upload-picture")
 async def upload_picture():
     """
     Uploads pictures to the user's container
@@ -588,18 +590,31 @@ async def upload_picture():
         zoom_level = data["zoom_level"]
         nb_seeds = data["nb_seeds"]
         image_base64 = data["image"]
-        location_id = data["location_id"]
+        picture_set_id = data["session_id"]
         
-        if not (container_name and user_id and seed_name and zoom_level and nb_seeds and image_base64):
+        if not (container_name and user_id and seed_name and image_base64 and picture_set_id):
             raise InferenceRequestError(
                 "missing request arguments: either folder_name, container_name, imageDims or image is missing")
-            
             
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
         
-        return jsonify([True]), 200
+        debut = time.time()
+        
+        _, encoded_data = image_base64.split(",", 1)
+        
+        image_bytes = base64.b64decode(encoded_data)
+        image_hash_value = await azure_storage.generate_hash(image_bytes)
+        
+        connection = datastore.get_connection()
+        cursor = datastore.get_cursor(connection)
+        response = await datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, [image_hash_value], seed_name, zoom_level, nb_seeds)
+        datastore.end_query(connection, cursor)
+        
+        fin = time.time()
+        print(fin-debut)
+        
         if response:
             return jsonify([True]), 200
         else:
