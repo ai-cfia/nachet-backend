@@ -554,7 +554,7 @@ async def new_batch_import():
     try:
         data = await request.get_json()
         container_name = data["container_name"]
-        user_id = data["userId"]
+        user_id = container_name
         nb_pictures = data["nb_pictures"]
         
         if not (container_name and user_id and nb_pictures):
@@ -585,7 +585,7 @@ async def upload_picture():
     try:
         data = await request.get_json()
         container_name = data["container_name"]
-        user_id = data["userId"]
+        user_id = container_name
         seed_name = data["seed_name"]
         zoom_level = data["zoom_level"]
         nb_seeds = data["nb_seeds"]
