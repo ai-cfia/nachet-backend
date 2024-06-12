@@ -181,7 +181,7 @@ async def before_serving():
         raise
 
 
-@app.get("/get-user-id")
+@app.post("/get-user-id")
 async def get_user_id() :
     """
     Returns the user id
@@ -355,7 +355,7 @@ async def inference_request():
         container_name = data["container_name"]
         imageDims = data["imageDims"]
         image_base64 = data["image"]
-        user_id = data["userId"]
+        user_id = container_name
         
         area_ratio = data.get("area_ratio", 0.5)
         color_format = data.get("color_format", "hex")
