@@ -32,11 +32,14 @@ backend->>+AzureStorageAPI: (async) upload_inference_result(json)
 
 ### Details
 
-- The backend was built with the [Quart](http://pgjones.gitlab.io/quart/) framework
+- The backend was built with the [Quart](http://pgjones.gitlab.io/quart/)
+  framework
 - Quart is an asyncio reimplementation of Flask
 - All HTTP requests are handled in `app.py` in the root folder
-- Azure Storage API calls are handled in the `azure_storage_api/azure_Storage_api.py
-- Inference results from model endpoint are directly handled in `model_inference/inference.py`
+- Azure Storage API calls are handled in the
+  `azure_storage_api/azure_Storage_api.py
+- Inference results from model endpoint are directly handled in
+  `model_inference/inference.py`
 
 ****
 
@@ -51,12 +54,25 @@ hypercorn -b :8080 app:app
 
 ### RUNNING NACHET-BACKEND AS A DOCKER CONTAINER
 
-If you want to run the program as a Docker container (e.g., for production), use:
+If you want to run the program as a Docker container (e.g., for production),
+use:
 
 ```bash
 docker build -t nachet-backend .
 docker run -p 8080:8080 -e PORT=8080 -v $(pwd):/app nachet-backend
 ```
+
+#### RUNNING NACHET-BACKEND WITH THE FRONTEND IN DOCKER
+
+If you want to run the frontend and backend together in Docker, use:
+
+```bash
+docker-compose up --build
+```
+
+You can then visit the web client at `http://localhost:80`. The backend will be
+build from the Dockerfile enabling preview of local changes and the frontend
+will be pulled from our Github registry.
 
 ### TESTING NACHET-BACKEND
 
