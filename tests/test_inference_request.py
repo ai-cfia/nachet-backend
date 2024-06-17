@@ -23,8 +23,8 @@ class TestInferenceRequest(unittest.TestCase):
         image_path = os.path.join(current_dir, 'img/1310_1.png')
         self.endpoints = "/model-endpoints-metadata"
         self.inference = "/inf"
-        self.container_name = "bab1da84-5937-4016-965e-67e1ea6e29c4"
-        self.folder_name = "test_folder"
+        self.container_name = "a427278e-28df-428f-8937-ddeeef44e72f"
+        self.folder_name = "test1"
         self.image_header = "data:image/PNG;base64,"
         with open(image_path, 'rb') as image_file:
             self.image_src = base64.b64encode(image_file.read()).decode('utf-8')
@@ -66,7 +66,11 @@ class TestInferenceRequest(unittest.TestCase):
             "topN",
             "overlapping",
             "overlappingIndices",
-            "models"
+            "models",
+            "box_id",
+            "inference_id",
+            "object_type_id",
+            "top_id"
         }
 
         # Test the answers from inference_request
@@ -78,7 +82,6 @@ class TestInferenceRequest(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
-                    "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
                     "image": self.image_header + self.image_src,
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
@@ -87,7 +90,7 @@ class TestInferenceRequest(unittest.TestCase):
                 })
         )
 
-        result_json = json.loads(asyncio.run(response.get_data()))[0]
+        result_json = json.loads(asyncio.run(response.get_data()))
         keys = set(result_json.keys())
         keys.update(result_json["boxes"][0].keys())
         responses.update(keys)
@@ -124,7 +127,6 @@ class TestInferenceRequest(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
-                    "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
                     "image": self.image_header,
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
@@ -142,7 +144,6 @@ class TestInferenceRequest(unittest.TestCase):
         expected = ("InferenceRequestError: missing request arguments: either folder_name, container_name, imageDims or image is missing")
 
         data = {
-            "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
             "image": self.image_header,
             "imageDims": [720,540],
             "folder_name": self.folder_name,
@@ -192,7 +193,6 @@ class TestInferenceRequest(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
-                    "userId":"3e4d7d70-68d2-4302-a377-a869f1fd455e",
                     "image": self.image_src,
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,

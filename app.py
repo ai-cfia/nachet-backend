@@ -12,6 +12,7 @@ import time
 from PIL import Image
 from datetime import date
 from dotenv import load_dotenv
+from numpy import integer
 from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
@@ -62,7 +63,7 @@ class EmailNotSendError(APIErrors):
     pass
 
 
-class EmptyPictureSetError(APIErrors):
+class BatchImportError(APIErrors):
     pass
 
 
@@ -553,14 +554,19 @@ async def new_batch_import():
     """
     try:
         data = await request.get_json()
+        
+        if not ("container_name" in data and "nb_pictures" in data):
+            raise BatchImportError(
+                "missing request arguments: either container_name or nb_pictures is missing")
+            
         container_name = data["container_name"]
         user_id = container_name
         nb_pictures = data["nb_pictures"]
         
-        if not (container_name and user_id and nb_pictures):
-            raise InferenceRequestError(
-                "missing request arguments: either container_name, user_id or nb_pictures is missing")
-            
+        if not container_name or not(type(nb_pictures) is int) or nb_pictures <= 0 :
+            raise BatchImportError(
+                "wrong request arguments: either container_name or nb_pictures is wrong")
+        
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
@@ -572,8 +578,9 @@ async def new_batch_import():
         if picture_set_id:
             return jsonify({"session_id" : picture_set_id}), 200
         else:
-            raise APIErrors("failed to upload pictures")
-    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError) as error:
+            raise APIErrors("failed to create picture set")
+
+    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         return jsonify([f"APIErrors while initiating the batch import: {str(error)}"]), 400
 
 
@@ -593,14 +600,12 @@ async def upload_picture():
         picture_set_id = data["session_id"]
         
         if not (container_name and user_id and seed_name and image_base64 and picture_set_id):
-            raise InferenceRequestError(
+            raise BatchImportError(
                 "missing request arguments: either folder_name, container_name, imageDims or image is missing")
             
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
-        
-        debut = time.time()
         
         _, encoded_data = image_base64.split(",", 1)
         
@@ -612,14 +617,11 @@ async def upload_picture():
         response = await datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, [image_hash_value], seed_name, zoom_level, nb_seeds)
         datastore.end_query(connection, cursor)
         
-        fin = time.time()
-        print(fin-debut)
-        
         if response:
             return jsonify([True]), 200
         else:
             raise APIErrors("failed to upload pictures")
-    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError) as error:
+    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, BatchImportError) as error:
         return jsonify([f"APIErrors while uploading pictures: {str(error)}"]), 400
 
 
