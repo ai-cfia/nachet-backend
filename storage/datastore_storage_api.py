@@ -89,14 +89,21 @@ async def get_picture_id(cursor, user_id, image_hash_value, container_client) :
     """
     Return the picture_id of the image
     """
-    picture_id = await datastore.upload_picture(cursor, str(user_id), image_hash_value, container_client)
+    picture_id = await datastore.upload_picture_unknown(cursor, str(user_id), image_hash_value, container_client)
     return picture_id
 
-def upload_picture_set(**kwargs):
-    connection = get_connection()
-    cursor = get_cursor(connection)
-    return datastore.bin.upload_picture_set.upload_picture_set(cursor, **kwargs)
-
+def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
+    try :
+        return datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, zoom_level, nb_seeds)
+    except Exception as error:
+        raise DatastoreError(error)
+    
+async def create_picture_set(cursor, container_client, user_id: str, nb_pictures: int):
+    try :
+        return await datastore.create_picture_set(cursor, container_client, nb_pictures, user_id)
+    except Exception as error:
+        raise DatastoreError(error)
+    
 async def get_pipelines() -> list:
 
     """

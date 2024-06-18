@@ -61,7 +61,7 @@ class EmailNotSendError(APIErrors):
     pass
 
 
-class EmptyPictureSetError(APIErrors):
+class BatchImportError(APIErrors):
     pass
 
 
@@ -165,7 +165,7 @@ async def before_serving():
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         # Store the seeds names and ml structure in CACHE
-        CACHE["seeds"] = datastore.get_all_seeds_names() 
+        CACHE["seeds"] = datastore.get_all_seeds() 
         CACHE["endpoints"] = await get_pipelines()
         
         print(
@@ -480,6 +480,7 @@ async def get_seeds():
     Returns JSON containing the model seeds metadata
     """
     seeds = await datastore.get_all_seeds()
+    CACHE["seeds"] = seeds
     if seeds :
         return jsonify(seeds), 200
     else:
@@ -542,6 +543,90 @@ async def feedback_negative():
             raise APIErrors("missing argument(s)")
     except (KeyError, TypeError, APIErrors) as error:
         return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
+
+
+@app.post("/new-batch-import")
+async def new_batch_import():
+    """
+    Uploads pictures to the user's container
+    """
+    try:
+        data = await request.get_json()
+        
+        if not ("container_name" in data and "nb_pictures" in data):
+            raise BatchImportError(
+                "missing request arguments: either container_name or nb_pictures is missing")
+            
+        container_name = data["container_name"]
+        user_id = container_name
+        nb_pictures = data["nb_pictures"]
+        
+        if not container_name or not(isinstance(nb_pictures, int)) or nb_pictures <= 0 :
+            raise BatchImportError(
+                "wrong request arguments: either container_name or nb_pictures is wrong")
+        
+        container_client = await azure_storage.mount_container(
+            CONNECTION_STRING, container_name, create_container=True
+        )
+        
+        connection = datastore.get_connection()
+        cursor = datastore.get_cursor(connection)
+        picture_set_id = await datastore.create_picture_set(cursor, container_client, user_id, nb_pictures)
+        datastore.end_query(connection, cursor)
+        if picture_set_id:
+            return jsonify({"session_id" : picture_set_id}), 200
+        else:
+            raise APIErrors("failed to create picture set")
+
+    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+        return jsonify([f"APIErrors while initiating the batch import: {str(error)}"]), 400
+
+
+@app.post("/upload-picture")
+async def upload_picture():
+    """
+    Uploads pictures to the user's container
+    """
+    try:
+        data = await request.get_json()
+        
+        if not ("container_name" in data and "seed_name" in data and "image" in data and "session_id" in data):
+            raise BatchImportError(
+                "missing request arguments: either seed_name, session_id, container_name or image is missing")
+           
+        container_name = data["container_name"]
+        user_id = container_name
+        seed_name = data["seed_name"]
+        zoom_level = data["zoom_level"]
+        nb_seeds = data["nb_seeds"]
+        image_base64 = data["image"]
+        picture_set_id = data["session_id"]
+        
+        if not (container_name and seed_name and image_base64 and picture_set_id):
+            raise BatchImportError(
+                "wrong request arguments: either seed_name, session_id, container_name or image is wrong")
+            
+        container_client = await azure_storage.mount_container(
+            CONNECTION_STRING, container_name, create_container=True
+        )
+        
+        _, encoded_data = image_base64.split(",", 1)
+        
+        image_bytes = base64.b64decode(encoded_data)
+        image_hash_value = await azure_storage.generate_hash(image_bytes)
+        
+        connection = datastore.get_connection()
+        cursor = datastore.get_cursor(connection)
+        response = await datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, [image_hash_value], seed_name, zoom_level, nb_seeds)
+        datastore.end_query(connection, cursor)
+        
+        if response:
+            return jsonify([True]), 200
+        else:
+            raise APIErrors("failed to upload pictures")
+    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, BatchImportError) as error:
+        return jsonify([f"APIErrors while uploading pictures: {str(error)}"]), 400
+
 
 @app.get("/health")
 async def health():
