@@ -591,6 +591,11 @@ async def upload_picture():
     """
     try:
         data = await request.get_json()
+        
+        if not ("container_name" in data and "seed_name" in data and "image" in data and "session_id" in data):
+            raise BatchImportError(
+                "missing request arguments: either seed_name, session_id, container_name or image is missing")
+           
         container_name = data["container_name"]
         user_id = container_name
         seed_name = data["seed_name"]
@@ -599,9 +604,9 @@ async def upload_picture():
         image_base64 = data["image"]
         picture_set_id = data["session_id"]
         
-        if not (container_name and user_id and seed_name and image_base64 and picture_set_id):
+        if not (container_name and seed_name and image_base64 and picture_set_id):
             raise BatchImportError(
-                "missing request arguments: either folder_name, container_name, imageDims or image is missing")
+                "wrong request arguments: either seed_name, session_id, container_name or image is wrong")
             
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True

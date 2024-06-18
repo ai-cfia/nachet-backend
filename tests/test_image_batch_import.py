@@ -204,4 +204,57 @@ class TestUploadBatchImport(unittest.TestCase):
         result_json = json.loads(asyncio.run(response.get_data()))[0]
         print(result_json)
         
-    # TODO : errors tests
+    def test_upload_picture_missing_arguments_error(self):
+        """
+        Test if a request with missing arguments return an error
+        """
+        expected = ("APIErrors while uploading pictures: missing request arguments: either seed_name, session_id, container_name or image is missing")
+
+        response = asyncio.run(
+            self.test_client.post(
+                '/upload-picture',
+                headers={
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                json={
+                    "container_name": self.container_name,
+                    # missing session_id
+                    "seed_name": self.seed_name,
+                    "zoom_level": self.zoom_level,
+                    "nb_seeds": self.nb_seeds,
+                    "image": self.image 
+                })
+        )
+        result_json = json.loads(asyncio.run(response.get_data()))
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(result_json[0], expected)
+    
+    def test_upload_picture_wrong_arguments_error(self):
+        """
+        Test if a request with wrong arguments return an error
+        """
+        expected = ("APIErrors while uploading pictures: wrong request arguments: either seed_name, session_id, container_name or image is wrong")
+
+        response = asyncio.run(
+            self.test_client.post(
+                '/upload-picture',
+                headers={
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                json={
+                    "container_name": "", # wrong container_name
+                    "session_id": self.folder_name,
+                    "seed_name": self.seed_name,
+                    "zoom_level": self.zoom_level,
+                    "nb_seeds": self.nb_seeds,
+                    "image": self.image 
+                })
+        )
+        result_json = json.loads(asyncio.run(response.get_data()))
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(result_json[0], expected)
+        
