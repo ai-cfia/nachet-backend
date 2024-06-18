@@ -1,4 +1,3 @@
-import stat
 import unittest
 import asyncio
 import os
@@ -15,7 +14,7 @@ class TestNewBatchImport(unittest.TestCase):
         self.folder_name = None
         
     def tearDown(self):
-        if(self.folder_name != None):
+        if(self.folder_name is not None):
             response = asyncio.run(
                 self.test_client.post(
                     '/del',
@@ -49,7 +48,7 @@ class TestNewBatchImport(unittest.TestCase):
         
         self.assertEqual(response.status_code, 200)
         result_json = json.loads(asyncio.run(response.get_data()))
-        self.assertTrue(result_json.get("session_id")!=None)
+        self.assertTrue(result_json.get("session_id") is not None)
         
         self.folder_name = result_json.get("session_id")
 
@@ -165,7 +164,7 @@ class TestUploadBatchImport(unittest.TestCase):
         self.image = self.image_header + self.image_src
         
     def tearDown(self):
-        if(self.folder_name != None):
+        if(self.folder_name is not None):
             response = asyncio.run(
                 self.test_client.post(
                     '/del',
@@ -230,7 +229,7 @@ class TestUploadBatchImport(unittest.TestCase):
         
         self.assertEqual(response.status_code, 400)
         self.assertEqual(result_json[0], expected)
-    
+
     def test_upload_picture_wrong_arguments_error(self):
         """
         Test if a request with wrong arguments return an error
@@ -257,4 +256,3 @@ class TestUploadBatchImport(unittest.TestCase):
         
         self.assertEqual(response.status_code, 400)
         self.assertEqual(result_json[0], expected)
-        

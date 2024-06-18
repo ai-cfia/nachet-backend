@@ -9,4 +9,3 @@ request_function = {
     "test": request_inference_from_test,
     "m-14of15seeds-6seedsmag": request_inference_from_nachet_6seeds
 }
-

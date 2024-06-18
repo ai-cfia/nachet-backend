@@ -7,12 +7,10 @@ import io
 import magic
 import time
 import warnings
-import time
 
 from PIL import Image
 from datetime import date
 from dotenv import load_dotenv
-from numpy import integer
 from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
@@ -563,7 +561,7 @@ async def new_batch_import():
         user_id = container_name
         nb_pictures = data["nb_pictures"]
         
-        if not container_name or not(type(nb_pictures) is int) or nb_pictures <= 0 :
+        if not container_name or not(isinstance(nb_pictures, int)) or nb_pictures <= 0 :
             raise BatchImportError(
                 "wrong request arguments: either container_name or nb_pictures is wrong")
         
