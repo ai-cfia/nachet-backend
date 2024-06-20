@@ -6,10 +6,11 @@ When seed analysts use Nachet, they should be able to give their retroaction on
 the result. A pipeline of action needs to be integrated from the Frontend to the
 database to be able to register the user feedback. The possible feedbacks types
 are:
+
 - A perfect feedback (Doesn't change anything and validate the inference)
 - A new guess is given by the analyst
 - The box coordinates have changed
-- The box is deleted (not a seed) 
+- The box is deleted (not a seed)
 - A new box is added
 
 ## Prerequisites

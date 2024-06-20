@@ -4,7 +4,7 @@ import os
 import base64
 
 from app import app, json
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import MagicMock, Mock
 
 
 class TestPositiveFeedback(unittest.TestCase):

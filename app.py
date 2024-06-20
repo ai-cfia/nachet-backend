@@ -509,7 +509,7 @@ async def feedback_positive():
         inference_id = data["inferenceId"]
         
         for box in data["boxes"]:
-            if not("boxId" in box):
+            if "boxId" not in box:
                 raise BatchImportError(
                     "missing request arguments: boxId is missing in boxes")
                 
