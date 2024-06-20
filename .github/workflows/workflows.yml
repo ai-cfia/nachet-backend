@@ -6,7 +6,7 @@ on:
       - opened
       - closed
       - synchronize
-#testing
+
 jobs:
   lint-test:
     uses:
