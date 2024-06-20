@@ -74,14 +74,14 @@ def get_user_id(email: str) -> str:
     else :
         raise UserNotFoundError("User not found")
                                       
-async def validate_user(cursor, email: str, connection_string) -> datastore.User:
+async def create_user(email: str, connection_string) -> datastore.User:
     """
     Return True if user is valid, False otherwise
     """
-    if user_datastore.is_user_registered(cursor, email):
-        user = datastore.get_User(email, cursor)
-    else :
-        user = await datastore.new_user(cursor, email, connection_string)
+    connection = get_connection()
+    cursor = get_cursor(connection)
+    user = await datastore.new_user(cursor, email, connection_string)
+    end_query(connection, cursor)
     return user
 
 
@@ -89,14 +89,21 @@ async def get_picture_id(cursor, user_id, image_hash_value, container_client) :
     """
     Return the picture_id of the image
     """
-    picture_id = await datastore.upload_picture(cursor, str(user_id), image_hash_value, container_client)
+    picture_id = await datastore.upload_picture_unknown(cursor, str(user_id), image_hash_value, container_client)
     return picture_id
 
-def upload_picture_set(**kwargs):
-    connection = get_connection()
-    cursor = get_cursor(connection)
-    return datastore.bin.upload_picture_set.upload_picture_set(cursor, **kwargs)
-
+def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
+    try :
+        return datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, zoom_level, nb_seeds)
+    except Exception as error:
+        raise DatastoreError(error)
+    
+async def create_picture_set(cursor, container_client, user_id: str, nb_pictures: int):
+    try :
+        return await datastore.create_picture_set(cursor, container_client, nb_pictures, user_id)
+    except Exception as error:
+        raise DatastoreError(error)
+    
 async def get_pipelines() -> list:
 
     """
@@ -113,14 +120,8 @@ async def get_pipelines() -> list:
 async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
     return await datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
 
-async def save_perfect_feedback(inference_id:str, user_id:str):
-    # peut-être --> user_id = user.get_user_id(cursor, email) (genre j'ai l'email et pas le id direct)
-    connection = get_connection()
-    cursor = get_cursor(connection)
-    await datastore.register_perfect_inference_feeback(inference_id, user_id, cursor)
+async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes_id):
+    await datastore.new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
     
-async def save_annoted_feedback(inference_id:str, user_id:str, inference_feedback:dict):
-    # peut-être --> user_id = user.get_user_id(cursor, email) (genre j'ai l'email et pas le id direct)
-    connection = get_connection()
-    cursor = get_cursor(connection)
-    await datastore.register_annoted_inference_feeback(inference_id, user_id, inference_feedback, cursor)
+async def save_annoted_feedback(cursor, inference_id:str, user_id:str, boxes):
+    await datastore.new_annoted_inference_feeback(cursor, inference_id, user_id, boxes)

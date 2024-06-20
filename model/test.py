@@ -41,11 +41,11 @@ async def request_inference_from_test(model: namedtuple, previous_result: str):
                             "bottomX": 0.86,
                             "bottomY": 0.56
                         },
-                        "label": "test_label",
+                        "label": "Ambrosia artemisiifolia",
                         "score": 1.0,
                         "topN": [
                             {
-                                "label": "test_label",
+                                "label": "Ambrosia artemisiifolia",
                                 "score": 1.0,
                             },
                         ],
