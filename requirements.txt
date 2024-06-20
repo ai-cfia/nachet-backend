@@ -5,3 +5,9 @@ quart
 quart-cors
 python-dotenv
 hypercorn
+Pillow
+cryptography
+pyyaml
+pydantic
+python-magic
+nachet-datastore @git+https://github.com/ai-cfia/nachet-datastore.git@main
