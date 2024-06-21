@@ -214,7 +214,7 @@ class TestNegativeFeedback(unittest.TestCase):
         for box in inference.get("boxes"):
             boxes.append(
                     {
-                        "box_id" : box.get("box_id"), #TODO change to boxId
+                        "boxId" : box.get("box_id"),
                         "label": "Solanum carolinense", #instead of "Ambrosia artemisiifolia"
                         "classId": "05d77efa-1e48-4b71-a101-9b59d28318b5",
                         "box": box.get("box"),
@@ -235,12 +235,12 @@ class TestNegativeFeedback(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
-                    "user_id": self.userId, #TODO change to userId
-                    "inference_id": inferenceId, #TODO change to inferenceId
+                    "userId": self.userId,
+                    "inferenceId": inferenceId,
                     "boxes": boxes
                 })
         )
-        
+        print(response)
         result_json = json.loads(asyncio.run(response.get_data()))
         self.assertTrue(result_json)
         self.assertEqual(response.status_code, 200)
@@ -257,7 +257,7 @@ class TestNegativeFeedback(unittest.TestCase):
         for box in inference.get("boxes"):
             boxes.append(
                     {
-                        "box_id" : box.get("box_id"), #TODO change to boxId
+                        "boxId" : box.get("box_id"),
                         "label": "Solanum carolinense", #instead of "Ambrosia artemisiifolia"
                         "classId": "05d77efa-1e48-4b71-a101-9b59d28318b5",
                         "box": box.get("box"),
@@ -275,7 +275,7 @@ class TestNegativeFeedback(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
-                    "inference_id": inferenceId, #TODO change to inferenceId
+                    "inferenceId": inferenceId,
                     "boxes": boxes
                 })
         )
@@ -288,7 +288,7 @@ class TestNegativeFeedback(unittest.TestCase):
         
         boxes.append({                
                 "label": "Solanum carolinense",
-                "box_id": "2f7137ee-0517-46f9-a80d-a109d41c3f73",
+                "boxId": "2f7137ee-0517-46f9-a80d-a109d41c3f73",
                 "box": {
                     "topX": 56, 
                     "topY": 36, 
@@ -308,8 +308,8 @@ class TestNegativeFeedback(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
-                    "user_id": self.userId, #TODO change to userId
-                    "inference_id": inferenceId, #TODO change to inferenceId
+                    "userId": self.userId,
+                    "inferenceId": inferenceId,
                     "boxes": boxes
                 })
         )

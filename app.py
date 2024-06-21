@@ -192,7 +192,7 @@ async def get_user_id() :
         
         user_id = datastore.get_user_id(email)
         
-        return jsonify(user_id), 200
+        return jsonify({"user_id": user_id}), 200    
     except (KeyError, TypeError, ValueError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"GetUserIdError: {str(error)}"]), 400
@@ -543,13 +543,13 @@ async def feedback_negative():
     try:
         data = await request.get_json()
         
-        if not ("user_id" in data and "inference_id" in data and "boxes" in data): #TODO: change values to match the frontend
+        if not ("userId" in data and "inferenceId" in data and "boxes" in data):
             raise BatchImportError(
                 "missing request arguments: either userId, inferenceId or boxes is missing")
         
         boxes = data["boxes"]
         for object in boxes:
-            if not("box_id" in object and "label" in object and "classId" in object and "box" in object): #TODO: change box_id to boxId
+            if not("boxId" in object and "label" in object and "classId" in object and "box" in object):
                 raise BatchImportError(
                     "missing request arguments: either boxId, label, box or classId is missing in boxes")
             
