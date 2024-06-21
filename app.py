@@ -536,7 +536,7 @@ async def feedback_negative():
         if inference_id and user_id and boxes :
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
-            await datastore.save_annoted_feedback(inference_id, user_id, boxes)
+            await datastore.save_annoted_feedback(cursor, inference_id, user_id, boxes)
             datastore.end_query(connection, cursor)
             return jsonify([True]), 200
         else:
