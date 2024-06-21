@@ -192,7 +192,7 @@ async def get_user_id() :
         
         user_id = datastore.get_user_id(email)
         
-        return jsonify(user_id), 200
+        return jsonify({"user_id": user_id}), 200
     except (KeyError, TypeError, ValueError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"GetUserIdError: {str(error)}"]), 400
