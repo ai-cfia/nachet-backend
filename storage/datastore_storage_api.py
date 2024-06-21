@@ -123,5 +123,5 @@ async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:
 async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes_id):
     await datastore.new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
     
-async def save_annoted_feedback(cursor, inference_id:str, user_id:str, boxes):
-    await datastore.new_annoted_inference_feeback(cursor, inference_id, user_id, boxes)
+async def save_annoted_feedback(cursor, feedback_dict):
+    await datastore.new_correction_inference_feedback(cursor, feedback_dict)

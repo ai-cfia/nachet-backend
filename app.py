@@ -192,7 +192,7 @@ async def get_user_id() :
         
         user_id = datastore.get_user_id(email)
         
-        return jsonify(user_id), 200
+        return jsonify({"user_id": user_id}), 200    
     except (KeyError, TypeError, ValueError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"GetUserIdError: {str(error)}"]), 400
@@ -500,9 +500,21 @@ async def feedback_positive():
     """
     try:
         data = await request.get_json()
+        
+        if not ("userId" in data and "inferenceId" in data and "boxes" in data):
+            raise BatchImportError(
+                "missing request arguments: either userId, inferenceId or boxes is missing")
+        
         user_id = data["userId"]
         inference_id = data["inferenceId"]
-        boxes_id = [item['boxId'] for item in data["boxes"]]
+        
+        for box in data["boxes"]:
+            if "boxId" not in box:
+                raise BatchImportError(
+                    "missing request arguments: boxId is missing in boxes")
+                
+        boxes_id = [box['boxId'] for box in data["boxes"]]
+        
         if inference_id and user_id and boxes_id:
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
@@ -530,17 +542,23 @@ async def feedback_negative():
     """
     try:
         data = await request.get_json()
-        user_id = data["userId"]
-        inference_id = data["inferenceId"]
+        
+        if not ("userId" in data and "inferenceId" in data and "boxes" in data):
+            raise BatchImportError(
+                "missing request arguments: either userId, inferenceId or boxes is missing")
+        
         boxes = data["boxes"]
-        if inference_id and user_id and boxes :
-            connection = datastore.get_connection()
-            cursor = datastore.get_cursor(connection)
-            await datastore.save_annoted_feedback(inference_id, user_id, boxes)
-            datastore.end_query(connection, cursor)
-            return jsonify([True]), 200
-        else:
-            raise APIErrors("missing argument(s)")
+        for object in boxes:
+            if not("boxId" in object and "label" in object and "classId" in object and "box" in object):
+                raise BatchImportError(
+                    "missing request arguments: either boxId, label, box or classId is missing in boxes")
+            
+        connection = datastore.get_connection()
+        cursor = datastore.get_cursor(connection)
+        await datastore.save_annoted_feedback(cursor, data)
+        datastore.end_query(connection, cursor)
+        
+        return jsonify([True]), 200
     except (KeyError, TypeError, APIErrors) as error:
         return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
 
