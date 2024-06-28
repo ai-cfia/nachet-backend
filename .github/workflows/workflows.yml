@@ -8,7 +8,7 @@ on:
       - synchronize
 
 jobs:
-  lint-test:
+  lint-coverage-test:
     uses:
       ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
     secrets: inherit
