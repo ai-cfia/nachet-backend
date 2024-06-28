@@ -98,12 +98,12 @@ def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures,
     except Exception as error:
         raise DatastoreError(error)
     
-async def create_picture_set(cursor, container_client, user_id: str, nb_pictures: int):
+async def create_picture_set(cursor, container_client, user_id: str, nb_pictures: int, folder_name = None):
     try :
-        return await datastore.create_picture_set(cursor, container_client, nb_pictures, user_id)
+        return await datastore.create_picture_set(cursor, container_client, nb_pictures, user_id, folder_name)
     except Exception as error:
         raise DatastoreError(error)
-    
+
 async def get_pipelines() -> list:
 
     """
@@ -125,3 +125,12 @@ async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes_id)
     
 async def save_annoted_feedback(cursor, feedback_dict):
     await datastore.new_correction_inference_feedback(cursor, feedback_dict)
+
+async def delete_directory(cursor, picture_set_id):
+    await datastore.delete_picture_set(cursor, picture_set_id)
+    
+async def get_directories(cursor, user_id):
+    try :
+        return await datastore.get_picture_sets_info(cursor, user_id)
+    except Exception as error:
+        raise DatastoreError(error)
