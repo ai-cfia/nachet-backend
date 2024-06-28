@@ -1,4 +1,4 @@
-name: Docker build and push to ghcr.io/ai-cfia and lint test
+name: Nachet backend workflow
 
 on:
   pull_request:
@@ -8,12 +8,12 @@ on:
       - synchronize
 
 jobs:
-  lint-test:
+  lint-coverage-test:
     uses:
       ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
     secrets: inherit
 
-  deploy:
+  build-push-ghcr:
     uses:
       ai-cfia/github-workflows/.github/workflows/workflow-build-push-container-github-registry.yml@main
     with:
