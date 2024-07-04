@@ -1,4 +1,4 @@
-# Import Folder Images
+# User inference feedback
 
 ## Executive summary
 

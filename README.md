@@ -45,8 +45,16 @@ backend->>+AzureStorageAPI: (async) upload_inference_result(json)
 
 ### RUNNING NACHET-BACKEND FROM DEVCONTAINER
 
-When you are developping, you can run the program while in the devcontainer by
-using this command:
+When developping you first need to install the packages required. 
+
+This command musy be run the **first time** you want to run the backend on your
+computer, but also **every time** you update the requirements.txt file and **every time** the
+datastore repo is updated
+```bash
+pip install -r requirements.txt
+```
+
+Then, you can run the backend while in the devcontainer by using this command:
 
 ```bash
 hypercorn -b :8080 app:app

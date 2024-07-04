@@ -126,8 +126,11 @@ async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes_id)
 async def save_annoted_feedback(cursor, feedback_dict):
     await datastore.new_correction_inference_feedback(cursor, feedback_dict)
 
-async def delete_directory(cursor, picture_set_id):
-    await datastore.delete_picture_set(cursor, picture_set_id)
+async def delete_directory(cursor, user_id, picture_set_id, container_client):
+    try :
+        await datastore.delete_picture_set(cursor, user_id, picture_set_id, container_client)
+    except Exception as error:
+        raise DatastoreError(error)
     
 async def get_directories(cursor, user_id):
     try :
