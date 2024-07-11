@@ -71,10 +71,10 @@ class TestPositiveFeedback(unittest.TestCase):
     def test_positive_feedback_successful(self):
         
         inference = self.create_test_inference()
-        inferenceId = inference.get("inference_id")
+        inferenceId = inference.get("inferenceId")
         boxes = []
         for box in inference.get("boxes"):
-            boxes.append({"boxId" : box.get("box_id")})
+            boxes.append({"boxId" : box.get("boxId")})
         
         response = asyncio.run(
             self.test_client.post(
@@ -209,12 +209,12 @@ class TestNegativeFeedback(unittest.TestCase):
     def test_negative_feedback_successful(self):
         
         inference = self.create_test_inference()
-        inferenceId = inference.get("inference_id")
+        inferenceId = inference.get("inferenceId")
         boxes = []
         for box in inference.get("boxes"):
             boxes.append(
                     {
-                        "boxId" : box.get("box_id"),
+                        "boxId" : box.get("boxId"),
                         "label": "Solanum carolinense", #instead of "Ambrosia artemisiifolia"
                         "classId": "05d77efa-1e48-4b71-a101-9b59d28318b5",
                         "box": box.get("box"),
