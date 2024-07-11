@@ -98,9 +98,9 @@ def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures,
     except Exception as error:
         raise DatastoreError(error)
     
-async def create_picture_set(cursor, container_client, user_id: str, nb_pictures: int):
+async def create_picture_set(cursor, container_client, user_id: str, nb_pictures: int, folder_name = None):
     try :
-        return await datastore.create_picture_set(cursor, container_client, nb_pictures, user_id)
+        return await datastore.create_picture_set(cursor, container_client, nb_pictures, user_id, folder_name)
     except Exception as error:
         raise DatastoreError(error)
     
