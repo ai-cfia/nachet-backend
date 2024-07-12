@@ -47,7 +47,7 @@ backend->>+AzureStorageAPI: (async) upload_inference_result(json)
 
 When developping you first need to install the packages required. 
 
-This command musy be run the **first time** you want to run the backend on your
+This command must be run the **first time** you want to run the backend on your
 computer, but also **every time** you update the requirements.txt file and **every time** the
 datastore repo is updated
 ```bash
