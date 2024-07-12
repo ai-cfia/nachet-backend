@@ -197,6 +197,41 @@ async def get_user_id() :
         print(error)
         return jsonify([f"GetUserIdError: {str(error)}"]), 400
 
+# Deprecated
+@app.post("/del")
+async def delete_directory():
+    """
+    deletes a directory in the user's container
+    """
+    try:
+        data = await request.get_json()
+        container_name = data["container_name"]
+        folder_name = data["folder_name"]
+        if container_name and folder_name:
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
+            )
+            if container_client:
+                folder_uuid = await azure_storage.get_folder_uuid(
+                    container_client, folder_name
+                )
+                if folder_uuid:
+                    blob_list = container_client.list_blobs()
+                    for blob in blob_list:
+                        if blob.name.split("/")[0] == folder_uuid:
+                            container_client.delete_blob(blob.name)
+                    return jsonify([True]), 200
+                else:
+                    raise DeleteDirectoryRequestError("directory does not exist")
+            else:
+                raise DeleteDirectoryRequestError("failed to mount container")
+        else:
+            raise DeleteDirectoryRequestError("missing container or directory name")
+
+    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
+        print(error)
+        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+
 @app.post("/delete-request")
 async def delete_request():
     """
