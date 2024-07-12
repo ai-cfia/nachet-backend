@@ -65,12 +65,11 @@ same applies to pictures imported in batches, which have been downloaded for
 training purposes. Our solution is to request confirmation from the user, who
 can decide to delete pictures from his container but let us save them, or he can
 delete everything anyway, for example if there has been a missed click.
- 
+
 ## Prerequisites
 
 - The user must be signed in and have an Azure Storage Container
 - The backend need to have a connection with the datastore
-
 
 ## Sequence Diagram
 
@@ -138,7 +137,6 @@ note left of FE : "Are you sure ? Everything in this folder will be deleted and 
     end
 
 ```
-
 
 ## API Routes
 

@@ -128,7 +128,7 @@ async def save_annoted_feedback(cursor, feedback_dict):
 
 async def delete_directory_request(cursor, user_id, picture_set_id):
     try :
-        return len(await datastore.(cursor, user_id, picture_set_id)) > 0
+        return len(await datastore.find_validated_pictures(cursor, user_id, picture_set_id)) > 0
     except Exception as error:
         raise DatastoreError(error)
 

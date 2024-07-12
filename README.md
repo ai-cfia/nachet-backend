@@ -45,11 +45,12 @@ backend->>+AzureStorageAPI: (async) upload_inference_result(json)
 
 ### RUNNING NACHET-BACKEND FROM DEVCONTAINER
 
-When developping you first need to install the packages required. 
+When developping you first need to install the packages required.
 
 This command must be run the **first time** you want to run the backend on your
-computer, but also **every time** you update the requirements.txt file and **every time** the
-datastore repo is updated
+computer, but also **every time** you update the requirements.txt file and
+**every time** the datastore repo is updated
+
 ```bash
 pip install -r requirements.txt
 ```
