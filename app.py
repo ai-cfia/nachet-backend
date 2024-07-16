@@ -235,10 +235,11 @@ async def delete_directory():
 @app.post("/delete-request")
 async def delete_request():
     """
-    deletes a directory in the user's container
+    Request to delete a directory in the user's container.
+    
+    Return true if there is validated pictuers in it, false otherwise
     """
     try:
-        print("yes")
         data = await request.get_json()
         user_id = data["container_name"]
         picture_set_id = data["folder_uuid"]
@@ -262,7 +263,7 @@ async def delete_request():
 @app.post("/delete-permanently")
 async def delete_permanently():
     """
-    deletes a directory in the user's container
+    deletes a directory in the user's container permanently
     """
     try:
         data = await request.get_json()
@@ -292,7 +293,7 @@ async def delete_permanently():
 @app.post("/delete-with-archive")
 async def delete_with_archive():
     """
-    deletes a directory in the user's container
+    deletes a directory in the user's container and saves the validated pictures in the dev user container
     """
     try:
         data = await request.get_json()
