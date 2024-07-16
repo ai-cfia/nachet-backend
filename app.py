@@ -165,7 +165,7 @@ async def before_serving():
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         # Store the seeds names and ml structure in CACHE
-        CACHE["seeds"] = datastore.get_all_seeds() 
+        CACHE["seeds"] = await datastore.get_all_seeds() 
         CACHE["endpoints"] = await get_pipelines()
         
         print(
@@ -197,7 +197,7 @@ async def get_user_id() :
         print(error)
         return jsonify([f"GetUserIdError: {str(error)}"]), 400
 
-
+# Deprecated
 @app.post("/del")
 async def delete_directory():
     """
@@ -232,6 +232,95 @@ async def delete_directory():
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
 
+@app.post("/delete-request")
+async def delete_request():
+    """
+    Request to delete a directory in the user's container.
+    
+    Return true if there is validated pictuers in it, false otherwise
+    """
+    try:
+        data = await request.get_json()
+        user_id = data["container_name"]
+        picture_set_id = data["folder_uuid"]
+        if user_id and picture_set_id:
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+
+            response = await datastore.delete_directory_request(cursor, str(user_id), str(picture_set_id))
+            # Close connection
+            datastore.end_query(connection, cursor)
+            
+            return jsonify(response), 200
+        else:
+            raise DeleteDirectoryRequestError("missing container or directory name")
+
+    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+
+@app.post("/delete-permanently")
+async def delete_permanently():
+    """
+    deletes a directory in the user's container permanently
+    """
+    try:
+        data = await request.get_json()
+        container_name = data["container_name"]
+        user_id = container_name
+        picture_set_id = data["folder_uuid"]
+        if user_id and picture_set_id:
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
+            )
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+
+            response = await datastore.delete_directory_permanently(cursor, str(user_id), str(picture_set_id), container_client)
+            # Close connection
+            datastore.end_query(connection, cursor)
+            
+            return jsonify(response), 200
+        else:
+            raise DeleteDirectoryRequestError("missing container or directory name")
+
+    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+
+@app.post("/delete-with-archive")
+async def delete_with_archive():
+    """
+    deletes a directory in the user's container and saves the validated pictures in the dev user container
+    """
+    try:
+        data = await request.get_json()
+        container_name = data["container_name"]
+        user_id = container_name
+        picture_set_id = data["folder_uuid"]
+        if user_id and picture_set_id:
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
+            )
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+
+            response = await datastore.delete_directory_with_archive(cursor, str(user_id), str(picture_set_id), container_client)
+            # Close connection
+            datastore.end_query(connection, cursor)
+            
+            if response :
+                return jsonify(True), 200
+        else:
+            raise DeleteDirectoryRequestError("missing container or directory name")
+
+    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+
 
 @app.post("/dir")
 async def list_directories():
@@ -240,17 +329,20 @@ async def list_directories():
     """
     try:
         data = await request.get_json()
-        container_name = data["container_name"]
-        if container_name:
-            container_client = await azure_storage.mount_container(
-                CONNECTION_STRING, container_name, create_container=True
-            )
-            response = await azure_storage.get_directories(container_client)
-            return jsonify(response), 200
+        user_id = data["container_name"]
+        if user_id:
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+
+            directories = await datastore.get_directories(cursor, str(user_id))
+            # Close connection
+            datastore.end_query(connection, cursor)
+            return jsonify(directories)
         else:
             raise ListDirectoriesRequestError("Missing container name")
 
-    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError) as error:
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
 
@@ -263,22 +355,27 @@ async def create_directory():
     try:
         data = await request.get_json()
         container_name = data["container_name"]
+        user_id = container_name
         folder_name = data["folder_name"]
         if container_name and folder_name:
             container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
             )
-            response = await azure_storage.create_folder(
-                container_client, folder_name
-            )
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+
+            response = await datastore.create_picture_set(cursor, container_client, user_id, 0, folder_name)
+            # Close connection
+            datastore.end_query(connection, cursor)
             if response:
-                return jsonify([True]), 200
+                return jsonify([response]), 200
             else:
                 raise CreateDirectoryRequestError("directory already exists")
         else:
             raise CreateDirectoryRequestError("missing container or directory name")
 
-    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage.MountContainerError) as error:
+    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"CreateDirectoryRequestError: {str(error)}"]), 400
 
