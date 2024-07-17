@@ -67,8 +67,8 @@ class TestInferenceRequest(unittest.TestCase):
             "overlapping",
             "overlappingIndices",
             "models",
-            "boxId",
-            "inferenceId",
+            "box_id",
+            "inference_id",
             "object_type_id",
             "top_id"
         }
