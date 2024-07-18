@@ -11,24 +11,24 @@ class TestNewBatchImport(unittest.TestCase):
         self.test_client = app.test_client()
         self.container_name = "a427278e-28df-428f-8937-ddeeef44e72f"
         self.nb_pictures = 1
-        self.folder_name = None
-        
+        self.folder_name = "test_batch_import"
+        self.session_id = None
     def tearDown(self):
-        if(self.folder_name is not None):
+        if(self.session_id is not None):
             response = asyncio.run(
                 self.test_client.post(
-                    '/del',
+                    '/delete-permanently',
                     headers={
                         "Content-Type": "application/json",
                         "Access-Control-Allow-Origin": "*",
                     },
                     json={
                         "container_name": self.container_name,
-                        "folder_name": self.folder_name
+                        "folder_uuid": self.session_id
                     })
             )
             if(response.status_code == 200):
-                self.folder_name = None
+                self.session_id = None
         self.test_client = None
 
     def test_new_batch_import_successfull(self):
@@ -42,6 +42,7 @@ class TestNewBatchImport(unittest.TestCase):
                 },
                 json={
                     "container_name": self.container_name,
+                    "folder_name": self.folder_name,
                     "nb_pictures": self.nb_pictures
                 })
         )
@@ -50,7 +51,7 @@ class TestNewBatchImport(unittest.TestCase):
         result_json = json.loads(asyncio.run(response.get_data()))
         self.assertTrue(result_json.get("session_id") is not None)
         
-        self.folder_name = result_json.get("session_id")
+        self.session_id = result_json.get("session_id")
 
     def test_new_batch_import_missing_arguments_error(self):
         """
@@ -66,6 +67,7 @@ class TestNewBatchImport(unittest.TestCase):
                     "Access-Control-Allow-Origin": "*",
                 },
                 json={
+                    "folder_name": self.folder_name,
                     "nb_pictures": self.nb_pictures
                 })
         )
@@ -89,6 +91,7 @@ class TestNewBatchImport(unittest.TestCase):
                 },
                 json={
                     "container_name": "",
+                    "folder_name": self.folder_name,
                     "nb_pictures": self.nb_pictures
                 })
         )
@@ -106,6 +109,7 @@ class TestNewBatchImport(unittest.TestCase):
                 },
                 json={
                     "container_name": self.container_name,
+                    "folder_name": self.folder_name,
                     "nb_pictures": "1"
                 })
         )
@@ -123,6 +127,7 @@ class TestNewBatchImport(unittest.TestCase):
                 },
                 json={
                     "container_name": self.container_name,
+                    "folder_name": "test_batch_import",
                     "nb_pictures": 0
                 })
         )
@@ -136,7 +141,8 @@ class TestUploadBatchImport(unittest.TestCase):
         self.test_client = app.test_client()
         self.container_name = "a427278e-28df-428f-8937-ddeeef44e72f"
         self.nb_pictures = 1
-        
+        self.folder_name = "test_batch_import"
+        self.session_id = None
         response = asyncio.run(
             self.test_client.post(
                 '/new-batch-import',
@@ -146,12 +152,16 @@ class TestUploadBatchImport(unittest.TestCase):
                 },
                 json={
                     "container_name": self.container_name,
+                    "folder_name": self.folder_name,
                     "nb_pictures": self.nb_pictures
                 })
         )
-        
         result_json = json.loads(asyncio.run(response.get_data()))
-        self.folder_name = result_json.get("session_id")
+        if response.status_code == 200:
+            print("Setup : folder successfully created")
+        else :
+            print(result_json)
+        self.session_id = result_json.get("session_id")
         
         self.seed_name = "Ambrosia artemisiifolia"
         self.zoom_level = None
@@ -164,22 +174,22 @@ class TestUploadBatchImport(unittest.TestCase):
         self.image = self.image_header + self.image_src
         
     def tearDown(self):
-        if(self.folder_name is not None):
+        if(self.session_id is not None):
             response = asyncio.run(
                 self.test_client.post(
-                    '/del',
+                    '/delete-permanently',
                     headers={
                         "Content-Type": "application/json",
                         "Access-Control-Allow-Origin": "*",
                     },
                     json={
                         "container_name": self.container_name,
-                        "folder_name": self.folder_name
+                        "folder_uuid": self.session_id
                     })
             )
             if(response.status_code == 200):
-                self.folder_name = None
-        # does delete folder also delete pictures ?
+                print("Teardown : folder successfully deleted")
+                self.session_id = None
         self.test_client = None
         
     def test_upload_picture_successfull(self):
@@ -192,7 +202,7 @@ class TestUploadBatchImport(unittest.TestCase):
                 },
                 json={
                     "container_name": self.container_name,
-                    "session_id": self.folder_name,
+                    "session_id": self.session_id,
                     "seed_name": self.seed_name,
                     "zoom_level": self.zoom_level,
                     "nb_seeds": self.nb_seeds,
@@ -245,7 +255,7 @@ class TestUploadBatchImport(unittest.TestCase):
                 },
                 json={
                     "container_name": "", # wrong container_name
-                    "session_id": self.folder_name,
+                    "session_id": self.session_id,
                     "seed_name": self.seed_name,
                     "zoom_level": self.zoom_level,
                     "nb_seeds": self.nb_seeds,
