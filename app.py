@@ -674,6 +674,9 @@ async def new_batch_import():
             
         container_name = data["container_name"]
         user_id = container_name
+        folder_name = data["folder_name"]
+        if folder_name == "" :
+            folder_name = None
         nb_pictures = data["nb_pictures"]
         
         if not container_name or not(isinstance(nb_pictures, int)) or nb_pictures <= 0 :
@@ -686,7 +689,7 @@ async def new_batch_import():
         
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
-        picture_set_id = await datastore.create_picture_set(cursor, container_client, user_id, nb_pictures)
+        picture_set_id = await datastore.create_picture_set(cursor, container_client, user_id, nb_pictures, folder_name)
         datastore.end_query(connection, cursor)
         if picture_set_id:
             return jsonify({"session_id" : picture_set_id}), 200

@@ -1,9 +1,11 @@
 """
 This module provide an absraction to the nachet-datastore interface.
 """
+import os
 import datastore
 from datastore import db
 from datastore import user as user_datastore
+from datastore import Nachet as nachet_datastore
 import datastore.bin.deployment_mass_import
 
 import datastore.bin.upload_picture_set
@@ -21,8 +23,11 @@ class GetPipelinesError(DatastoreError):
 class UserNotFoundError(DatastoreError):
     pass
 
+NACHET_DB_URL = os.getenv("NACHET_DB_URL")
+NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
+
 def get_connection() :
-    return db.connect_db()
+    return db.connect_db(NACHET_DB_URL, NACHET_SCHEMA)
 
 def get_cursor(connection):
     return db.cursor(connection)
@@ -38,7 +43,7 @@ async def get_all_seeds() -> list:
     try:
         connection = get_connection()
         cursor = get_cursor(connection)
-        return await datastore.get_seed_info(cursor)
+        return await nachet_datastore.get_seed_info(cursor)
     except Exception as error: # TODO modify Exception for more specific exception
         raise SeedNotFoundError(error.args[0])
 
@@ -89,12 +94,12 @@ async def get_picture_id(cursor, user_id, image_hash_value, container_client) :
     """
     Return the picture_id of the image
     """
-    picture_id = await datastore.upload_picture_unknown(cursor, str(user_id), image_hash_value, container_client)
+    picture_id = await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image_hash_value, container_client)
     return picture_id
 
 def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
     try :
-        return datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, zoom_level, nb_seeds)
+        return nachet_datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, zoom_level, nb_seeds)
     except Exception as error:
         raise DatastoreError(error)
     
@@ -112,23 +117,23 @@ async def get_pipelines() -> list:
     try:
         connection = get_connection()
         cursor = get_cursor(connection)
-        pipelines = await datastore.get_ml_structure(cursor)
+        pipelines = await nachet_datastore.get_ml_structure(cursor)
         return pipelines
     except Exception as error: # TODO modify Exception for more specific exception
         raise GetPipelinesError(error.args[0])
 
 async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
-    return await datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
+    return await nachet_datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
 
 async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes_id):
-    await datastore.new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
+    await nachet_datastore.new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
     
 async def save_annoted_feedback(cursor, feedback_dict):
-    await datastore.new_correction_inference_feedback(cursor, feedback_dict)
+    await nachet_datastore.new_correction_inference_feedback(cursor, feedback_dict)
 
 async def delete_directory_request(cursor, user_id, picture_set_id):
     try :
-        return len(await datastore.find_validated_pictures(cursor, user_id, picture_set_id)) > 0
+        return len(await nachet_datastore.find_validated_pictures(cursor, user_id, picture_set_id)) > 0
     except Exception as error:
         raise DatastoreError(error)
 
@@ -140,7 +145,7 @@ async def delete_directory_permanently(cursor, user_id, picture_set_id, containe
 
 async def delete_directory_with_archive(cursor, user_id, picture_set_id, container_client):
     try :
-        return await datastore.delete_picture_set_with_archive(cursor, user_id, picture_set_id, container_client)
+        return await nachet_datastore.delete_picture_set_with_archive(cursor, user_id, picture_set_id, container_client)
     except Exception as error:
         raise DatastoreError(error)
     
