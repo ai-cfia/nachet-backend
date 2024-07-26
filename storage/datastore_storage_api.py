@@ -154,3 +154,15 @@ async def get_directories(cursor, user_id):
         return await datastore.get_picture_sets_info(cursor, user_id)
     except Exception as error:
         raise DatastoreError(error)
+
+async def get_inference(cursor, user_id, picture_id):
+    try :
+        return await nachet_datastore.get_picture_inference(cursor, user_id, picture_id)
+    except Exception as error:
+        raise DatastoreError(error)
+    
+async def get_image_hash_value(cursor, user_id, picture_id):
+    try :
+        return await nachet_datastore.get_picture_blob(cursor, user_id, picture_id)
+    except Exception as error:
+        raise DatastoreError(error)

@@ -1,3 +1,4 @@
+from tkinter import image_names
 import urllib.request
 import json
 import os
@@ -176,9 +177,13 @@ async def before_serving():
             """
         ) #TODO Transform into logging
 
-    except (ServerError, inference.ModelAPIErrors) as e:
+    except (Exception, ServerError, inference.ModelAPIErrors) as e:
         print(e)
         raise
+
+@app.before_request
+def log_request_info():
+    print(f"Call:{request.path}")
 
 
 @app.post("/get-user-id")
@@ -321,7 +326,7 @@ async def delete_with_archive():
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
 
-
+# Deprecated
 @app.post("/dir")
 async def list_directories():
     """
@@ -339,6 +344,68 @@ async def list_directories():
             # Close connection
             datastore.end_query(connection, cursor)
             return jsonify(directories)
+        else:
+            raise ListDirectoriesRequestError("Missing container name")
+
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+
+@app.post("/get-directories")
+async def get_directories():
+    """
+    get all directories in the user's container with pictures names and number of pictures
+    """
+    try:
+        data = await request.get_json()
+        user_id = data["container_name"]
+        if user_id:
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+
+            directories_list = await datastore.get_directories(cursor, str(user_id))
+            
+            # Close connection
+            datastore.end_query(connection, cursor)
+            
+            result = {"folders" : directories_list}
+            return jsonify(result)
+        else:
+            raise ListDirectoriesRequestError("Missing container name")
+
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+
+@app.post("/get-picture")
+async def get_picture():
+    """
+    get all directories in the user's container with pictures names and number of pictures
+    """
+    try:
+        data = await request.get_json()
+        user_id = data["container_name"]
+        picture_id = data["picture_id"]
+        
+        if user_id:
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+            
+            picture = {}
+            picture["picture_id"] = picture_id
+            
+            inference = await datastore.get_inference(cursor, str(user_id), str(picture_id))
+            picture["inference"] = inference
+            
+            image = await datastore.get_image_hash_value(cursor, str(user_id), str(picture_id))
+            print(image)
+            picture["image"] = image
+            
+            # Close connection
+            datastore.end_query(connection, cursor)
+            return jsonify(picture)
         else:
             raise ListDirectoriesRequestError("Missing container name")
 
