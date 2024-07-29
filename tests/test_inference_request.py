@@ -70,7 +70,9 @@ class TestInferenceRequest(unittest.TestCase):
             "box_id",
             "inference_id",
             "object_type_id",
-            "top_id"
+            "top_id",
+            "models",
+            "pipeline_id"
         }
 
         # Test the answers from inference_request
