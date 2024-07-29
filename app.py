@@ -181,11 +181,6 @@ async def before_serving():
         print(e)
         raise
 
-@app.before_request
-def log_request_info():
-    print(f"Call:{request.path}")
-
-
 @app.post("/get-user-id")
 async def get_user_id() :
     """
@@ -384,11 +379,16 @@ async def get_picture():
     get all directories in the user's container with pictures names and number of pictures
     """
     try:
-        data = await request.get_json()
-        user_id = data["container_name"]
+        data = await request.get_json()        
+        container_name = data["container_name"]
+        user_id = container_name
         picture_id = data["picture_id"]
         
         if user_id:
+            
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
+            )
             # Open db connection
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
@@ -399,7 +399,7 @@ async def get_picture():
             inference = await datastore.get_inference(cursor, str(user_id), str(picture_id))
             picture["inference"] = inference
             
-            image = await datastore.get_image_hash_value(cursor, str(user_id), str(picture_id))
+            image = await datastore.get_image_hash_value(cursor, str(user_id), container_client, str(picture_id))
             print(image)
             picture["image"] = image
             

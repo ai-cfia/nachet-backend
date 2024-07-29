@@ -151,7 +151,7 @@ async def delete_directory_with_archive(cursor, user_id, picture_set_id, contain
     
 async def get_directories(cursor, user_id):
     try :
-        return await datastore.get_picture_sets_info(cursor, user_id)
+        return await nachet_datastore.get_picture_sets_info(cursor, user_id)
     except Exception as error:
         raise DatastoreError(error)
 
@@ -161,8 +161,8 @@ async def get_inference(cursor, user_id, picture_id):
     except Exception as error:
         raise DatastoreError(error)
     
-async def get_image_hash_value(cursor, user_id, picture_id):
+async def get_image_hash_value(cursor, user_id, container_client, picture_id):
     try :
-        return await nachet_datastore.get_picture_blob(cursor, user_id, picture_id)
+        return await nachet_datastore.get_picture_blob(cursor, user_id, container_client, picture_id)
     except Exception as error:
         raise DatastoreError(error)
