@@ -399,9 +399,9 @@ async def get_picture():
             inference = await datastore.get_inference(cursor, str(user_id), str(picture_id))
             picture["inference"] = inference
             
-            image = await datastore.get_image_hash_value(cursor, str(user_id), container_client, str(picture_id))
-            print(image)
-            picture["image"] = image
+            blob = await datastore.get_picture_blob(cursor, str(user_id), container_client, str(picture_id))
+            image_base64 = base64.b64encode(blob)
+            picture["image"] = "data:image/tiff;base64," + image_base64.decode("utf-8")
             
             # Close connection
             datastore.end_query(connection, cursor)
@@ -554,9 +554,8 @@ async def inference_request():
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
 
-        image_hash_value = await azure_storage.generate_hash(image_bytes)
         picture_id = await datastore.get_picture_id(
-            cursor, user_id, image_hash_value, container_client
+            cursor, user_id, image_bytes, container_client
         )
         # Close connection
         datastore.end_query(connection, cursor)
@@ -577,15 +576,16 @@ async def inference_request():
 
         result_json_string = await record_model(pipeline, processed_result_json)
 
+        """
         # upload the inference results to the user's container as async task
         app.add_background_task(
             azure_storage.upload_inference_result,
             container_client,
             folder_name,
             result_json_string,
-            image_hash_value,
+            image_bytes,
         )
-        
+        """
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)

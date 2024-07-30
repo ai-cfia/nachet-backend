@@ -90,11 +90,11 @@ async def create_user(email: str, connection_string) -> datastore.User:
     return user
 
 
-async def get_picture_id(cursor, user_id, image_hash_value, container_client) :
+async def get_picture_id(cursor, user_id, image, container_client) :
     """
     Return the picture_id of the image
     """
-    picture_id = await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image_hash_value, container_client)
+    picture_id = await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image, container_client)
     return picture_id
 
 def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
@@ -161,7 +161,7 @@ async def get_inference(cursor, user_id, picture_id):
     except Exception as error:
         raise DatastoreError(error)
     
-async def get_image_hash_value(cursor, user_id, container_client, picture_id):
+async def get_picture_blob(cursor, user_id, container_client, picture_id):
     try :
         return await nachet_datastore.get_picture_blob(cursor, user_id, container_client, picture_id)
     except Exception as error:
