@@ -26,6 +26,12 @@ class UserNotFoundError(DatastoreError):
 NACHET_DB_URL = os.getenv("NACHET_DB_URL")
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
+if NACHET_DB_URL is None:
+    raise DatastoreError("Missing environment variable: NACHET_DB_URL")
+
+if NACHET_SCHEMA is None:
+    raise DatastoreError("Missing environment variable: NACHET_SCHEMA")
+
 def get_connection() :
     return db.connect_db(NACHET_DB_URL, NACHET_SCHEMA)
 

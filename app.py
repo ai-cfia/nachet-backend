@@ -146,6 +146,9 @@ async def before_serving():
         if CONNECTION_STRING is None:
             raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
+        if NACHET_DATA is None:
+            raise ServerError("Missing environment variable: NACHET_DATA")
+
         if FERNET_KEY is None:
             raise ServerError("Missing environment variable: FERNET_KEY")
 
@@ -438,7 +441,7 @@ async def create_directory():
             if response:
                 return jsonify([response]), 200
             else:
-                raise CreateDirectoryRequestError("directory already exists")
+                raise CreateDirectoryRequestError("Error while creating directory")
         else:
             raise CreateDirectoryRequestError("missing container or directory name")
 
@@ -574,18 +577,6 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
 
-        result_json_string = await record_model(pipeline, processed_result_json)
-
-        """
-        # upload the inference results to the user's container as async task
-        app.add_background_task(
-            azure_storage.upload_inference_result,
-            container_client,
-            folder_name,
-            result_json_string,
-            image_bytes,
-        )
-        """
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
