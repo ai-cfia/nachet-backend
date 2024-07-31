@@ -50,7 +50,14 @@ async def request_inference_from_test(model: namedtuple, previous_result: str):
                             },
                         ],
                     }
-                ]
+                ],
+                "models" : 
+                    [
+                        {
+                            "name" : model.name,
+                            "version" : 1
+                        }
+                    ]
             }
         ]
 
