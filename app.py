@@ -1,4 +1,3 @@
-from tkinter import image_names
 import urllib.request
 import json
 import os
