@@ -164,6 +164,7 @@ class TestUploadBatchImport(unittest.TestCase):
         self.session_id = result_json.get("session_id")
         
         self.seed_name = "Ambrosia artemisiifolia"
+        self.seed_id = "14e96554-aadf-42e4-8665-d141354800d1"
         self.zoom_level = None
         self.nb_seeds = None
         current_dir = os.path.dirname(__file__)
@@ -204,6 +205,7 @@ class TestUploadBatchImport(unittest.TestCase):
                     "container_name": self.container_name,
                     "session_id": self.session_id,
                     "seed_name": self.seed_name,
+                    "seed_id" : self.seed_id,
                     "zoom_level": self.zoom_level,
                     "nb_seeds": self.nb_seeds,
                     "image": self.image
@@ -230,6 +232,7 @@ class TestUploadBatchImport(unittest.TestCase):
                     "container_name": self.container_name,
                     # missing session_id
                     "seed_name": self.seed_name,
+                    "seed_id" : self.seed_id,
                     "zoom_level": self.zoom_level,
                     "nb_seeds": self.nb_seeds,
                     "image": self.image 
@@ -257,6 +260,7 @@ class TestUploadBatchImport(unittest.TestCase):
                     "container_name": "", # wrong container_name
                     "session_id": self.session_id,
                     "seed_name": self.seed_name,
+                    "seed_id" : self.seed_id,
                     "zoom_level": self.zoom_level,
                     "nb_seeds": self.nb_seeds,
                     "image": self.image 
