@@ -145,6 +145,9 @@ async def before_serving():
         if CONNECTION_STRING is None:
             raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
+        if NACHET_DATA is None:
+            raise ServerError("Missing environment variable: NACHET_DATA")
+
         if FERNET_KEY is None:
             raise ServerError("Missing environment variable: FERNET_KEY")
 
@@ -176,10 +179,9 @@ async def before_serving():
             """
         ) #TODO Transform into logging
 
-    except (ServerError, inference.ModelAPIErrors) as e:
+    except (Exception, ServerError, inference.ModelAPIErrors) as e:
         print(e)
         raise
-
 
 @app.post("/get-user-id")
 async def get_user_id() :
@@ -321,7 +323,7 @@ async def delete_with_archive():
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
 
-
+# Deprecated
 @app.post("/dir")
 async def list_directories():
     """
@@ -339,6 +341,73 @@ async def list_directories():
             # Close connection
             datastore.end_query(connection, cursor)
             return jsonify(directories)
+        else:
+            raise ListDirectoriesRequestError("Missing container name")
+
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+
+@app.post("/get-directories")
+async def get_directories():
+    """
+    get all directories in the user's container with pictures names and number of pictures
+    """
+    try:
+        data = await request.get_json()
+        user_id = data["container_name"]
+        if user_id:
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+
+            directories_list = await datastore.get_directories(cursor, str(user_id))
+            
+            # Close connection
+            datastore.end_query(connection, cursor)
+            
+            result = {"folders" : directories_list}
+            return jsonify(result)
+        else:
+            raise ListDirectoriesRequestError("Missing container name")
+
+    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+        print(error)
+        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+
+@app.post("/get-picture")
+async def get_picture():
+    """
+    get all directories in the user's container with pictures names and number of pictures
+    """
+    try:
+        data = await request.get_json()        
+        container_name = data["container_name"]
+        user_id = container_name
+        picture_id = data["picture_id"]
+        
+        if user_id:
+            
+            container_client = await azure_storage.mount_container(
+                CONNECTION_STRING, container_name, create_container=True
+            )
+            # Open db connection
+            connection = datastore.get_connection()
+            cursor = datastore.get_cursor(connection)
+            
+            picture = {}
+            picture["picture_id"] = picture_id
+            
+            inference = await datastore.get_inference(cursor, str(user_id), str(picture_id))
+            picture["inference"] = inference
+            
+            blob = await datastore.get_picture_blob(cursor, str(user_id), container_client, str(picture_id))
+            image_base64 = base64.b64encode(blob)
+            picture["image"] = "data:image/tiff;base64," + image_base64.decode("utf-8")
+            
+            # Close connection
+            datastore.end_query(connection, cursor)
+            return jsonify(picture)
         else:
             raise ListDirectoriesRequestError("Missing container name")
 
@@ -371,7 +440,7 @@ async def create_directory():
             if response:
                 return jsonify([response]), 200
             else:
-                raise CreateDirectoryRequestError("directory already exists")
+                raise CreateDirectoryRequestError("Error while creating directory")
         else:
             raise CreateDirectoryRequestError("missing container or directory name")
 
@@ -487,9 +556,8 @@ async def inference_request():
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
 
-        image_hash_value = await azure_storage.generate_hash(image_bytes)
         picture_id = await datastore.get_picture_id(
-            cursor, user_id, image_hash_value, container_client
+            cursor, user_id, image_bytes, container_client
         )
         # Close connection
         datastore.end_query(connection, cursor)
@@ -508,17 +576,6 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
 
-        result_json_string = await record_model(pipeline, processed_result_json)
-
-        # upload the inference results to the user's container as async task
-        app.add_background_task(
-            azure_storage.upload_inference_result,
-            container_client,
-            folder_name,
-            result_json_string,
-            image_hash_value,
-        )
-        
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)

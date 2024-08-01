@@ -26,6 +26,12 @@ class UserNotFoundError(DatastoreError):
 NACHET_DB_URL = os.getenv("NACHET_DB_URL")
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
+if NACHET_DB_URL is None:
+    raise DatastoreError("Missing environment variable: NACHET_DB_URL")
+
+if NACHET_SCHEMA is None:
+    raise DatastoreError("Missing environment variable: NACHET_SCHEMA")
+
 def get_connection() :
     return db.connect_db(NACHET_DB_URL, NACHET_SCHEMA)
 
@@ -90,11 +96,11 @@ async def create_user(email: str, connection_string) -> datastore.User:
     return user
 
 
-async def get_picture_id(cursor, user_id, image_hash_value, container_client) :
+async def get_picture_id(cursor, user_id, image, container_client) :
     """
     Return the picture_id of the image
     """
-    picture_id = await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image_hash_value, container_client)
+    picture_id = await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image, container_client)
     return picture_id
 
 def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
@@ -151,6 +157,18 @@ async def delete_directory_with_archive(cursor, user_id, picture_set_id, contain
     
 async def get_directories(cursor, user_id):
     try :
-        return await datastore.get_picture_sets_info(cursor, user_id)
+        return await nachet_datastore.get_picture_sets_info(cursor, user_id)
+    except Exception as error:
+        raise DatastoreError(error)
+
+async def get_inference(cursor, user_id, picture_id):
+    try :
+        return await nachet_datastore.get_picture_inference(cursor, user_id, picture_id)
+    except Exception as error:
+        raise DatastoreError(error)
+    
+async def get_picture_blob(cursor, user_id, container_client, picture_id):
+    try :
+        return await nachet_datastore.get_picture_blob(cursor, user_id, container_client, picture_id)
     except Exception as error:
         raise DatastoreError(error)

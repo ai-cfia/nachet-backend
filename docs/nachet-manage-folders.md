@@ -145,10 +145,49 @@ note left of FE : "Are you sure ? Everything in this folder will be deleted and 
 The `create-dir` route need a folder_name and create the folder in database and
 in Azure Blob storage.
 
-### /dir
+### /get-directories
 
-The `dir` route retreives all user directories from the database (id, name and
-nb_pictures).
+The `get-directories` route retreives all user directories from the database
+with their pictures as a json. There is 4 different cases for the pictures :
+
+| **is_verified \\ inference_exist** | **false**              | **true**             |
+|------------------------------------|----------------------|-----------------------|
+| **false**                           | *should not happend* | inference not verified  |
+| **true**                          | batch import | inference verified |
+
+```json
+{
+"folders" : [
+        {
+            "picture_set_id" : "xxxx-xxxx-xxxx-xxxx",
+            "folder_name" : "folder name",
+            "nb_pictures": 4,
+            "pictures" : [
+                {
+                    "picture_id" : "xxxx-xxxx-xxxx-xxxx",
+                    "inference_exist": false,
+                    "is_validated": true
+                },
+                ...
+            ]
+        },
+        ...
+    ]
+}
+```
+
+### /get-picture
+
+The `get-picture` route retreives selected picture as a json :
+
+```json
+{
+    "picture_id" : "xxxx-xxxx-xxxx-xxxx",
+    "inference": {
+     }
+    "image": "data:image/...;base64,xxxxxxxx"
+}
+```
 
 ### /delete-request
 
