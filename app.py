@@ -28,7 +28,6 @@ from datastore import azure_storage # noqa: E402
 class APIErrors(Exception):
     pass
 
-
 class DeleteDirectoryRequestError(APIErrors):
     pass
 
@@ -198,6 +197,9 @@ async def get_user_id() :
     except (KeyError, TypeError, ValueError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"GetUserIdError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error getting user id for email {email}"]), 400
 
 # Deprecated
 @app.post("/del")
@@ -233,6 +235,9 @@ async def delete_directory():
     except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error deleting {folder_name} directory"]), 400
 
 @app.post("/delete-request")
 async def delete_request():
@@ -261,6 +266,9 @@ async def delete_request():
     except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error requesting deletion of directory"]), 400
 
 @app.post("/delete-permanently")
 async def delete_permanently():
@@ -291,6 +299,9 @@ async def delete_permanently():
     except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error deleting directory"]), 400
 
 @app.post("/delete-with-archive")
 async def delete_with_archive():
@@ -322,6 +333,9 @@ async def delete_with_archive():
     except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error deleting directory"]), 400
 
 # Deprecated
 @app.post("/dir")
@@ -347,6 +361,9 @@ async def list_directories():
     except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error getting user directories"]), 400
 
 @app.post("/get-directories")
 async def get_directories():
@@ -374,6 +391,9 @@ async def get_directories():
     except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error getting user directories"]), 400
 
 @app.post("/get-picture")
 async def get_picture():
@@ -414,6 +434,9 @@ async def get_picture():
     except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error getting picture"]), 400
 
 
 @app.post("/create-dir")
@@ -447,6 +470,9 @@ async def create_directory():
     except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         print(error)
         return jsonify([f"CreateDirectoryRequestError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error creating directory"]), 400
 
 
 @app.post("/image-validation")
@@ -502,6 +528,9 @@ async def image_validation():
     except (KeyError, TypeError, ValueError, ImageValidationError) as error:
         print(error)
         return jsonify([f"ImageValidationError: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error validating image"]), 400
 
 
 @app.post("/inf")
@@ -592,6 +621,9 @@ async def inference_request():
     except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage.MountContainerError) as error:
         print(error)
         return jsonify(["InferenceRequestError: " + error.args[0]]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error during classification"]), 400
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -612,9 +644,9 @@ async def reload_seed_data():
     try:
         await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
         return jsonify(["Seed data reloaded successfully"]), 200
-    except urllib.error.HTTPError as e:
-        return jsonify(
-            {f"An error happend when reloading the seed data: {e.args[0]}"}), 500
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : An error happend when reloading the seed data: {error.args[0]}"]), 400
 
 
 @app.get("/model-endpoints-metadata")
@@ -625,7 +657,7 @@ async def get_model_endpoints_metadata():
     if CACHE['endpoints']:
         return jsonify(CACHE['endpoints']), 200
     else:
-        return jsonify("Error retrieving model endpoints metadata.", 404)
+        return jsonify("Error retrieving model endpoints metadata.", 400)
 
 
 @app.get("/seeds")
@@ -679,6 +711,9 @@ async def feedback_positive():
             raise APIErrors("missing argument(s)")
     except (KeyError, TypeError, APIErrors) as error:
         return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error giving a positive feedback"]), 400
 
 @app.post("/feedback-negative")
 async def feedback_negative():
@@ -715,6 +750,9 @@ async def feedback_negative():
         return jsonify([True]), 200
     except (KeyError, TypeError, APIErrors) as error:
         return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error giving a negative feedback"]), 400
 
 
 @app.post("/new-batch-import")
@@ -755,6 +793,9 @@ async def new_batch_import():
 
     except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, datastore.DatastoreError) as error:
         return jsonify([f"APIErrors while initiating the batch import: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error initiating batch upload"]), 400
 
 
 @app.post("/upload-picture")
@@ -801,6 +842,9 @@ async def upload_picture():
             raise APIErrors("failed to upload pictures")
     except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, BatchImportError) as error:
         return jsonify([f"APIErrors while uploading pictures: {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error uploading picture"]), 400
 
 
 @app.get("/health")
