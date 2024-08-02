@@ -78,12 +78,15 @@ def get_user_id(email: str) -> str:
     """
     Return the user_id of the user
     """
-    connection = get_connection()
-    cursor = get_cursor(connection)
-    if user_datastore.is_user_registered(cursor, email):
-        return user_datastore.get_user_id(cursor, email)
-    else :
-        raise UserNotFoundError("User not found")
+    try :
+        connection = get_connection()
+        cursor = get_cursor(connection)
+        if user_datastore.is_user_registered(cursor, email):
+            return user_datastore.get_user_id(cursor, email)
+        else :
+            raise UserNotFoundError("User not found")
+    except Exception as error:
+        raise DatastoreError(error)
                                       
 async def create_user(email: str, connection_string) -> datastore.User:
     """
@@ -116,7 +119,6 @@ async def create_picture_set(cursor, container_client, user_id: str, nb_pictures
         raise DatastoreError(error)
 
 async def get_pipelines() -> list:
-
     """
     Retrieves the pipelines from the Datastore
     """
@@ -129,13 +131,22 @@ async def get_pipelines() -> list:
         raise GetPipelinesError(error.args[0])
 
 async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):
-    return await nachet_datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
+    try :
+        return await nachet_datastore.register_inference_result(cursor, user_id, inference_dict, picture_id, pipeline_id, type)
+    except Exception as error:
+        raise DatastoreError(error)
 
 async def save_perfect_feedback(cursor, inference_id:str, user_id:str, boxes_id):
-    await nachet_datastore.new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
+    try :
+        await nachet_datastore.new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
+    except Exception as error:
+        raise DatastoreError(error)
     
 async def save_annoted_feedback(cursor, feedback_dict):
-    await nachet_datastore.new_correction_inference_feedback(cursor, feedback_dict)
+    try :
+        await nachet_datastore.new_correction_inference_feedback(cursor, feedback_dict)
+    except Exception as error:
+        raise DatastoreError(error)
 
 async def delete_directory_request(cursor, user_id, picture_set_id):
     try :
