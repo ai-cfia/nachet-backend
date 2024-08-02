@@ -103,9 +103,9 @@ async def get_picture_id(cursor, user_id, image, container_client) :
     picture_id = await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image, container_client)
     return picture_id
 
-def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, seed_id: str, zoom_level: float = None, nb_seeds: int = None) :
+def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
     try :
-        return nachet_datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, seed_id, zoom_level, nb_seeds)
+        return nachet_datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, zoom_level, nb_seeds)
     except Exception as error:
         raise DatastoreError(error)
     
