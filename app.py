@@ -856,12 +856,13 @@ async def upload_picture():
         container_name = data.get("container_name")
         user_id = container_name
         seed_name = data.get("seed_name")
+        seed_id = data.get("seed_id")
         zoom_level = data.get("zoom_level")
         nb_seeds = data.get("nb_seeds")
         image_base64 = data.get("image")
         picture_set_id = data.get("session_id")
         
-        if not (container_name and seed_name and image_base64 and picture_set_id):
+        if not (container_name and (seed_name or seed_id) and image_base64 and picture_set_id):
             raise MissingArgumentsError(
                 "wrong request arguments: either seed_name, session_id, container_name or image is wrong")
             
@@ -872,11 +873,11 @@ async def upload_picture():
         _, encoded_data = image_base64.split(",", 1)
         
         image_bytes = base64.b64decode(encoded_data)
-        image_hash_value = await azure_storage.generate_hash(image_bytes)
+        
         
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
-        response = await datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, [image_hash_value], seed_name, zoom_level, nb_seeds)
+        response = await datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, [image_bytes], seed_name, seed_id, zoom_level, nb_seeds)
         datastore.end_query(connection, cursor)
         
         if response:
