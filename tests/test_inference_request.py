@@ -118,7 +118,7 @@ class TestInferenceRequest(unittest.TestCase):
         mock_container.return_value = mock_container_client
 
         # Build expected response
-        expected = 400
+        expected = ("API Error during classification : An error occurred while processing the requests :\n The result send to the inference function is empty")
 
         # Test the answers from inference_request
         response = asyncio.run(
@@ -133,17 +133,20 @@ class TestInferenceRequest(unittest.TestCase):
                     "imageDims": [720,540],
                     "folder_name": self.folder_name,
                     "container_name": self.container_name,
-                    "model_name": "not_in_pipeline_name"
+                    "model_name":  self.pipeline.get("pipeline_name")
                 })
         )
 
-        print(expected == response.status_code)
-        self.assertEqual(response.status_code, expected)
+        result_json = json.loads(asyncio.run(response.get_data()))
+        print(expected == result_json[0])
+        print(response.status_code == 400)
+        self.assertEqual(result_json[0], expected)
+        self.assertEqual(response.status_code, 400)
 
     def test_inference_request_missing_argument(self):
         # Build expected response
         responses = []
-        expected = ("InferenceRequestError: missing request arguments: either folder_name, container_name, imageDims or image is missing")
+        expected = ("API Error during classification : missing request arguments: either folder_name, container_name, imageDims or image is missing")
 
         data = {
             "image": self.image_header,
@@ -184,7 +187,7 @@ class TestInferenceRequest(unittest.TestCase):
 
     def test_inference_request_wrong_pipeline_name(self):
         # Build expected response
-        expected = ("InferenceRequestError: model wrong_pipeline_name not found")
+        expected = ("API Error during classification : model wrong_pipeline_name not found")
 
         # Test the answers from inference_request
         response = asyncio.run(

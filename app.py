@@ -20,7 +20,7 @@ load_dotenv() # noqa: E402
 
 import model.inference as inference # noqa: E402
 import storage.datastore_storage_api as datastore # noqa: E402
-from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError # noqa: E402
+from model.model_exceptions import ModelAPIError # noqa: E402
 from model import request_function # noqa: E402
 from datastore import azure_storage # noqa: E402
 
@@ -197,13 +197,13 @@ async def get_user_id() :
     
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving user id for email {email} : {str(error)}"]), 400
     except (KeyError, TypeError, ValueError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error retrieving user id for email {email} : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error getting user id for email {email}"]), 400
+        return jsonify([f"Unhandled API error : Error retrieving user id for email {email}"]), 400
 
 # Deprecated
 @app.post("/del")
@@ -236,12 +236,15 @@ async def delete_directory():
         else:
             raise MissingArgumentsError("missing container or directory name")
 
-    except (KeyError, TypeError, APIError, DeleteDirectoryRequestError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error deleting directory : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error deleting directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error deleting {folder_name} directory"]), 400
+        return jsonify([f"Unhandled API error : Error deleting directory"]), 400
 
 @app.post("/delete-request")
 async def delete_request():
@@ -269,10 +272,10 @@ async def delete_request():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error requesting deletion of directory : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error requesting deletion of directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error requesting deletion of directory"]), 400
@@ -305,10 +308,10 @@ async def delete_permanently():
     
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error deleting directory : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error deleting directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error deleting directory"]), 400
@@ -342,10 +345,10 @@ async def delete_with_archive():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error deleting directory : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error deleting directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error deleting directory"]), 400
@@ -373,13 +376,13 @@ async def list_directories():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving user directories : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error getting user directories"]), 400
+        return jsonify([f"Unhandled API error : Error retrieving user directories"]), 400
 
 @app.post("/get-directories")
 async def get_directories():
@@ -406,13 +409,13 @@ async def get_directories():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving user directories : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error getting user directories"]), 400
+        return jsonify([f"Unhandled API error : Error retrieving user directories"]), 400
 
 @app.post("/get-picture")
 async def get_picture():
@@ -452,13 +455,13 @@ async def get_picture():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving the picture : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error retrieving the picture : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error getting picture"]), 400
+        return jsonify([f"Unhandled API error : Error retrieving the picture"]), 400
 
 
 @app.post("/create-dir")
@@ -487,14 +490,14 @@ async def create_directory():
             else:
                 raise CreateDirectoryRequestError("Error while creating directory")
         else:
-            raise MissingArgumentsError("Missing container and directory name")
+            raise MissingArgumentsError("missing container or directory name")
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error creating directory : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error creating directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error creating directory"]), 400
@@ -516,7 +519,7 @@ async def image_validation():
         data = await request.get_json()
         image_base64 = data.get("image")
         
-        if not image :
+        if not image_base64 :
             raise MissingArgumentsError("Missing image")
         
         header, encoded_image = image_base64.split(",", 1)
@@ -555,10 +558,10 @@ async def image_validation():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
+        return jsonify([f"Datastore Error validating image : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error validating image : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error validating image"]), 400
@@ -651,10 +654,10 @@ async def inference_request():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error : {str(error)}"]), 400
-    except (KeyError, TypeError, APIError) as error:
+        return jsonify([f"Datastore Error during classification : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError, ModelAPIError) as error:
         print(error)
-        return jsonify([f"API Error : {str(error)}"]), 400
+        return jsonify([f"API Error during classification : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error during classification"]), 400
@@ -745,10 +748,10 @@ async def feedback_positive():
             raise MissingArgumentsError("missing argument(s)")
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"Datastore Error giving a positive feedback : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"API Error giving a positive feedback : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error giving a positive feedback"]), 400
@@ -789,10 +792,10 @@ async def feedback_negative():
     
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"Datastore Error giving a negative feedback : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"API Error giving a negative feedback : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error giving a negative feedback"]), 400
@@ -836,10 +839,10 @@ async def new_batch_import():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"Datastore Error initiating batch upload : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"API Error initiating batch upload : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error initiating batch upload"]), 400
@@ -864,7 +867,7 @@ async def upload_picture():
         
         if not (container_name and (seed_name or seed_id) and image_base64 and picture_set_id):
             raise MissingArgumentsError(
-                "wrong request arguments: either seed_name, session_id, container_name or image is wrong")
+                "missing request arguments: either seed_name, session_id, container_name or image is missing")
             
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
@@ -887,10 +890,10 @@ async def upload_picture():
     
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"Datastore Error uploading picture : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error during positive feedback : {str(error)}"]), 400
+        return jsonify([f"API Error uploading picture : {str(error)}"]), 400
     except Exception as error :
         print(error)
         return jsonify([f"Unhandled API error : Error uploading picture"]), 400

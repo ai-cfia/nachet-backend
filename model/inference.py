@@ -11,9 +11,9 @@ The colors can be returned in HEX or RGB format depending on the frontend prefer
 import numpy as np
 
 from model.color_palette import primary_colors, light_colors, mixing_palettes, shades_colors
-from model.model_exceptions import ModelAPIErrors
+from model.model_exceptions import ModelAPIError
 
-class ProcessInferenceResultsModelAPIError(ModelAPIErrors) :
+class ProcessInferenceResultsModelAPIError(ModelAPIError) :
     pass
 
 def generator(list_length):
