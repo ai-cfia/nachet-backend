@@ -244,7 +244,7 @@ async def delete_directory():
         return jsonify([f"API Error deleting directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error deleting directory"]), 400
+        return jsonify(["Unhandled API error : Error deleting directory"]), 400
 
 @app.post("/delete-request")
 async def delete_request():
@@ -278,7 +278,7 @@ async def delete_request():
         return jsonify([f"API Error requesting deletion of directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error requesting deletion of directory"]), 400
+        return jsonify(["Unhandled API error : Error requesting deletion of directory"]), 400
 
 @app.post("/delete-permanently")
 async def delete_permanently():
@@ -314,7 +314,7 @@ async def delete_permanently():
         return jsonify([f"API Error deleting directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error deleting directory"]), 400
+        return jsonify(["Unhandled API error : Error deleting directory"]), 400
 
 @app.post("/delete-with-archive")
 async def delete_with_archive():
@@ -351,7 +351,7 @@ async def delete_with_archive():
         return jsonify([f"API Error deleting directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error deleting directory"]), 400
+        return jsonify(["Unhandled API error : Error deleting directory"]), 400
 
 # Deprecated
 @app.post("/dir")
@@ -382,7 +382,7 @@ async def list_directories():
         return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error retrieving user directories"]), 400
+        return jsonify(["Unhandled API error : Error retrieving user directories"]), 400
 
 @app.post("/get-directories")
 async def get_directories():
@@ -415,7 +415,7 @@ async def get_directories():
         return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error retrieving user directories"]), 400
+        return jsonify(["Unhandled API error : Error retrieving user directories"]), 400
 
 @app.post("/get-picture")
 async def get_picture():
@@ -461,7 +461,7 @@ async def get_picture():
         return jsonify([f"API Error retrieving the picture : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error retrieving the picture"]), 400
+        return jsonify(["Unhandled API error : Error retrieving the picture"]), 400
 
 
 @app.post("/create-dir")
@@ -500,7 +500,7 @@ async def create_directory():
         return jsonify([f"API Error creating directory : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error creating directory"]), 400
+        return jsonify(["Unhandled API error : Error creating directory"]), 400
 
 
 @app.post("/image-validation")
@@ -564,7 +564,7 @@ async def image_validation():
         return jsonify([f"API Error validating image : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error validating image"]), 400
+        return jsonify(["Unhandled API error : Error validating image"]), 400
 
 
 @app.post("/inf")
@@ -660,7 +660,7 @@ async def inference_request():
         return jsonify([f"API Error during classification : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error during classification"]), 400
+        return jsonify(["Unhandled API error : Error during classification"]), 400
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -754,7 +754,7 @@ async def feedback_positive():
         return jsonify([f"API Error giving a positive feedback : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error giving a positive feedback"]), 400
+        return jsonify(["Unhandled API error : Error giving a positive feedback"]), 400
 
 @app.post("/feedback-negative")
 async def feedback_negative():
@@ -798,7 +798,7 @@ async def feedback_negative():
         return jsonify([f"API Error giving a negative feedback : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error giving a negative feedback"]), 400
+        return jsonify(["Unhandled API error : Error giving a negative feedback"]), 400
 
 
 @app.post("/new-batch-import")
@@ -845,7 +845,7 @@ async def new_batch_import():
         return jsonify([f"API Error initiating batch upload : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error initiating batch upload"]), 400
+        return jsonify(["Unhandled API error : Error initiating batch upload"]), 400
 
 
 @app.post("/upload-picture")
@@ -896,7 +896,7 @@ async def upload_picture():
         return jsonify([f"API Error uploading picture : {str(error)}"]), 400
     except Exception as error :
         print(error)
-        return jsonify([f"Unhandled API error : Error uploading picture"]), 400
+        return jsonify(["Unhandled API error : Error uploading picture"]), 400
 
 
 @app.get("/health")
