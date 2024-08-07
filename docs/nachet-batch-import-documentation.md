@@ -1,4 +1,4 @@
-# Import Folder Images
+# Batch Upload of images
 
 ## Executive summary
 
@@ -56,14 +56,12 @@ sequenceDiagram;
     Frontend -->>-User: Show session form
     User -) User: Fill form :<br> Seed selection, nb Seeds/Pic, Zoom
     User -)+Frontend: Upload: folder of pictures
-    Frontend ->>+Backend: HTTP Post Req.
+    Frontend ->>+Backend: HTTP Post : /new-batch-import
     Backend -)+ Datastore: create_picture_set (cursor, user_id, container_client, nb_pictures)
     Datastore --)- Backend : picture_set_id
-    Backend -)Datastore: upload_picture(cursor, container_client, encoded_picture, picture_set_id, **data)
-    Note over Backend, Datastore: data contains at least the following <br>  value: seed_name, zoom_level, nb_seeds
     Backend -->>- Frontend : picture_set_id
     loop for each picture to upload
-    Frontend ->>+Backend: HTTP Post Req. (with picture_set_id)
+    Frontend ->>+Backend: HTTP Post : /upload-picture`
     Backend -)Datastore: upload_picture(cursor, container_client, encoded_picture, picture_set_id, **data)
     Note over Backend, Datastore: data contains at least the following <br>  value: seed_name, zoom_level, nb_seeds
     end
@@ -79,11 +77,11 @@ process](https://github.com/ai-cfia/nachet-datastore/blob/issue13-create-process
 
 ### /get-user-id
 
-The `get-user-id` route retrieve the user-id for a given email.
+The `/get-user-id` route retrieve the user-id for a given email.
 
 ### /seeds
 
-The `seeds` is the route to call to get the all the seeds names needed for the
+The `/seeds` is the route to call to get the all the seeds names needed for the
 frontend to build the form to upload the pictures to the database.
 
 ### /new-batch-import
@@ -94,6 +92,6 @@ picture_set_id as a session id
 
 ### /upload-picture
 
-The `/upload-pictures` route is the API endpoint responsible to assure the
+The `/upload-picture` route is the API endpoint responsible to assure the
 transit of the picture to the database. The frontend might send the session id
 so the picture is associate to the right picture_set
