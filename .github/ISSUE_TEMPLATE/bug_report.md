@@ -7,14 +7,14 @@ assignees: ''
 
 ---
 
-Bug report  
-===========
+Bug Report
+==========
 
 about: Create a report to help us improve  
 title: As a [stakeholder], I want to [description of the desired outcome].  
 labels: bug  
 assignees: ""  
----  
+---
 
 ## Description  
 
@@ -30,7 +30,7 @@ like screenshots and GIFs if possible.]
 **Actual Behavior:**  
 [Describe what actually happened.]  
 
-**Environment:**  
+## Environment  
 
 **Commit Hash:** [e.g., 1cb3d1876a7b4c2435b4a5067e5ae53631063948]  
 
@@ -38,7 +38,7 @@ like screenshots and GIFs if possible.]
 
 **Browser Version:** [e.g., Chrome 91.0.4472.77]  
 
-**Logs and Screenshots:**  
+## Logs and Screenshots  
 
 **Browser Console Logs:**  
 [Include relevant browser console logs, if applicable]  
@@ -46,7 +46,8 @@ like screenshots and GIFs if possible.]
 **Extra Screenshots:**  
 [Attach any relevant extra screenshots]  
 
-**Additional Context:**  
+## Additional Context  
+
 [Include any other context about the problem here.]  
 
 **Suggested Fix:** (facultatif)  
