@@ -1,14 +1,13 @@
 ---
-name: Bug report
+name: Bug Report
 about: Create a report to help us improve
-title: ''
-labels: bug
-assignees: ''
-
+title: "User Reported Bug: {Insert reported bug here}"
+labels: user-reported-bug
+assignees: ""
 ---
 
-Description
-===========
+**Describe the bug**
+A clear and concise description of what the bug is.
 
 **Bug Summary:** [Provide a brief but clear summary of the bug. Add visuals  
 like screenshots and GIFs if possible.]  
