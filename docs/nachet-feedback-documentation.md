@@ -83,11 +83,11 @@ sequenceDiagram;
 
 ### /get-user-id
 
-The `get-user-id` route retrieve the user-id for a given email.
+The `/get-user-id` route retrieve the user-id for a given email.
 
 ### /seeds
 
-The `seeds` is the route to call to get the all the seeds names needed for the
+The `/seeds` is the route to call to get the all the seeds names needed for the
 frontend to build the form to upload the pictures to the database.
 
 ### /feedback-positive

@@ -283,6 +283,8 @@ to the frontend.
 In the `app.py`
 
 ```python
+
+
 async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
     """
     Retrieves the pipelines from the Azure storage API.
@@ -326,7 +328,7 @@ async def get_pipelines() -> list:
     try:
         connection = get_connection()
         cursor = get_cursor(connection)
-        pipelines = await datastore.get_ml_structure(cursor)
+        pipelines = await nachet_datastore.get_ml_structure(cursor)
         return pipelines
     except Exception as error: # TODO modify Exception for more specific exception
         raise GetPipelinesError(error.args[0])
@@ -337,6 +339,7 @@ async def get_pipelines() -> list:
 
 |Version|Creation Date| Pipelines|
 |--|--|--|
+|0.1.4 | 2024-08-01 | Swin Transformer and 6 Seeds Detector|
 |0.1.3 | 2024-03-26 | Swin Transformer and 6 Seeds Detector|
 |0.1.0 | 2024-02-26 | Swin Transformer and 6 Seeds Detector|
 |0.1.1 | 2024-03-14 | Swin Transformer and 6 Seeds Detector|

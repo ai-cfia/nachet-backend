@@ -9,25 +9,38 @@ sequenceDiagram
   actor Client
   participant frontend
   participant backend
-  participant EndpointAPI
+  participant datastore
+  participant database
   participant AzureStorageAPI
 
-Client->>+frontend: getDirectoriesList()
-frontend->>+backend: HTTP POST req.
-backend->>+AzureStorageAPI: get_blobs()
-AzureStorageAPI-->>-backend: blobListObject
-backend-->>frontend: directories list res.
-frontend-->>Client: display directories
-Client->>frontend: handleInference()
-frontend->>backend: HTTP POST req.
-backend->>+AzureStorageAPI: upload_image(image)
-AzureStorageAPI-->>-backend: imageBlobObject
-backend->>+EndpointAPI: get_inference_result(image)
-EndpointAPI-->>-backend: inference res.
+Client->>+frontend: Start Application
+frontend->>+backend: HTTP POST : /get-user-id
+backend->>+datastore: get_user_id()
+datastore->>+database: get_user_id()
+database-->>-datastore: user_uuid
+datastore-->>-backend: user_uuid
+backend-->>-frontend: user_uuid
+frontend-->>Client: user is logged in
+frontend->>+backend: HTTP POST : /get-directories
+backend->>+datastore: get_picture_sets_info()
+datastore->>+database: get_picture_sets()
+database-->>-datastore: picture_sets
+datastore-->>-backend: picture_sets and pictures names
+backend-->>-frontend: directories list with pictures names
+frontend-->>-Client: display directories
+Client->>frontend: Capture seeds
+Client->>+frontend: Classify capture
+frontend->>backend: HTTP POST /inf
+backend->>+datastore: upload_picture(image)
+datastore->>database: new_picture()
+datastore->>AzureStorageAPI: upload_image(image)
+datastore-->>-backend: picture_id
 backend->>backend: process inf. result
+backend->>+datastore: save_inference_result(inf)
+datastore->>database: new_inference()
+datastore-->>-backend: inference res.
 backend-->>frontend: inference res.
 frontend-->>-Client: display inference res.
-backend->>+AzureStorageAPI: (async) upload_inference_result(json)
 ```
 
 ### Details
@@ -36,8 +49,7 @@ backend->>+AzureStorageAPI: (async) upload_inference_result(json)
   framework
 - Quart is an asyncio reimplementation of Flask
 - All HTTP requests are handled in `app.py` in the root folder
-- Azure Storage API calls are handled in the
-  `azure_storage_api/azure_Storage_api.py
+- Calls to Azure Blob Storage and the database are handled in the `nachet-backend/storage/datastore_storage_api.py` file that call the [datastore](https://github.com/ai-cfia/ailab-datastore) repo that handles the data 
 - Inference results from model endpoint are directly handled in
   `model_inference/inference.py`
 
