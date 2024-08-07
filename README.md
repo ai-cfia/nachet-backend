@@ -49,7 +49,10 @@ frontend-->>-Client: display inference res.
   framework
 - Quart is an asyncio reimplementation of Flask
 - All HTTP requests are handled in `app.py` in the root folder
-- Calls to Azure Blob Storage and the database are handled in the `nachet-backend/storage/datastore_storage_api.py` file that call the [datastore](https://github.com/ai-cfia/ailab-datastore) repo that handles the data 
+- Calls to Azure Blob Storage and the database are handled in the
+  `nachet-backend/storage/datastore_storage_api.py` file that call the
+  [datastore](https://github.com/ai-cfia/ailab-datastore) repo that handles the
+  data
 - Inference results from model endpoint are directly handled in
   `model_inference/inference.py`
 
