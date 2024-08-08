@@ -575,7 +575,9 @@ async def inference_request():
         processed_result_json = await inference.process_inference_results(
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
-
+        
+        result_json_string = await record_model(pipeline, processed_result_json)
+        
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
