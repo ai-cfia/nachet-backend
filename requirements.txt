@@ -10,4 +10,4 @@ cryptography
 pyyaml
 pydantic
 python-magic
-nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@main
+nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@69f49ceb4d1eee40c3f753929a8d57b5d040dc47

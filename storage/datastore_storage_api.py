@@ -172,10 +172,11 @@ async def get_directories(cursor, user_id):
     except Exception as error:
         raise DatastoreError(error)
 
-async def get_inference(cursor, user_id, picture_id):
+async def get_inference(cursor, user_id, picture_id=None, inference_id=None):
     try :
-        return await nachet_datastore.get_picture_inference(cursor, user_id, picture_id)
+        return await nachet_datastore.get_picture_inference(cursor, user_id, picture_id, inference_id)
     except Exception as error:
+        print(error)
         raise DatastoreError(error)
     
 async def get_picture_blob(cursor, user_id, container_client, picture_id):
