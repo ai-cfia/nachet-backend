@@ -639,7 +639,7 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
         
-        result_json_string = await record_model(pipeline, processed_result_json)
+        await record_model(pipeline, processed_result_json)
         
         # Open db connection
         connection = datastore.get_connection()
