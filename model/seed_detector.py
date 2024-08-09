@@ -11,9 +11,9 @@ from urllib.error import URLError
 from PIL import Image
 from collections import namedtuple
 from urllib.request import Request, urlopen
-from model.model_exceptions import ModelAPIErrors
+from model.model_exceptions import ModelAPIError
 
-class SeedDetectorModelAPIError(ModelAPIErrors) :
+class SeedDetectorModelAPIError(ModelAPIError) :
     pass
 
 def process_image_slicing(image_bytes: bytes, result_json: dict) -> list:

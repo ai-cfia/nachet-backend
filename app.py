@@ -20,48 +20,45 @@ load_dotenv() # noqa: E402
 
 import model.inference as inference # noqa: E402
 import storage.datastore_storage_api as datastore # noqa: E402
-from azure.core.exceptions import ResourceNotFoundError, ServiceResponseError # noqa: E402
+from model.model_exceptions import ModelAPIError # noqa: E402
 from model import request_function # noqa: E402
 from datastore import azure_storage # noqa: E402
 
 
-class APIErrors(Exception):
+class APIError(Exception):
+    pass
+
+class MissingArgumentsError(APIError):
+    pass
+
+class DeleteDirectoryRequestError(APIError):
+    pass
+
+class InferenceRequestError(APIError):
     pass
 
 
-class DeleteDirectoryRequestError(APIErrors):
+class CreateDirectoryRequestError(APIError):
     pass
 
 
-class ListDirectoriesRequestError(APIErrors):
+class ServerError(APIError):
     pass
 
 
-class InferenceRequestError(APIErrors):
+class ImageValidationError(APIError):
     pass
 
 
-class CreateDirectoryRequestError(APIErrors):
+class ValidateEnvVariablesError(APIError):
     pass
 
 
-class ServerError(APIErrors):
+class EmailNotSendError(APIError):
     pass
 
 
-class ImageValidationError(APIErrors):
-    pass
-
-
-class ValidateEnvVariablesError(APIErrors):
-    pass
-
-
-class EmailNotSendError(APIErrors):
-    pass
-
-
-class BatchImportError(APIErrors):
+class BatchImportError(APIError):
     pass
 
 
@@ -179,7 +176,7 @@ async def before_serving():
             """
         ) #TODO Transform into logging
 
-    except (Exception, ServerError, inference.ModelAPIErrors) as e:
+    except (Exception, ServerError, inference.ModelAPIError) as e:
         print(e)
         raise
 
@@ -190,14 +187,23 @@ async def get_user_id() :
     """
     try:
         data = await request.get_json()
-        email = data["email"]
+        email = data.get("email")
+        if not email:
+            raise MissingArgumentsError("Missing email")
         
         user_id = datastore.get_user_id(email)
         
-        return jsonify({"user_id": user_id}), 200    
-    except (KeyError, TypeError, ValueError, datastore.DatastoreError) as error:
+        return jsonify({"user_id": user_id}), 200 
+    
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"GetUserIdError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving user id for email {email} : {str(error)}"]), 400
+    except (KeyError, TypeError, ValueError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error retrieving user id for email {email} : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : Error retrieving user id for email {email}"]), 400
 
 # Deprecated
 @app.post("/del")
@@ -207,8 +213,8 @@ async def delete_directory():
     """
     try:
         data = await request.get_json()
-        container_name = data["container_name"]
-        folder_name = data["folder_name"]
+        container_name = data.get("container_name")
+        folder_name = data.get("folder_name")
         if container_name and folder_name:
             container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
@@ -228,11 +234,17 @@ async def delete_directory():
             else:
                 raise DeleteDirectoryRequestError("failed to mount container")
         else:
-            raise DeleteDirectoryRequestError("missing container or directory name")
+            raise MissingArgumentsError("missing container or directory name")
 
-    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error deleting directory : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error deleting directory : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error deleting directory"]), 400
 
 @app.post("/delete-request")
 async def delete_request():
@@ -243,8 +255,8 @@ async def delete_request():
     """
     try:
         data = await request.get_json()
-        user_id = data["container_name"]
-        picture_set_id = data["folder_uuid"]
+        user_id = data.get("container_name")
+        picture_set_id = data.get("folder_uuid")
         if user_id and picture_set_id:
             # Open db connection
             connection = datastore.get_connection()
@@ -256,11 +268,17 @@ async def delete_request():
             
             return jsonify(response), 200
         else:
-            raise DeleteDirectoryRequestError("missing container or directory name")
+            raise MissingArgumentsError("missing container or directory name")
 
-    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error requesting deletion of directory : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error requesting deletion of directory : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error requesting deletion of directory"]), 400
 
 @app.post("/delete-permanently")
 async def delete_permanently():
@@ -269,9 +287,9 @@ async def delete_permanently():
     """
     try:
         data = await request.get_json()
-        container_name = data["container_name"]
+        container_name = data.get("container_name")
         user_id = container_name
-        picture_set_id = data["folder_uuid"]
+        picture_set_id = data.get("folder_uuid")
         if user_id and picture_set_id:
             container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
@@ -286,11 +304,17 @@ async def delete_permanently():
             
             return jsonify(response), 200
         else:
-            raise DeleteDirectoryRequestError("missing container or directory name")
-
-    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
+            raise MissingArgumentsError("missing container name or directory id")
+    
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error deleting directory : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error deleting directory : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error deleting directory"]), 400
 
 @app.post("/delete-with-archive")
 async def delete_with_archive():
@@ -299,9 +323,9 @@ async def delete_with_archive():
     """
     try:
         data = await request.get_json()
-        container_name = data["container_name"]
+        container_name = data.get("container_name")
         user_id = container_name
-        picture_set_id = data["folder_uuid"]
+        picture_set_id = data.get("folder_uuid")
         if user_id and picture_set_id:
             container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
@@ -317,11 +341,17 @@ async def delete_with_archive():
             if response :
                 return jsonify(True), 200
         else:
-            raise DeleteDirectoryRequestError("missing container or directory name")
+            raise MissingArgumentsError("missing container or directory name")
 
-    except (KeyError, TypeError, azure_storage.MountContainerError, ResourceNotFoundError, DeleteDirectoryRequestError, ServiceResponseError, datastore.DatastoreError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"DeleteDirectoryRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error deleting directory : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error deleting directory : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error deleting directory"]), 400
 
 # Deprecated
 @app.post("/dir")
@@ -331,7 +361,7 @@ async def list_directories():
     """
     try:
         data = await request.get_json()
-        user_id = data["container_name"]
+        user_id = data.get("container_name")
         if user_id:
             # Open db connection
             connection = datastore.get_connection()
@@ -342,11 +372,17 @@ async def list_directories():
             datastore.end_query(connection, cursor)
             return jsonify(directories)
         else:
-            raise ListDirectoriesRequestError("Missing container name")
+            raise MissingArgumentsError("Missing container name")
 
-    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving user directories : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error retrieving user directories"]), 400
 
 @app.post("/get-directories")
 async def get_directories():
@@ -355,7 +391,7 @@ async def get_directories():
     """
     try:
         data = await request.get_json()
-        user_id = data["container_name"]
+        user_id = data.get("container_name")
         if user_id:
             # Open db connection
             connection = datastore.get_connection()
@@ -369,11 +405,17 @@ async def get_directories():
             result = {"folders" : directories_list}
             return jsonify(result)
         else:
-            raise ListDirectoriesRequestError("Missing container name")
+            raise MissingArgumentsError("Missing container name")
 
-    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving user directories : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error retrieving user directories"]), 400
 
 @app.post("/get-picture")
 async def get_picture():
@@ -382,11 +424,11 @@ async def get_picture():
     """
     try:
         data = await request.get_json()        
-        container_name = data["container_name"]
+        container_name = data.get("container_name")
         user_id = container_name
-        picture_id = data["picture_id"]
+        picture_id = data.get("picture_id")
         
-        if user_id:
+        if user_id and picture_id:
             
             container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
@@ -409,11 +451,17 @@ async def get_picture():
             datastore.end_query(connection, cursor)
             return jsonify(picture)
         else:
-            raise ListDirectoriesRequestError("Missing container name")
+            raise MissingArgumentsError("Missing container name")
 
-    except (KeyError, TypeError, ListDirectoriesRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"ListDirectoriesRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error retrieving the picture : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error retrieving the picture : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error retrieving the picture"]), 400
 
 
 @app.post("/create-dir")
@@ -423,9 +471,9 @@ async def create_directory():
     """
     try:
         data = await request.get_json()
-        container_name = data["container_name"]
+        container_name = data.get("container_name")
         user_id = container_name
-        folder_name = data["folder_name"]
+        folder_name = data.get("folder_name")
         if container_name and folder_name:
             container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
@@ -442,11 +490,17 @@ async def create_directory():
             else:
                 raise CreateDirectoryRequestError("Error while creating directory")
         else:
-            raise CreateDirectoryRequestError("missing container or directory name")
+            raise MissingArgumentsError("missing container or directory name")
 
-    except (KeyError, TypeError, CreateDirectoryRequestError, azure_storage.MountContainerError, datastore.DatastoreError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"CreateDirectoryRequestError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error creating directory : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error creating directory : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error creating directory"]), 400
 
 
 @app.post("/image-validation")
@@ -463,8 +517,11 @@ async def image_validation():
     try:
 
         data = await request.get_json()
-        image_base64 = data["image"]
-
+        image_base64 = data.get("image")
+        
+        if not image_base64 :
+            raise MissingArgumentsError("Missing image")
+        
         header, encoded_image = image_base64.split(",", 1)
         image_bytes = base64.b64decode(encoded_image)
 
@@ -499,9 +556,15 @@ async def image_validation():
 
         return jsonify([validator]), 200
 
-    except (KeyError, TypeError, ValueError, ImageValidationError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"ImageValidationError: {str(error)}"]), 400
+        return jsonify([f"Datastore Error validating image : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error validating image : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error validating image"]), 400
 
 
 @app.post("/inf")
@@ -517,10 +580,10 @@ async def inference_request():
         data = await request.get_json()
         pipeline_name = data.get("model_name")
         validator = data.get("validator")
-        folder_name = data["folder_name"]
-        container_name = data["container_name"]
-        imageDims = data["imageDims"]
-        image_base64 = data["image"]
+        folder_name = data.get("folder_name")
+        container_name = data.get("container_name")
+        imageDims = data.get("imageDims")
+        image_base64 = data.get("image")
         user_id = container_name
         
         area_ratio = data.get("area_ratio", 0.5)
@@ -531,7 +594,7 @@ async def inference_request():
         validators = CACHE.get("validators")
 
         if not (folder_name and container_name and imageDims and image_base64):
-            raise InferenceRequestError(
+            raise MissingArgumentsError(
                 "missing request arguments: either folder_name, container_name, imageDims or image is missing")
 
         if not pipelines_endpoints.get(pipeline_name):
@@ -591,9 +654,15 @@ async def inference_request():
         print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
         return jsonify(saved_result_json), 200
 
-    except (inference.ModelAPIErrors, KeyError, TypeError, ValueError, InferenceRequestError, azure_storage.MountContainerError) as error:
+    except datastore.DatastoreError as error:
         print(error)
-        return jsonify(["InferenceRequestError: " + error.args[0]]), 400
+        return jsonify([f"Datastore Error during classification : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError, ModelAPIError) as error:
+        print(error)
+        return jsonify([f"API Error during classification : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error during classification"]), 400
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
@@ -614,9 +683,9 @@ async def reload_seed_data():
     try:
         await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
         return jsonify(["Seed data reloaded successfully"]), 200
-    except urllib.error.HTTPError as e:
-        return jsonify(
-            {f"An error happend when reloading the seed data: {e.args[0]}"}), 500
+    except Exception as error :
+        print(error)
+        return jsonify([f"Unhandled API error : An error happend when reloading the seed data: {error.args[0]}"]), 400
 
 
 @app.get("/model-endpoints-metadata")
@@ -627,7 +696,7 @@ async def get_model_endpoints_metadata():
     if CACHE['endpoints']:
         return jsonify(CACHE['endpoints']), 200
     else:
-        return jsonify("Error retrieving model endpoints metadata.", 404)
+        return jsonify("Error retrieving model endpoints metadata.", 400)
 
 
 @app.get("/seeds")
@@ -640,7 +709,7 @@ async def get_seeds():
     if seeds :
         return jsonify(seeds), 200
     else:
-        return jsonify("Error retrieving seeds", 404)
+        return jsonify("Error retrieving seeds", 400)
 
 
 @app.post("/feedback-positive")
@@ -678,9 +747,16 @@ async def feedback_positive():
             datastore.end_query(connection, cursor)
             return jsonify([True]), 200
         else:
-            raise APIErrors("missing argument(s)")
-    except (KeyError, TypeError, APIErrors) as error:
-        return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
+            raise MissingArgumentsError("missing argument(s)")
+    except datastore.DatastoreError as error:
+        print(error)
+        return jsonify([f"Datastore Error giving a positive feedback : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error giving a positive feedback : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error giving a positive feedback"]), 400
 
 @app.post("/feedback-negative")
 async def feedback_negative():
@@ -700,13 +776,13 @@ async def feedback_negative():
         data = await request.get_json()
         
         if not ("userId" in data and "inferenceId" in data and "boxes" in data):
-            raise BatchImportError(
+            raise MissingArgumentsError(
                 "missing request arguments: either userId, inferenceId or boxes is missing")
         
-        boxes = data["boxes"]
+        boxes = data.get("boxes")
         for object in boxes:
             if not("boxId" in object and "label" in object and "classId" in object and "box" in object):
-                raise BatchImportError(
+                raise MissingArgumentsError(
                     "missing request arguments: either boxId, label, box or classId is missing in boxes")
             
         connection = datastore.get_connection()
@@ -715,8 +791,16 @@ async def feedback_negative():
         datastore.end_query(connection, cursor)
         
         return jsonify([True]), 200
-    except (KeyError, TypeError, APIErrors) as error:
-        return jsonify([f"APIErrors while sending the inference feedback: {str(error)}"]), 400
+    
+    except datastore.DatastoreError as error:
+        print(error)
+        return jsonify([f"Datastore Error giving a negative feedback : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error giving a negative feedback : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error giving a negative feedback"]), 400
 
 
 @app.post("/new-batch-import")
@@ -728,18 +812,18 @@ async def new_batch_import():
         data = await request.get_json()
         
         if not ("container_name" in data and "nb_pictures" in data):
-            raise BatchImportError(
+            raise MissingArgumentsError(
                 "missing request arguments: either container_name or nb_pictures is missing")
             
-        container_name = data["container_name"]
+        container_name = data.get("container_name")
         user_id = container_name
         folder_name = data.get("folder_name")
         if folder_name == "" :
             folder_name = None
-        nb_pictures = data["nb_pictures"]
+        nb_pictures = data.get("nb_pictures")
         
         if not container_name or not(isinstance(nb_pictures, int)) or nb_pictures <= 0 :
-            raise BatchImportError(
+            raise MissingArgumentsError(
                 "wrong request arguments: either container_name or nb_pictures is wrong")
         
         container_client = await azure_storage.mount_container(
@@ -753,10 +837,17 @@ async def new_batch_import():
         if picture_set_id:
             return jsonify({"session_id" : picture_set_id}), 200
         else:
-            raise APIErrors("failed to create picture set")
+            raise APIError("failed to create picture set")
 
-    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, datastore.DatastoreError) as error:
-        return jsonify([f"APIErrors while initiating the batch import: {str(error)}"]), 400
+    except datastore.DatastoreError as error:
+        print(error)
+        return jsonify([f"Datastore Error initiating batch upload : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error initiating batch upload : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error initiating batch upload"]), 400
 
 
 @app.post("/upload-picture")
@@ -766,23 +857,19 @@ async def upload_picture():
     """
     try:
         data = await request.get_json()
-        
-        if not ("container_name" in data and "seed_name" in data and "image" in data and "session_id" in data):
-            raise BatchImportError(
-                "missing request arguments: either seed_name, session_id, container_name or image is missing")
-           
-        container_name = data["container_name"]
+
+        container_name = data.get("container_name")
         user_id = container_name
-        seed_name = data["seed_name"]
+        seed_name = data.get("seed_name")
         seed_id = data.get("seed_id")
-        zoom_level = data["zoom_level"]
-        nb_seeds = data["nb_seeds"]
-        image_base64 = data["image"]
-        picture_set_id = data["session_id"]
+        zoom_level = data.get("zoom_level")
+        nb_seeds = data.get("nb_seeds")
+        image_base64 = data.get("image")
+        picture_set_id = data.get("session_id")
         
         if not (container_name and (seed_name or seed_id) and image_base64 and picture_set_id):
-            raise BatchImportError(
-                "wrong request arguments: either seed_name, session_id, container_name or image is wrong")
+            raise MissingArgumentsError(
+                "missing request arguments: either seed_name, session_id, container_name or image is missing")
             
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
@@ -801,9 +888,17 @@ async def upload_picture():
         if response:
             return jsonify([True]), 200
         else:
-            raise APIErrors("failed to upload pictures")
-    except (KeyError, TypeError, APIErrors, azure_storage.MountContainerError, BatchImportError) as error:
-        return jsonify([f"APIErrors while uploading pictures: {str(error)}"]), 400
+            raise APIError("failed to upload pictures")
+    
+    except datastore.DatastoreError as error:
+        print(error)
+        return jsonify([f"Datastore Error uploading picture : {str(error)}"]), 400
+    except (KeyError, TypeError, APIError) as error:
+        print(error)
+        return jsonify([f"API Error uploading picture : {str(error)}"]), 400
+    except Exception as error :
+        print(error)
+        return jsonify(["Unhandled API error : Error uploading picture"]), 400
 
 
 @app.get("/health")

@@ -90,7 +90,7 @@ class TestCreateFolder(unittest.TestCase):
         """
         Test the directory creation route with unsuccessful conditions : missing argument.
         """
-        expected = ("CreateDirectoryRequestError: missing container or directory name")
+        expected = ("API Error creating directory : missing container or directory name")
         
         response = asyncio.run(
             self.test_client.post(
@@ -113,7 +113,7 @@ class TestCreateFolder(unittest.TestCase):
         """
         Test the directory creation route with unsuccessful conditions : an error from datastore is raised.
         """
-        expected = ("CreateDirectoryRequestError: An error occured during the upload of the picture set")
+        expected = ("Datastore Error creating directory : An error occured during the upload of the picture set")
         self.mock_create_picture_set.side_effect = DatastoreError("An error occured during the upload of the picture set")
         
         response = asyncio.run(
@@ -205,7 +205,7 @@ class TestGetFolders(unittest.TestCase):
         """
         Test the get directories route with unsuccessful conditions : missing argument.
         """
-        expected = ("ListDirectoriesRequestError: Missing container name")
+        expected = ("API Error retrieving user directories : Missing container name")
         
         response = asyncio.run(
             self.test_client.post(
@@ -227,7 +227,7 @@ class TestGetFolders(unittest.TestCase):
         """
         Test the get directories route with unsuccessful conditions : an error from datastore is raised.
         """
-        expected = ("ListDirectoriesRequestError: An error occured while retrieving the picture sets")
+        expected = ("Datastore Error retrieving user directories : An error occured while retrieving the picture sets")
         self.mock_get_directories.side_effect = DatastoreError("An error occured while retrieving the picture sets")
         
         response = asyncio.run(

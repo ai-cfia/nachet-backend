@@ -1,2 +1,2 @@
-class ModelAPIErrors(Exception):
+class ModelAPIError(Exception):
     pass

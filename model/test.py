@@ -7,9 +7,9 @@ Functions:
     request_inference_from_nachet_six_seed: Requests inference from the Nachet Six Seed model.
 """
 from collections import namedtuple
-from model.model_exceptions import ModelAPIErrors
+from model.model_exceptions import ModelAPIError
 
-class TestModelAPIError(ModelAPIErrors) :
+class TestModelAPIError(ModelAPIError) :
     pass
 
 async def request_inference_from_test(model: namedtuple, previous_result: str):

@@ -97,7 +97,7 @@ class TestPositiveFeedback(unittest.TestCase):
         """
         Test if a request with missing arguments return an error
         """
-        expected = ("APIErrors while sending the inference feedback: missing request arguments: either userId, inferenceId or boxes is missing")
+        expected = ("API Error giving a positive feedback : missing request arguments: either userId, inferenceId or boxes is missing")
         
         inference = self.create_test_inference()
         inferenceId = inference.get("inference_id")
@@ -122,7 +122,7 @@ class TestPositiveFeedback(unittest.TestCase):
         result_json = json.loads(asyncio.run(response.get_data()))
         self.assertEqual(result_json[0], expected)
         
-        expected = ("APIErrors while sending the inference feedback: missing request arguments: boxId is missing in boxes")
+        expected = ("API Error giving a positive feedback : missing request arguments: boxId is missing in boxes")
         
         boxes.append({}) # add a box with a missing argument 
         
@@ -249,7 +249,7 @@ class TestNegativeFeedback(unittest.TestCase):
         """
         Test if a request with missing arguments return an error
         """
-        expected = ("APIErrors while sending the inference feedback: missing request arguments: either userId, inferenceId or boxes is missing")
+        expected = ("API Error giving a negative feedback : missing request arguments: either userId, inferenceId or boxes is missing")
         
         inference = self.create_test_inference()
         inferenceId = inference.get("inference_id")
@@ -284,7 +284,7 @@ class TestNegativeFeedback(unittest.TestCase):
         result_json = json.loads(asyncio.run(response.get_data()))
         self.assertEqual(result_json[0], expected)
         
-        expected = ("APIErrors while sending the inference feedback: missing request arguments: either boxId, label, box or classId is missing in boxes")
+        expected = ("API Error giving a negative feedback : missing request arguments: either boxId, label, box or classId is missing in boxes")
         
         boxes.append({                
                 "label": "Solanum carolinense",

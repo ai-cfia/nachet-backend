@@ -7,9 +7,9 @@ import json
 from collections import namedtuple
 from urllib.error import URLError
 from urllib.request import Request, urlopen
-from model.model_exceptions import ModelAPIErrors
+from model.model_exceptions import ModelAPIError
 
-class SixSeedModelAPIError(ModelAPIErrors) :
+class SixSeedModelAPIError(ModelAPIError) :
     pass
 
 async def request_inference_from_nachet_6seeds(model: namedtuple, previous_result: str):

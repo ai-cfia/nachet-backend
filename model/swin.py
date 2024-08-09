@@ -8,9 +8,9 @@ import json
 from collections import namedtuple
 from urllib.error import URLError
 from urllib.request import Request, urlopen
-from model.model_exceptions import ModelAPIErrors
+from model.model_exceptions import ModelAPIError
 
-class SwinModelAPIError(ModelAPIErrors) :
+class SwinModelAPIError(ModelAPIError) :
     pass
 
 def process_swin_result(img_box:dict, results: dict) -> list:

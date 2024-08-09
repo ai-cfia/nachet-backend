@@ -57,7 +57,7 @@ class TestNewBatchImport(unittest.TestCase):
         """
         Test if a request with missing arguments return an error
         """
-        expected = ("APIErrors while initiating the batch import: missing request arguments: either container_name or nb_pictures is missing")
+        expected = ("API Error initiating batch upload : missing request arguments: either container_name or nb_pictures is missing")
 
         response = asyncio.run(
             self.test_client.post(
@@ -80,7 +80,7 @@ class TestNewBatchImport(unittest.TestCase):
         """
         Test if a request with a wrong argument return an error
         """
-        expected = ("APIErrors while initiating the batch import: wrong request arguments: either container_name or nb_pictures is wrong")
+        expected = ("API Error initiating batch upload : wrong request arguments: either container_name or nb_pictures is wrong")
 
         response = asyncio.run(
             self.test_client.post(
@@ -219,7 +219,7 @@ class TestUploadBatchImport(unittest.TestCase):
         """
         Test if a request with missing arguments return an error
         """
-        expected = ("APIErrors while uploading pictures: missing request arguments: either seed_name, session_id, container_name or image is missing")
+        expected = ("API Error uploading picture : missing request arguments: either seed_name, session_id, container_name or image is missing")
 
         response = asyncio.run(
             self.test_client.post(
@@ -247,7 +247,7 @@ class TestUploadBatchImport(unittest.TestCase):
         """
         Test if a request with wrong arguments return an error
         """
-        expected = ("APIErrors while uploading pictures: wrong request arguments: either seed_name, session_id, container_name or image is wrong")
+        expected = ("API Error uploading picture : missing request arguments: either seed_name, session_id, container_name or image is missing")
 
         response = asyncio.run(
             self.test_client.post(
