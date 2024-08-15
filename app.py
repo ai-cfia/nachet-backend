@@ -639,7 +639,7 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
         
-        result_json_string = await record_model(pipeline, processed_result_json)
+        await record_model(pipeline, processed_result_json)
         
         # Open db connection
         connection = datastore.get_connection()
@@ -744,8 +744,9 @@ async def feedback_positive():
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
             await datastore.save_perfect_feedback(cursor, inference_id, user_id, boxes_id)
+            inference = await datastore.get_inference(cursor, str(user_id), None, inference_id=str(inference_id))
             datastore.end_query(connection, cursor)
-            return jsonify([True]), 200
+            return jsonify(inference), 200
         else:
             raise MissingArgumentsError("missing argument(s)")
     except datastore.DatastoreError as error:
@@ -778,7 +779,8 @@ async def feedback_negative():
         if not ("userId" in data and "inferenceId" in data and "boxes" in data):
             raise MissingArgumentsError(
                 "missing request arguments: either userId, inferenceId or boxes is missing")
-        
+        user_id = data.get("userId")
+        inference_id = data.get("inferenceId")
         boxes = data.get("boxes")
         for object in boxes:
             if not("boxId" in object and "label" in object and "classId" in object and "box" in object):
@@ -788,9 +790,9 @@ async def feedback_negative():
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
         await datastore.save_annoted_feedback(cursor, data)
+        inference = await datastore.get_inference(cursor, str(user_id), None, inference_id=str(inference_id))
         datastore.end_query(connection, cursor)
-        
-        return jsonify([True]), 200
+        return jsonify(inference), 200
     
     except datastore.DatastoreError as error:
         print(error)
