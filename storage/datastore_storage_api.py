@@ -33,10 +33,16 @@ if NACHET_SCHEMA is None:
     raise DatastoreError("Missing environment variable: NACHET_SCHEMA")
 
 def get_connection() :
-    return db.connect_db(NACHET_DB_URL, NACHET_SCHEMA)
-
+    try :
+        return db.connect_db(NACHET_DB_URL, NACHET_SCHEMA)
+    except Exception as error:
+        raise DatastoreError(error)
+        
 def get_cursor(connection):
-    return db.cursor(connection)
+    try :
+        return db.cursor(connection)
+    except Exception as error:
+        raise DatastoreError(error)
  
 def end_query(connection, cursor):
     db.end_query(connection, cursor)
