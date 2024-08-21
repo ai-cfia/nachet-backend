@@ -45,7 +45,10 @@ def get_cursor(connection):
         raise DatastoreError(error)
  
 def end_query(connection, cursor):
-    db.end_query(connection, cursor)
+    try :
+        db.end_query(connection, cursor)
+    except Exception as error:
+        raise DatastoreError(error)
  
 async def get_all_seeds() -> list:
 
@@ -56,7 +59,7 @@ async def get_all_seeds() -> list:
         connection = get_connection()
         cursor = get_cursor(connection)
         return await nachet_datastore.get_seed_info(cursor)
-    except Exception as error: # TODO modify Exception for more specific exception
+    except Exception as error:
         raise SeedNotFoundError(error.args[0])
 
 
@@ -72,14 +75,6 @@ def get_all_seeds_names() -> list:
     except Exception as error: # TODO modify Exception for more specific exception
         raise SeedNotFoundError(error.args[0])
 
-def get_seeds(expression: str) -> list:
-    """
-    Return a list of all seed that contains the expression
-    """
-    connection = get_connection()
-    cursor = get_cursor(connection)
-    return list(filter(lambda x: expression in x, get_all_seeds_names(cursor)))
-
 def get_user_id(email: str) -> str:
     """
     Return the user_id of the user
@@ -88,33 +83,41 @@ def get_user_id(email: str) -> str:
         connection = get_connection()
         cursor = get_cursor(connection)
         if user_datastore.is_user_registered(cursor, email):
-            return user_datastore.get_user_id(cursor, email)
+            user_id = user_datastore.get_user_id(cursor, email)
+            end_query(connection, cursor)
+            return user_id
         else :
+            end_query(connection, cursor)
             raise UserNotFoundError("User not found")
     except Exception as error:
         raise DatastoreError(error)
                                       
 async def create_user(email: str, connection_string) -> datastore.User:
     """
-    Return True if user is valid, False otherwise
+    Return the user User(email, user_id)
     """
-    connection = get_connection()
-    cursor = get_cursor(connection)
-    user = await datastore.new_user(cursor, email, connection_string)
-    end_query(connection, cursor)
-    return user
+    try:
+        connection = get_connection()
+        cursor = get_cursor(connection)
+        user = await datastore.new_user(cursor, email, connection_string)
+        end_query(connection, cursor)
+        return user
+    except Exception as error:
+        raise DatastoreError(error)
 
 
 async def get_picture_id(cursor, user_id, image, container_client) :
     """
     Return the picture_id of the image
     """
-    picture_id = await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image, container_client)
-    return picture_id
+    try:
+        return await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image, container_client)
+    except Exception as error:
+        raise DatastoreError(error)
 
-def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, seed_id: str, zoom_level: float = None, nb_seeds: int = None) :
+async def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, seed_id: str, zoom_level: float = None, nb_seeds: int = None) :
     try :
-        return nachet_datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, seed_id, zoom_level, nb_seeds)
+        return await nachet_datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name, seed_id, zoom_level, nb_seeds)
     except Exception as error:
         raise DatastoreError(error)
     
@@ -182,7 +185,6 @@ async def get_inference(cursor, user_id, picture_id=None, inference_id=None):
     try :
         return await nachet_datastore.get_picture_inference(cursor, user_id, picture_id, inference_id)
     except Exception as error:
-        print(error)
         raise DatastoreError(error)
     
 async def get_picture_blob(cursor, user_id, container_client, picture_id):
