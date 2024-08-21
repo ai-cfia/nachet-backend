@@ -1,4 +1,7 @@
 """
+THOSE FUNCTIONS ARE DEPRECATED
+The functions currently in use are in the datastore repo
+
 ---- user-container based structure ----- - container name is user id - whenever
 a new user is created, a new container is created with the user uuid - inside
 the container, there are project folders (project name = project uuid) - for

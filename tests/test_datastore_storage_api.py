@@ -32,7 +32,7 @@ class TestConnection(unittest.TestCase):
             self.connection.rollback()
             self.connection.close()
 
-    def test_get_connection_successfull(self):
+    def test_get_connection_successful(self):
         try :
             self.connection = datastore.get_connection()
             self.assertFalse(self.connection.closed)
@@ -45,7 +45,7 @@ class TestConnection(unittest.TestCase):
         with self.assertRaises(datastore.DatastoreError):
             self.connection = datastore.get_connection()
 
-    def test_get_cursor_successfull(self):
+    def test_get_cursor_successful(self):
         try :
             self.connection = datastore.get_connection()
             self.cursor = datastore.get_cursor(self.connection)
@@ -59,7 +59,7 @@ class TestConnection(unittest.TestCase):
         with self.assertRaises(datastore.DatastoreError):
             self.cursor = datastore.get_cursor(mock_connection)
 
-    def test_end_query_successfull(self):
+    def test_end_query_successful(self):
         try :
             self.connection = datastore.get_connection()
             self.cursor = datastore.get_cursor(self.connection)
@@ -92,7 +92,7 @@ class TestSeedsGetters(unittest.IsolatedAsyncioTestCase):
     def tearDown(self) -> None:
         self.test_client = None
 
-    async def test_get_all_seeds_successfull(self):
+    async def test_get_all_seeds_successful(self):
         mock_cursor = MagicMock()
         mock_connection = MagicMock()
 
@@ -119,7 +119,7 @@ class TestSeedsGetters(unittest.IsolatedAsyncioTestCase):
                 with self.assertRaises(datastore.SeedNotFoundError):
                     await datastore.get_all_seeds()
 
-    def test_get_all_seeds_names_successfull(self):
+    def test_get_all_seeds_names_successful(self):
         mock_cursor = MagicMock()
         mock_connection = MagicMock()
 
@@ -159,7 +159,7 @@ class TestUser(unittest.IsolatedAsyncioTestCase):
     def tearDown(self) -> None:
         self.test_client = None
     
-    def test_get_user_id_successfull(self):
+    def test_get_user_id_successful(self):
         mock_is_user_registered = MagicMock(return_value=True)
         mock_get_user_id = MagicMock(return_value=self.user_id)
 
@@ -202,7 +202,7 @@ class TestUser(unittest.IsolatedAsyncioTestCase):
             
             mock_is_user_registered.assert_called_once_with(mock_cursor, email)
 
-    async def test_create_user_successfull(self):
+    async def test_create_user_successful(self):
         mock_new_user = AsyncMock(return_value=datastore.datastore.User(self.email, self.user_id))
 
         with patch('storage.datastore_storage_api.get_connection') as mock_get_connection, \
@@ -255,7 +255,7 @@ class TestPicture(unittest.IsolatedAsyncioTestCase):
     def tearDown(self) -> None:
         self.test_client = None
 
-    async def test_get_picture_id_successfull(self):
+    async def test_get_picture_id_successful(self):
         mock_upload_picture_unknown = AsyncMock(return_value=self.picture_id)
         with patch('storage.datastore_storage_api.nachet_datastore.upload_picture_unknown', new=mock_upload_picture_unknown) :
             self.assertEqual(str(await datastore.get_picture_id(self.mock_cursor, self.user_id, self.mock_image, self.mock_container_client)), self.picture_id)
@@ -268,7 +268,7 @@ class TestPicture(unittest.IsolatedAsyncioTestCase):
                 await datastore.get_picture_id(self.mock_cursor, self.user_id, self.mock_image, self.mock_container_client)
                 mock_upload_picture_unknown.assert_awaited_once_with(self.mock_cursor, self.user_id, self.mock_image, self.mock_container_client)
 
-    async def test_upload_pictures_successfull(self):
+    async def test_upload_pictures_successful(self):
         mock_upload_pictures = AsyncMock(return_value=[self.picture_id])
         with patch('storage.datastore_storage_api.nachet_datastore.upload_pictures', new=mock_upload_pictures) :
             self.assertEqual(await datastore.upload_pictures(self.mock_cursor, self.user_id, self.picture_set_id, self.mock_container_client, [self.mock_image], self.seed_name, self.seed_id), [self.picture_id])
@@ -281,7 +281,7 @@ class TestPicture(unittest.IsolatedAsyncioTestCase):
                 await datastore.upload_pictures(self.mock_cursor, self.user_id, self.picture_set_id, self.mock_container_client, [self.mock_image], self.seed_name, self.seed_id)
                 mock_upload_pictures.assert_awaited_once_with(self.mock_cursor, self.user_id, self.picture_set_id, self.mock_container_client, [self.mock_image], self.seed_name, self.seed_id, None, None)
 
-    async def test_create_picture_set_successfull(self):
+    async def test_create_picture_set_successful(self):
         mock_create_picture_set = AsyncMock(return_value=self.picture_set_id)
         with patch('storage.datastore_storage_api.datastore.create_picture_set', new=mock_create_picture_set) :
             self.assertEqual(await datastore.create_picture_set(self.mock_cursor, self.mock_container_client, self.user_id, len([self.mock_image]), self.folder_name), self.picture_set_id)

@@ -91,7 +91,7 @@ class TestPositiveFeedback(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         result_json = json.loads(asyncio.run(response.get_data()))
-        self.assertTrue(result_json)
+        self.assertIsInstance(result_json, dict)
         
     def test_positive_feedback_missing_arguments_error(self):
         """
@@ -240,10 +240,9 @@ class TestNegativeFeedback(unittest.TestCase):
                     "boxes": boxes
                 })
         )
-        print(response)
-        result_json = json.loads(asyncio.run(response.get_data()))
-        self.assertTrue(result_json)
         self.assertEqual(response.status_code, 200)
+        result_json = json.loads(asyncio.run(response.get_data()))
+        self.assertIsInstance(result_json, dict)
 
     def test_positive_feedback_missing_arguments_error(self):
         """

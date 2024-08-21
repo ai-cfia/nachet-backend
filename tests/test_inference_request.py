@@ -36,7 +36,7 @@ class TestInferenceRequest(unittest.TestCase):
         self.image_src = None
         self.test = None
 
-    @patch("storage.azure_storage_api.mount_container")
+    @patch("bin.bin_azure_storage_api.mount_container") # TODO : change to patch the mount_container function of the datastore repo
     def test_inference_request_successful(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
@@ -100,8 +100,8 @@ class TestInferenceRequest(unittest.TestCase):
         print(expected_keys == responses)
         self.assertEqual(responses, expected_keys)
 
-    @patch("storage.azure_storage_api.mount_container")
-    def test_inference_request_unsuccessfull(self, mock_container):
+    @patch("bin.bin_azure_storage_api.mount_container") # TODO : change to patch the mount_container function of the datastore repo
+    def test_inference_request_unsuccessful(self, mock_container):
         # Mock azure client services
         mock_blob = Mock()
         mock_blob.readall.return_value = b""
