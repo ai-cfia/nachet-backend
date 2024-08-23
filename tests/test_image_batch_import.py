@@ -31,7 +31,7 @@ class TestNewBatchImport(unittest.TestCase):
                 self.session_id = None
         self.test_client = None
 
-    def test_new_batch_import_successfull(self):
+    def test_new_batch_import_successful(self):
 
         response = asyncio.run(
             self.test_client.post(
@@ -193,7 +193,7 @@ class TestUploadBatchImport(unittest.TestCase):
                 self.session_id = None
         self.test_client = None
         
-    def test_upload_picture_successfull(self):
+    def test_upload_picture_successful(self):
         response = asyncio.run(
             self.test_client.post(
                 '/upload-picture',

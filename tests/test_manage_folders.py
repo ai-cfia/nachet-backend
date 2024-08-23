@@ -61,7 +61,7 @@ class TestCreateFolder(unittest.TestCase):
         self.patch_end_query.stop()
 
 
-    def test_create_directory_successfull(self):
+    def test_create_directory_successful(self):
         """
         Test the directory creation route with successful conditions.
         """
@@ -178,7 +178,7 @@ class TestGetFolders(unittest.TestCase):
         self.patch_get_directories.stop()
         self.patch_end_query.stop()
 
-    def test_get_directories_successfull(self):
+    def test_get_directories_successful(self):
         """
         Test the get directories route with successful conditions.
         """
@@ -310,7 +310,7 @@ class TestGetPicture(unittest.TestCase):
         self.patch_get_picture_blob.stop()
         self.patch_end_query.stop()
     
-    def test_get_picture_successfull(self):
+    def test_get_picture_successful(self):
         """
         Test the get picture route with successful conditions.
         """
@@ -347,12 +347,122 @@ class TestDeleteFolder(unittest.TestCase):
         Set up the test environment before running each test case.
         """
         self.test_client = app.test_client()
+        self.container_name = "test_container_name"
+        self.folder_uuid = "test_folder_uuid"
+        self.validated_pictures_id = ["picture_id_1", "picture_id_3"]
+
+        # Mock the azure_storage and database variables
+        self.mock_cur = MagicMock()     
+        self.mock_connection = MagicMock()
+        self.mock_container_client = MagicMock()
+
+        # Patch the azure_storage and datastore functions
+        self.patch_connect_db = patch('app.datastore.db.connect_db', return_value=self.mock_connection)
+        self.patch_cursor = patch('app.datastore.db.cursor', return_value=self.mock_cur)
+        self.patch_mount_container = patch('app.azure_storage.mount_container', return_value=self.mock_container_client)
+        self.patch_delete_directory_request = patch('app.datastore.delete_directory_request', return_value =  self.validated_pictures_id)
+        self.patch_delete_directory_permanently = patch('app.datastore.delete_directory_permanently', return_value =  True)
+        self.patch_delete_with_archive = patch('app.datastore.delete_directory_with_archive', return_value = self.folder_uuid)
+        self.patch_end_query = patch('app.datastore.end_query')
+
+        self.mock_connect_db = self.patch_connect_db.start()
+        self.mock_cursor = self.patch_cursor.start()
+        self.mock_mount_container = self.patch_mount_container.start()
+        self.mock_delete_directory_request = self.patch_delete_directory_request.start()
+        self.mock_delete_directory_permanently = self.patch_delete_directory_permanently.start()
+        self.mock_delete_with_archive = self.patch_delete_with_archive.start()
+        self.mock_end_query = self.patch_end_query.start()
 
     def tearDown(self) -> None:
         """
         Tear down the test environment at the end of each test case.
         """
         self.test_client = None
+        self.patch_connect_db.stop()
+        self.patch_cursor.stop()
+        self.patch_mount_container.stop()
+        self.patch_delete_directory_request.stop()
+        self.patch_delete_directory_permanently.stop()
+        self.patch_delete_with_archive.stop()
+        self.patch_end_query.stop()
+
+    def test_delete_request_successful(self):
+        """
+        Test the delete request route with successful conditions.
+        """
+        response = asyncio.run(
+            self.test_client.post(
+                '/delete-request',
+                headers={
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                json={
+                    "container_name": self.container_name,
+                    "folder_uuid": self.folder_uuid
+                })
+        )
+        self.assertEqual(response.status_code, 200)
+        self.maxDiff = None
+        self.assertEqual(json.loads(asyncio.run(response.get_data())), self.validated_pictures_id)
+        
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_cursor.assert_called_once_with(self.mock_connection)
+        self.mock_delete_directory_request.assert_called_once_with(self.mock_cur, self.container_name, self.folder_uuid)
+        self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)
+        
+    def test_delete_permanently_successful(self):
+        """
+        Test the delete permanently route with successful conditions.
+        """
+        response = asyncio.run(
+            self.test_client.post(
+                '/delete-permanently',
+                headers={
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                json={
+                    "container_name": self.container_name,
+                    "folder_uuid": self.folder_uuid
+                })
+        )
+        self.assertEqual(response.status_code, 200)
+        self.maxDiff = None
+        self.assertTrue(json.loads(asyncio.run(response.get_data())))
+
+        self.mock_mount_container.assert_called_once_with(CONNECTION_STRING, self.container_name, create_container=True)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_cursor.assert_called_once_with(self.mock_connection)
+        self.mock_delete_directory_permanently.assert_called_once_with(self.mock_cur, self.container_name, self.folder_uuid, self.mock_container_client)
+        self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)
+
+    def test_delete_with_archive_successful(self):
+        """
+        Test the delete with archive route with successful conditions.
+        """
+        response = asyncio.run(
+            self.test_client.post(
+                '/delete-with-archive',
+                headers={
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                json={
+                    "container_name": self.container_name,
+                    "folder_uuid": self.folder_uuid
+                })
+        )
+        self.assertEqual(response.status_code, 200)
+        self.maxDiff = None
+        self.assertTrue(json.loads(asyncio.run(response.get_data())))
+
+        self.mock_mount_container.assert_called_once_with(CONNECTION_STRING, self.container_name, create_container=True)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_cursor.assert_called_once_with(self.mock_connection)
+        self.mock_delete_with_archive.assert_called_once_with(self.mock_cur, self.container_name, self.folder_uuid, self.mock_container_client)
+        self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)
+
 
 if __name__ == '__main__':
     unittest.main()
