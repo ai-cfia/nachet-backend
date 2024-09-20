@@ -15,6 +15,7 @@ from quart import Quart, request, jsonify
 from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
 load_dotenv() # noqa: E402
 
@@ -133,6 +134,7 @@ CACHE = {
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH_MEGABYTES * 1024 * 1024
+app.asgi_app = OpenTelemetryMiddleware(app.asgi_app)
 
 
 @app.before_serving
@@ -425,7 +427,7 @@ async def get_picture():
     try:
         data = await request.get_json()        
         container_name = data.get("container_name")
-        user_id = container_name
+        user_id = data.get("user_id")
         picture_id = data.get("picture_id")
         
         if user_id and picture_id:
