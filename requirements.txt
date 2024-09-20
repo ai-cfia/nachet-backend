@@ -10,4 +10,9 @@ cryptography
 pyyaml
 pydantic
 python-magic
+opentelemetry-instrumentation-asgi
+opentelemetry-distro
+opentelemetry-exporter-otlp
+opentelemetry-sdk
+opentelemetry-api
 nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@main
