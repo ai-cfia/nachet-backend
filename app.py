@@ -16,6 +16,10 @@ from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
 load_dotenv() # noqa: E402
 
@@ -86,6 +90,8 @@ PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 
+OTEL_COLLECTOR_URL = os.getenv("OTEL_COLLECTOR_ENDPOINT")
+
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
     VALID_DIMENSION = json.loads(os.getenv("NACHET_VALID_DIMENSION"))
@@ -130,6 +136,12 @@ CACHE = {
     "pipelines": {},
     "validators": []
 }
+
+
+trace.set_tracer_provider(TracerProvider())
+tracer = trace.get_tracer(__name__)
+span_processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=OTEL_COLLECTOR_URL))
+trace.get_tracer_provider().add_span_processor(span_processor)
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
