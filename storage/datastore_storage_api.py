@@ -5,11 +5,11 @@ import os
 import datastore
 from datastore import db
 from datastore import user as user_datastore
-from datastore import nachet as nachet_datastore
-import datastore.bin.deployment_mass_import
+import nachet as nachet_datastore
+import nachet.bin.deployment_mass_import
 
 import datastore.bin.upload_picture_set
-import datastore.db.queries.seed as seed_queries
+import nachet.db.queries.seed as seed_queries
 
 class DatastoreError(Exception):
     pass
