@@ -19,7 +19,13 @@ from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter as TraceExporter
+# from opentelemetry import metrics
+# from opentelemetry.sdk.metrics import MeterProvider
+# from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OtlpSpanExporter as MetricExporter
+# from opentelemetry import logs
+# from opentelemetry.sdk.logs import LogEmitterProvider
+# from opentelemetry.exporter.otlp.proto.grpc.log_exporter import OtlpSpanExporter as LogExporter
 
 load_dotenv() # noqa: E402
 
@@ -137,11 +143,23 @@ CACHE = {
     "validators": []
 }
 
-
+trace_exporter = TraceExporter(endpoint=OTEL_COLLECTOR_URL)
+trace_processor = BatchSpanProcessor(trace_exporter)
 trace.set_tracer_provider(TracerProvider())
 tracer = trace.get_tracer(__name__)
-span_processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=OTEL_COLLECTOR_URL))
-trace.get_tracer_provider().add_span_processor(span_processor)
+trace.get_tracer_provider().add_span_processor(trace_processor)
+
+
+# metrics.set_meter_provider(MeterProvider())
+# meter = metrics.get_meter(__name__)
+# metrics_exporter = MetricExporter(endpoint=OTEL_COLLECTOR_URL)
+# # metrics.get_meter_provider().start_pipeline()
+
+
+# logs.set_log_emitter_provider(LogEmitterProvider())
+# emitter = logs.get_log_emitter(__name__)
+# logs_exporter = LogExporter(endpoint=OTEL_COLLECTOR_URL)
+# # logs.get_tracer_provider().add_span_processor(logs_exporter)
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
