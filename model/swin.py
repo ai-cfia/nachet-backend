@@ -56,7 +56,8 @@ async def request_inference_from_swin(model: namedtuple, previous_result: 'list[
                 model.deployment_platform: model.name
             }
             body = img
-            req = Request(model.endpoint, body, headers)
+            req = Request(model.endpoint, body, headers, method="POST")
+            # req = Request("http://192.168.x.x:12390/score", body, headers, method="POST")
             response = urlopen(req)
             result = response.read()
             results.append(json.loads(result.decode("utf8")))

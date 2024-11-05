@@ -88,6 +88,10 @@ PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
 PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
+ENVIRONMENT = os.getenv("NACHET_ENV")
+NACHET_FRONTEND_DEV_URL = os.getenv("NACHET_FRONTEND_DEV_URL")
+NACHET_FRONTEND_PUBLIC_URL = os.getenv("NACHET_FRONTEND_PUBLIC_URL")
+ALLOWED_URL = NACHET_FRONTEND_DEV_URL if ENVIRONMENT == "local" else NACHET_FRONTEND_PUBLIC_URL
 
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
@@ -129,8 +133,15 @@ Model = namedtuple(
 
 CACHE = {"seeds": None, "endpoints": None, "pipelines": {}, "validators": []}
 
+cors_settings = {
+    "allow_origin": [ALLOWED_URL],
+    "allow_methods": ["GET", "POST", "OPTIONS"],
+    "allow_credentials": True,
+    "max_age": 86400
+}
+
 app = Quart(__name__)
-app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
+app = cors(app, **cors_settings)
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH_MEGABYTES * 1024 * 1024
 
 
@@ -191,12 +202,12 @@ async def get_user_id():
     """
     try:
         email = None
-        internal = True # set flag to false if developing locally
 
         if "jxVouchCookie" in request.cookies:
-            email = decode_vouch_cookie(request.cookies["jxVouchCookie"])
+            decoded_cookie = decode_vouch_cookie(request.cookies["jxVouchCookie"])
+            email = decoded_cookie["CustomClaims"]["email"]
 
-        if not internal and not email: # only allow internal requests to bypass email
+        if ENVIRONMENT == "local" and not email:  # only allow local dev requests to bypass email
             data = await request.get_json()
             email = data.get("email")
 

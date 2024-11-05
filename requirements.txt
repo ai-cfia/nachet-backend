@@ -1,14 +1,16 @@
-numpy
+nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@v1.0.0-nachet-datastore
+numpy==1.26.4
 azure-storage-blob
 azure-identity
-quart
+flask==3.0.3
+quart==0.19.6
 quart-cors
 python-dotenv
 hypercorn
-Pillow
+Pillow==10.3.0
 cryptography
 pyyaml
-pydantic
+pydantic==2.7.1
+pydantic-core==2.18.2
 python-magic
 PyJWT
-nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@v1.0.0-nachet-datastore
