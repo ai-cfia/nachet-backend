@@ -16,23 +16,27 @@ from quart_cors import cors
 from collections import namedtuple
 from cryptography.fernet import Fernet
 
-load_dotenv() # noqa: E402
+load_dotenv()  # noqa: E402
 
-import model.inference as inference # noqa: E402
-import storage.datastore_storage_api as datastore # noqa: E402
-from model.model_exceptions import ModelAPIError # noqa: E402
-from model import request_function # noqa: E402
-from datastore import azure_storage # noqa: E402
+import model.inference as inference  # noqa: E402
+import storage.datastore_storage_api as datastore  # noqa: E402
+from model.model_exceptions import ModelAPIError  # noqa: E402
+from model import request_function  # noqa: E402
+from datastore import azure_storage  # noqa: E402
+from auth.cookie import decode_vouch_cookie  # noqa: E402
 
 
 class APIError(Exception):
     pass
 
+
 class MissingArgumentsError(APIError):
     pass
 
+
 class DeleteDirectoryRequestError(APIError):
     pass
+
 
 class InferenceRequestError(APIError):
     pass
@@ -84,6 +88,10 @@ PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
 PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
+ENVIRONMENT = os.getenv("NACHET_ENV")
+NACHET_FRONTEND_DEV_URL = os.getenv("NACHET_FRONTEND_DEV_URL")
+NACHET_FRONTEND_PUBLIC_URL = os.getenv("NACHET_FRONTEND_PUBLIC_URL")
+ALLOWED_URL = NACHET_FRONTEND_DEV_URL if ENVIRONMENT == "local" else NACHET_FRONTEND_PUBLIC_URL
 
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
@@ -97,7 +105,7 @@ except (TypeError, json.decoder.JSONDecodeError):
         NACHET_VALID_EXTENSION or NACHET_VALID_DIMENSION is not set,
         using default values: {", ".join(list(VALID_EXTENSION))} and dimension: {tuple(VALID_DIMENSION.values())}
         """,
-        ImageWarning
+        ImageWarning,
     )
 
 try:
@@ -106,32 +114,34 @@ except (TypeError, ValueError):
     MAX_CONTENT_LENGTH_MEGABYTES = 16
     warnings.warn(
         f"NACHET_MAX_CONTENT_LENGTH not set, using default value of {MAX_CONTENT_LENGTH_MEGABYTES}",
-        MaxContentLengthWarning
+        MaxContentLengthWarning,
     )
 
 
 Model = namedtuple(
-    'Model',
+    "Model",
     [
-        'request_function',
-        'name',
-        'version',
-        'endpoint',
-        'api_key',
-        'content_type',
-        'deployment_platform',
-    ]
+        "request_function",
+        "name",
+        "version",
+        "endpoint",
+        "api_key",
+        "content_type",
+        "deployment_platform",
+    ],
 )
 
-CACHE = {
-    "seeds": None,
-    "endpoints": None,
-    "pipelines": {},
-    "validators": []
+CACHE = {"seeds": None, "endpoints": None, "pipelines": {}, "validators": []}
+
+cors_settings = {
+    "allow_origin": [ALLOWED_URL],
+    "allow_methods": ["GET", "POST", "OPTIONS"],
+    "allow_credentials": True,
+    "max_age": 86400
 }
 
 app = Quart(__name__)
-app = cors(app, allow_origin="*", allow_methods=["GET", "POST", "OPTIONS"])
+app = cors(app, **cors_settings)
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH_MEGABYTES * 1024 * 1024
 
 
@@ -140,7 +150,9 @@ async def before_serving():
     try:
         # Check: do environment variables exist?
         if CONNECTION_STRING is None:
-            raise ServerError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+            raise ServerError(
+                "Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING"
+            )
 
         if NACHET_DATA is None:
             raise ServerError("Missing environment variable: NACHET_DATA")
@@ -159,51 +171,76 @@ async def before_serving():
 
         # Check: are environment variables correct?
         if not bool(re.match(connection_string_regex, CONNECTION_STRING)):
-            raise ServerError("Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
+            raise ServerError(
+                "Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING"
+            )
 
         if not bool(re.match(pipeline_version_regex, PIPELINE_VERSION)):
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
         # Store the seeds names and ml structure in CACHE
-        CACHE["seeds"] = await datastore.get_all_seeds() 
+        CACHE["seeds"] = await datastore.get_all_seeds()
         CACHE["endpoints"] = await get_pipelines()
-        
+
         print(
             f"""Server start with current configuration:\n
                 date: {date.today()}
                 file version of pipelines: {PIPELINE_VERSION}
                 pipelines: {[pipeline for pipeline in CACHE["pipelines"].keys()]}\n
             """
-        ) #TODO Transform into logging
+        )  # TODO Transform into logging
 
     except (Exception, ServerError, inference.ModelAPIError) as e:
         print(e)
         raise
 
+
 @app.post("/get-user-id")
-async def get_user_id() :
+async def get_user_id():
     """
     Returns the user id
     """
     try:
-        data = await request.get_json()
-        email = data.get("email")
+        email = None
+
+        if "jxVouchCookie" in request.cookies:
+            decoded_cookie = decode_vouch_cookie(request.cookies["jxVouchCookie"])
+            email = decoded_cookie["CustomClaims"]["email"]
+
+        if ENVIRONMENT == "local" and not email:  # only allow local dev requests to bypass email
+            data = await request.get_json()
+            email = data.get("email")
+
         if not email:
             raise MissingArgumentsError("Missing email")
-        
+
         user_id = datastore.get_user_id(email)
-        
-        return jsonify({"user_id": user_id}), 200 
-    
+
+        return jsonify({"user_id": user_id}), 200
+
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error retrieving user id for email {email} : {str(error)}"]), 400
+        return (
+            jsonify(
+                [f"Datastore Error retrieving user id for email {email} : {str(error)}"]
+            ),
+            400,
+        )
     except (KeyError, TypeError, ValueError, APIError) as error:
         print(error)
-        return jsonify([f"API Error retrieving user id for email {email} : {str(error)}"]), 400
-    except Exception as error :
+        return (
+            jsonify([f"API Error retrieving user id for email {email} : {str(error)}"]),
+            400,
+        )
+    except Exception as error:
         print(error)
-        return jsonify([f"Unhandled API error : Error retrieving user id for email {email}"]), 400
+        return (
+            jsonify(
+                [f"Unhandled API error : Error retrieving user id for email {email}"]
+            ),
+            400,
+        )
+
 
 # Deprecated
 @app.post("/del")
@@ -242,15 +279,16 @@ async def delete_directory():
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error deleting directory : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error deleting directory"]), 400
+
 
 @app.post("/delete-request")
 async def delete_request():
     """
     Request to delete a directory in the user's container.
-    
+
     Return true if there is validated pictuers in it, false otherwise
     """
     try:
@@ -262,23 +300,37 @@ async def delete_request():
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
 
-            response = await datastore.delete_directory_request(cursor, str(user_id), str(picture_set_id))
+            response = await datastore.delete_directory_request(
+                cursor, str(user_id), str(picture_set_id)
+            )
             # Close connection
             datastore.end_query(connection, cursor)
-            
+
             return jsonify(response), 200
         else:
             raise MissingArgumentsError("missing container or directory name")
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error requesting deletion of directory : {str(error)}"]), 400
+        return (
+            jsonify(
+                [f"Datastore Error requesting deletion of directory : {str(error)}"]
+            ),
+            400,
+        )
     except (KeyError, TypeError, APIError) as error:
         print(error)
-        return jsonify([f"API Error requesting deletion of directory : {str(error)}"]), 400
-    except Exception as error :
+        return (
+            jsonify([f"API Error requesting deletion of directory : {str(error)}"]),
+            400,
+        )
+    except Exception as error:
         print(error)
-        return jsonify(["Unhandled API error : Error requesting deletion of directory"]), 400
+        return (
+            jsonify(["Unhandled API error : Error requesting deletion of directory"]),
+            400,
+        )
+
 
 @app.post("/delete-permanently")
 async def delete_permanently():
@@ -298,23 +350,26 @@ async def delete_permanently():
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
 
-            response = await datastore.delete_directory_permanently(cursor, str(user_id), str(picture_set_id), container_client)
+            response = await datastore.delete_directory_permanently(
+                cursor, str(user_id), str(picture_set_id), container_client
+            )
             # Close connection
             datastore.end_query(connection, cursor)
-            
+
             return jsonify(response), 200
         else:
             raise MissingArgumentsError("missing container name or directory id")
-    
+
     except datastore.DatastoreError as error:
         print(error)
         return jsonify([f"Datastore Error deleting directory : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error deleting directory : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error deleting directory"]), 400
+
 
 @app.post("/delete-with-archive")
 async def delete_with_archive():
@@ -334,11 +389,13 @@ async def delete_with_archive():
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
 
-            response = await datastore.delete_directory_with_archive(cursor, str(user_id), str(picture_set_id), container_client)
+            response = await datastore.delete_directory_with_archive(
+                cursor, str(user_id), str(picture_set_id), container_client
+            )
             # Close connection
             datastore.end_query(connection, cursor)
-            
-            if response :
+
+            if response:
                 return jsonify(True), 200
         else:
             raise MissingArgumentsError("missing container or directory name")
@@ -349,9 +406,10 @@ async def delete_with_archive():
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error deleting directory : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error deleting directory"]), 400
+
 
 # Deprecated
 @app.post("/dir")
@@ -376,13 +434,17 @@ async def list_directories():
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error retrieving user directories : {str(error)}"]), 400
+        return (
+            jsonify([f"Datastore Error retrieving user directories : {str(error)}"]),
+            400,
+        )
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error retrieving user directories"]), 400
+
 
 @app.post("/get-directories")
 async def get_directories():
@@ -398,24 +460,28 @@ async def get_directories():
             cursor = datastore.get_cursor(connection)
 
             directories_list = await datastore.get_directories(cursor, str(user_id))
-            
+
             # Close connection
             datastore.end_query(connection, cursor)
-            
-            result = {"folders" : directories_list}
+
+            result = {"folders": directories_list}
             return jsonify(result)
         else:
             raise MissingArgumentsError("Missing container name")
 
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error retrieving user directories : {str(error)}"]), 400
+        return (
+            jsonify([f"Datastore Error retrieving user directories : {str(error)}"]),
+            400,
+        )
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error retrieving user directories : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error retrieving user directories"]), 400
+
 
 @app.post("/get-picture")
 async def get_picture():
@@ -423,30 +489,33 @@ async def get_picture():
     get all directories in the user's container with pictures names and number of pictures
     """
     try:
-        data = await request.get_json()        
+        data = await request.get_json()
         container_name = data.get("container_name")
         user_id = container_name
         picture_id = data.get("picture_id")
-        
+
         if user_id and picture_id:
-            
             container_client = await azure_storage.mount_container(
                 CONNECTION_STRING, container_name, create_container=True
             )
             # Open db connection
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
-            
+
             picture = {}
             picture["picture_id"] = picture_id
-            
-            inference = await datastore.get_inference(cursor, str(user_id), str(picture_id))
+
+            inference = await datastore.get_inference(
+                cursor, str(user_id), str(picture_id)
+            )
             picture["inference"] = inference
-            
-            blob = await datastore.get_picture_blob(cursor, str(user_id), container_client, str(picture_id))
+
+            blob = await datastore.get_picture_blob(
+                cursor, str(user_id), container_client, str(picture_id)
+            )
             image_base64 = base64.b64encode(blob)
             picture["image"] = "data:image/tiff;base64," + image_base64.decode("utf-8")
-            
+
             # Close connection
             datastore.end_query(connection, cursor)
             return jsonify(picture)
@@ -459,7 +528,7 @@ async def get_picture():
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error retrieving the picture : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error retrieving the picture"]), 400
 
@@ -482,7 +551,9 @@ async def create_directory():
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
 
-            response = await datastore.create_picture_set(cursor, container_client, user_id, 0, folder_name)
+            response = await datastore.create_picture_set(
+                cursor, container_client, user_id, 0, folder_name
+            )
             # Close connection
             datastore.end_query(connection, cursor)
             if response:
@@ -498,7 +569,7 @@ async def create_directory():
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error creating directory : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error creating directory"]), 400
 
@@ -515,25 +586,29 @@ async def image_validation():
         ImageValidationError: If the image fails any of the validation checks.
     """
     try:
-
         data = await request.get_json()
         image_base64 = data.get("image")
-        
-        if not image_base64 :
+
+        if not image_base64:
             raise MissingArgumentsError("Missing image")
-        
+
         header, encoded_image = image_base64.split(",", 1)
         image_bytes = base64.b64decode(encoded_image)
 
         image = Image.open(io.BytesIO(image_bytes))
 
         # size check
-        if image.size[0] > VALID_DIMENSION["width"] and image.size[1] > VALID_DIMENSION["height"]:
-            raise ImageValidationError(f"invalid file size: {image.size[0]}x{image.size[1]}")
+        if (
+            image.size[0] > VALID_DIMENSION["width"]
+            and image.size[1] > VALID_DIMENSION["height"]
+        ):
+            raise ImageValidationError(
+                f"invalid file size: {image.size[0]}x{image.size[1]}"
+            )
 
         # resizable check
         try:
-            size = (100,150)
+            size = (100, 150)
             image.thumbnail(size)
         except IOError:
             raise ImageValidationError("invalid file not resizable")
@@ -543,7 +618,7 @@ async def image_validation():
 
         # extension check
         if image_extension not in VALID_EXTENSION:
-           raise ImageValidationError(f"invalid file extension: {image_extension}")
+            raise ImageValidationError(f"invalid file extension: {image_extension}")
 
         expected_header = f"data:image/{image_extension};base64"
 
@@ -552,7 +627,7 @@ async def image_validation():
             raise ImageValidationError(f"invalid file header: {header}")
 
         validator = await azure_storage.generate_hash(image_bytes)
-        CACHE['validators'].append(validator)
+        CACHE["validators"].append(validator)
 
         return jsonify([validator]), 200
 
@@ -562,7 +637,7 @@ async def image_validation():
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error validating image : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error validating image"]), 400
 
@@ -574,9 +649,11 @@ async def inference_request():
     The image and inference results are uploaded to a folder in the user's container.
     """
 
-    seconds = time.perf_counter() # TODO: transform into logging
+    seconds = time.perf_counter()  # TODO: transform into logging
     try:
-        print(f"{date.today()} Entering inference request") # TODO: Transform into logging
+        print(
+            f"{date.today()} Entering inference request"
+        )  # TODO: Transform into logging
         data = await request.get_json()
         pipeline_name = data.get("model_name")
         validator = data.get("validator")
@@ -585,17 +662,18 @@ async def inference_request():
         imageDims = data.get("imageDims")
         image_base64 = data.get("image")
         user_id = container_name
-        
+
         area_ratio = data.get("area_ratio", 0.5)
         color_format = data.get("color_format", "hex")
 
-        print(f"Requested by user: {container_name}") # TODO: Transform into logging
+        print(f"Requested by user: {container_name}")  # TODO: Transform into logging
         pipelines_endpoints = CACHE.get("pipelines")
         validators = CACHE.get("validators")
 
         if not (folder_name and container_name and imageDims and image_base64):
             raise MissingArgumentsError(
-                "missing request arguments: either folder_name, container_name, imageDims or image is missing")
+                "missing request arguments: either folder_name, container_name, imageDims or image is missing"
+            )
 
         if not pipelines_endpoints.get(pipeline_name):
             raise InferenceRequestError(f"model {pipeline_name} not found")
@@ -614,7 +692,7 @@ async def inference_request():
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
-        
+
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
@@ -624,34 +702,40 @@ async def inference_request():
         )
         # Close connection
         datastore.end_query(connection, cursor)
-        
+
         pipeline = pipelines_endpoints.get(pipeline_name)
 
         for idx, model in enumerate(pipeline):
-            print(f"Entering {model.name.upper()} model") # TODO: Transform into logging
+            print(
+                f"Entering {model.name.upper()} model"
+            )  # TODO: Transform into logging
             result_json = await model.request_function(model, cache_json_result[idx])
             cache_json_result.append(result_json)
 
-        print("End of inference request") # TODO: Transform into logging
-        print("Process results") # TODO: Transform into logging
+        print("End of inference request")  # TODO: Transform into logging
+        print("Process results")  # TODO: Transform into logging
 
         processed_result_json = await inference.process_inference_results(
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
-        
+
         await record_model(pipeline, processed_result_json)
-        
+
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
-        
-        saved_result_json = await datastore.save_inference_result(cursor, user_id, processed_result_json[0], picture_id, pipeline_name, 1)
-        
+
+        saved_result_json = await datastore.save_inference_result(
+            cursor, user_id, processed_result_json[0], picture_id, pipeline_name, 1
+        )
+
         # Close connection
         datastore.end_query(connection, cursor)
-        
+
         # return the inference results to the client
-        print(f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds") # TODO: Transform into logging
+        print(
+            f"Took: {'{:10.4f}'.format(time.perf_counter() - seconds)} seconds"
+        )  # TODO: Transform into logging
         return jsonify(saved_result_json), 200
 
     except datastore.DatastoreError as error:
@@ -660,17 +744,18 @@ async def inference_request():
     except (KeyError, TypeError, APIError, ModelAPIError) as error:
         print(error)
         return jsonify([f"API Error during classification : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error during classification"]), 400
+
 
 @app.get("/seed-data/<seed_name>")
 async def get_seed_data(seed_name):
     """
     Returns JSON containing requested seed data
     """
-    if seed_name in CACHE['seeds']:
-        return jsonify(CACHE['seeds'][seed_name]), 200
+    if seed_name in CACHE["seeds"]:
+        return jsonify(CACHE["seeds"][seed_name]), 200
     else:
         return jsonify(f"No information found for {seed_name}."), 400
 
@@ -681,11 +766,18 @@ async def reload_seed_data():
     Reloads seed data JSON document from Nachet-Data
     """
     try:
-        await fetch_json(NACHET_DATA, 'seeds', "seeds/all.json")
+        await fetch_json(NACHET_DATA, "seeds", "seeds/all.json")
         return jsonify(["Seed data reloaded successfully"]), 200
-    except Exception as error :
+    except Exception as error:
         print(error)
-        return jsonify([f"Unhandled API error : An error happend when reloading the seed data: {error.args[0]}"]), 400
+        return (
+            jsonify(
+                [
+                    f"Unhandled API error : An error happend when reloading the seed data: {error.args[0]}"
+                ]
+            ),
+            400,
+        )
 
 
 @app.get("/model-endpoints-metadata")
@@ -693,8 +785,8 @@ async def get_model_endpoints_metadata():
     """
     Returns JSON containing the deployed endpoints' metadata
     """
-    if CACHE['endpoints']:
-        return jsonify(CACHE['endpoints']), 200
+    if CACHE["endpoints"]:
+        return jsonify(CACHE["endpoints"]), 200
     else:
         return jsonify("Error retrieving model endpoints metadata.", 400)
 
@@ -706,7 +798,7 @@ async def get_seeds():
     """
     seeds = await datastore.get_all_seeds()
     CACHE["seeds"] = seeds
-    if seeds :
+    if seeds:
         return jsonify(seeds), 200
     else:
         return jsonify("Error retrieving seeds", 400)
@@ -715,49 +807,59 @@ async def get_seeds():
 @app.post("/feedback-positive")
 async def feedback_positive():
     """
-    Receives inference feedback from the user and stores it in the database.
-    --> Perfect Inference Feedback :
-            - send the user_id and the inference_id to the datastore so the inference will be verified and not modified
- Params :
-    - user_id : the user id that send the feedback
-    - inference_id : the inference id that the user want to modify
-    - boxes_id : the boxes id that the user want to modify
+       Receives inference feedback from the user and stores it in the database.
+       --> Perfect Inference Feedback :
+               - send the user_id and the inference_id to the datastore so the inference will be verified and not modified
+    Params :
+       - user_id : the user id that send the feedback
+       - inference_id : the inference id that the user want to modify
+       - boxes_id : the boxes id that the user want to modify
     """
     try:
         data = await request.get_json()
-        
+
         if not ("userId" in data and "inferenceId" in data and "boxes" in data):
             raise BatchImportError(
-                "missing request arguments: either userId, inferenceId or boxes is missing")
-        
+                "missing request arguments: either userId, inferenceId or boxes is missing"
+            )
+
         user_id = data["userId"]
         inference_id = data["inferenceId"]
-        
+
         for box in data["boxes"]:
             if "boxId" not in box:
                 raise BatchImportError(
-                    "missing request arguments: boxId is missing in boxes")
-                
-        boxes_id = [box['boxId'] for box in data["boxes"]]
-        
+                    "missing request arguments: boxId is missing in boxes"
+                )
+
+        boxes_id = [box["boxId"] for box in data["boxes"]]
+
         if inference_id and user_id and boxes_id:
             connection = datastore.get_connection()
             cursor = datastore.get_cursor(connection)
-            await datastore.save_perfect_feedback(cursor, inference_id, user_id, boxes_id)
-            inference = await datastore.get_inference(cursor, str(user_id), None, inference_id=str(inference_id))
+            await datastore.save_perfect_feedback(
+                cursor, inference_id, user_id, boxes_id
+            )
+            inference = await datastore.get_inference(
+                cursor, str(user_id), None, inference_id=str(inference_id)
+            )
             datastore.end_query(connection, cursor)
             return jsonify(inference), 200
         else:
             raise MissingArgumentsError("missing argument(s)")
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error giving a positive feedback : {str(error)}"]), 400
+        return (
+            jsonify([f"Datastore Error giving a positive feedback : {str(error)}"]),
+            400,
+        )
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error giving a positive feedback : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error giving a positive feedback"]), 400
+
 
 @app.post("/feedback-negative")
 async def feedback_negative():
@@ -766,7 +868,7 @@ async def feedback_negative():
     --> Annoted Inference Feedback :
             - send the user_id and the inference_id to the datastore so the inference will be verified
             - also send the feedback to the datastore to modified the inference
-        
+
     Params :
     - inference_feedback : correction of the inference from the user if not a perfect inference
     - user_id : the user id that send the feedback
@@ -775,32 +877,44 @@ async def feedback_negative():
     """
     try:
         data = await request.get_json()
-        
+
         if not ("userId" in data and "inferenceId" in data and "boxes" in data):
             raise MissingArgumentsError(
-                "missing request arguments: either userId, inferenceId or boxes is missing")
+                "missing request arguments: either userId, inferenceId or boxes is missing"
+            )
         user_id = data.get("userId")
         inference_id = data.get("inferenceId")
         boxes = data.get("boxes")
         for object in boxes:
-            if not("boxId" in object and "label" in object and "classId" in object and "box" in object):
+            if not (
+                "boxId" in object
+                and "label" in object
+                and "classId" in object
+                and "box" in object
+            ):
                 raise MissingArgumentsError(
-                    "missing request arguments: either boxId, label, box or classId is missing in boxes")
-            
+                    "missing request arguments: either boxId, label, box or classId is missing in boxes"
+                )
+
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
         await datastore.save_annoted_feedback(cursor, data)
-        inference = await datastore.get_inference(cursor, str(user_id), None, inference_id=str(inference_id))
+        inference = await datastore.get_inference(
+            cursor, str(user_id), None, inference_id=str(inference_id)
+        )
         datastore.end_query(connection, cursor)
         return jsonify(inference), 200
-    
+
     except datastore.DatastoreError as error:
         print(error)
-        return jsonify([f"Datastore Error giving a negative feedback : {str(error)}"]), 400
+        return (
+            jsonify([f"Datastore Error giving a negative feedback : {str(error)}"]),
+            400,
+        )
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error giving a negative feedback : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error giving a negative feedback"]), 400
 
@@ -812,32 +926,36 @@ async def new_batch_import():
     """
     try:
         data = await request.get_json()
-        
+
         if not ("container_name" in data and "nb_pictures" in data):
             raise MissingArgumentsError(
-                "missing request arguments: either container_name or nb_pictures is missing")
-            
+                "missing request arguments: either container_name or nb_pictures is missing"
+            )
+
         container_name = data.get("container_name")
         user_id = container_name
         folder_name = data.get("folder_name")
-        if folder_name == "" :
+        if folder_name == "":
             folder_name = None
         nb_pictures = data.get("nb_pictures")
-        
-        if not container_name or not(isinstance(nb_pictures, int)) or nb_pictures <= 0 :
+
+        if not container_name or not (isinstance(nb_pictures, int)) or nb_pictures <= 0:
             raise MissingArgumentsError(
-                "wrong request arguments: either container_name or nb_pictures is wrong")
-        
+                "wrong request arguments: either container_name or nb_pictures is wrong"
+            )
+
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
-        
+
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
-        picture_set_id = await datastore.create_picture_set(cursor, container_client, user_id, nb_pictures, folder_name)
+        picture_set_id = await datastore.create_picture_set(
+            cursor, container_client, user_id, nb_pictures, folder_name
+        )
         datastore.end_query(connection, cursor)
         if picture_set_id:
-            return jsonify({"session_id" : picture_set_id}), 200
+            return jsonify({"session_id": picture_set_id}), 200
         else:
             raise APIError("failed to create picture set")
 
@@ -847,7 +965,7 @@ async def new_batch_import():
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error initiating batch upload : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error initiating batch upload"]), 400
 
@@ -868,37 +986,52 @@ async def upload_picture():
         nb_seeds = data.get("nb_seeds")
         image_base64 = data.get("image")
         picture_set_id = data.get("session_id")
-        
-        if not (container_name and (seed_name or seed_id) and image_base64 and picture_set_id):
+
+        if not (
+            container_name
+            and (seed_name or seed_id)
+            and image_base64
+            and picture_set_id
+        ):
             raise MissingArgumentsError(
-                "missing request arguments: either seed_name, session_id, container_name or image is missing")
-            
+                "missing request arguments: either seed_name, session_id, container_name or image is missing"
+            )
+
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
-        
+
         _, encoded_data = image_base64.split(",", 1)
-        
+
         image_bytes = base64.b64decode(encoded_data)
-        
-        
+
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
-        response = await datastore.upload_pictures(cursor, user_id, picture_set_id, container_client, [image_bytes], seed_name, seed_id, zoom_level, nb_seeds)
+        response = await datastore.upload_pictures(
+            cursor,
+            user_id,
+            picture_set_id,
+            container_client,
+            [image_bytes],
+            seed_name,
+            seed_id,
+            zoom_level,
+            nb_seeds,
+        )
         datastore.end_query(connection, cursor)
-        
+
         if response:
             return jsonify([True]), 200
         else:
             raise APIError("failed to upload pictures")
-    
+
     except datastore.DatastoreError as error:
         print(error)
         return jsonify([f"Datastore Error uploading picture : {str(error)}"]), 400
     except (KeyError, TypeError, APIError) as error:
         print(error)
         return jsonify([f"API Error uploading picture : {str(error)}"]), 400
-    except Exception as error :
+    except Exception as error:
         print(error)
         return jsonify(["Unhandled API error : Error uploading picture"]), 400
 
@@ -911,12 +1044,7 @@ async def health():
 @app.get("/test")
 async def test():
     # Build test pipeline
-    CACHE["endpoints"] = [
-                {
-                    "pipeline_name": "test_pipeline",
-                    "models": ["test_model1"]
-                }
-            ]
+    CACHE["endpoints"] = [{"pipeline_name": "test_pipeline", "models": ["test_model1"]}]
     # Built test model
     m = Model(
         request_function["test"],
@@ -925,7 +1053,7 @@ async def test():
         "http://localhost:8080/test_model1",
         "test_api_key",
         "application/json",
-        "test_platform"
+        "test_platform",
     )
 
     CACHE["pipelines"]["test_pipeline"] = (m,)
@@ -937,6 +1065,7 @@ async def record_model(pipeline: namedtuple, result: list):
     new_entry = [{"name": model.name, "version": model.version} for model in pipeline]
     result[0]["models"] = new_entry
     return json.dumps(result, indent=4)
+
 
 async def fetch_json(repo_URL, key, file_path):
     """
@@ -980,12 +1109,14 @@ async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
             cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
             cipher_suite.decrypt(model.get("api_key").encode()).decode(),
             model.get("content_type"),
-            model.get("deployment_platform")
+            model.get("deployment_platform"),
         )
         models += (m,)
     # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
-        CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple([m for m in models if m.name in pipeline.get("models")])
+        CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple(
+            [m for m in models if m.name in pipeline.get("models")]
+        )
 
     return result_json.get("pipelines")
 
