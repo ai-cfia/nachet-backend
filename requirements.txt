@@ -2,7 +2,7 @@ nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@v1.0.0-nach
 numpy==1.26.4
 azure-storage-blob
 azure-identity
-flask==3.0.3
+flask==3.1.0
 quart==0.19.6
 quart-cors
 python-dotenv
