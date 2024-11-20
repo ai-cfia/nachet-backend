@@ -205,7 +205,7 @@ async def get_user_id():
 
         if "jxVouchCookie" in request.cookies:
             decoded_cookie = decode_vouch_cookie(request.cookies["jxVouchCookie"])
-            print(decoded_cookie)
+            # print(decoded_cookie)
             email = decoded_cookie["CustomClaims"]["email"]
 
         if ENVIRONMENT == "local" and not email:  # only allow local dev requests to bypass email
