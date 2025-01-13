@@ -1,0 +1,18 @@
+FROM python:3.11-bullseye
+
+WORKDIR /app
+
+ENV QUART_APP=app.py
+ENV QUART_ENV=development
+ENV PYTHONUNBUFFERED True
+ENV PYTHONPATH=/app
+
+
+COPY . ./
+COPY ./requirements.txt.local .
+COPY ./lib/ailab-datastore /app/ailab-datastore/
+# COPY ../ailab-datastore /app/ailab-datastore/
+
+RUN pip install --no-cache-dir -r requirements.txt.local
+
+CMD hypercorn -b :$PORT app:app

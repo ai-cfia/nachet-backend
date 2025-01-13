@@ -111,6 +111,7 @@ async def get_picture_id(cursor, user_id, image, container_client) :
     Return the picture_id of the image
     """
     try:
+        print("get_picture_id upload_picture_unknown")
         return await nachet_datastore.upload_picture_unknown(cursor, str(user_id), image, container_client)
     except Exception as error:
         raise DatastoreError(error)
@@ -137,6 +138,7 @@ async def get_pipelines() -> list:
         pipelines = await nachet_datastore.get_ml_structure(cursor)
         return pipelines
     except Exception as error: # TODO modify Exception for more specific exception
+        print(error)
         raise GetPipelinesError(error.args[0])
 
 async def save_inference_result(cursor, user_id:str, inference_dict, picture_id:str, pipeline_id:str, type:int):

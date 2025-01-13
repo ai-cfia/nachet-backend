@@ -81,7 +81,12 @@ class MaxContentLengthWarning(APIWarnings):
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
 pipeline_version_regex = r"\d.\d.\d"
 
-CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
+NACHET_BLOB_ACCOUNT = os.getenv("NACHET_BLOB_ACCOUNT")
+NACHET_BLOB_KEY = os.getenv("NACHET_BLOB_KEY")
+NACHET_BLOB_URL = os.getenv("NACHET_BLOB_URL")
+
+CONNECTION_STRING=f"DefaultEndpointsProtocol=http;AccountName={NACHET_BLOB_ACCOUNT};AccountKey={NACHET_BLOB_KEY};BlobEndpoint=http://{NACHET_BLOB_URL}/{NACHET_BLOB_ACCOUNT};"
+NACHET_STORAGE_URL=f"DefaultEndpointsProtocol=http;AccountName={NACHET_BLOB_ACCOUNT};AccountKey={NACHET_BLOB_KEY};"
 
 FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
@@ -170,7 +175,7 @@ async def before_serving():
             raise ServerError("Missing environment variable: NACHET_DATA")
 
         # Check: are environment variables correct?
-        if not bool(re.match(connection_string_regex, CONNECTION_STRING)):
+        if not ENVIRONMENT == "local" and not bool(re.match(connection_string_regex, CONNECTION_STRING)):
             raise ServerError(
                 "Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING"
             )
@@ -691,6 +696,8 @@ async def inference_request():
         cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
+        print("Mounting container")  # TODO: Transform into logging
+        print("Container name: ", container_name)  # TODO: Transform into logging
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
@@ -1113,7 +1120,10 @@ async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
             model.get("content_type"),
             model.get("deployment_platform"),
         )
-        models += (m,)
+        # only keep one if a model has the same name
+        if m not in models:
+            models += (m,)
+    
     # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple(
