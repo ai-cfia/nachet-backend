@@ -24,9 +24,12 @@ class UserNotFoundError(DatastoreError):
     pass
 
 NACHET_DB_URL = os.getenv("NACHET_DB_URL")
+NACHET_DB_USER = os.getenv("NACHET_DB_USER")
+NACHET_DB_PASSWORD = os.getenv("NACHET_DB_PASSWORD")
+NACHET_DB_CONN_URL = f"postgresql://{NACHET_DB_USER}:{NACHET_DB_PASSWORD}@{NACHET_DB_URL}"
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
-if NACHET_DB_URL is None:
+if NACHET_DB_CONN_URL is None:
     raise DatastoreError("Missing environment variable: NACHET_DB_URL")
 
 if NACHET_SCHEMA is None:
@@ -34,7 +37,7 @@ if NACHET_SCHEMA is None:
 
 def get_connection() :
     try :
-        return db.connect_db(NACHET_DB_URL, NACHET_SCHEMA)
+        return db.connect_db(NACHET_DB_CONN_URL, NACHET_SCHEMA)
     except Exception as error:
         raise DatastoreError(error)
         
