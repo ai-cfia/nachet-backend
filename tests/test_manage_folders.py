@@ -10,13 +10,23 @@ from storage.datastore_storage_api import DatastoreError
 class TestMissingEnvError(Exception):
     pass
 
-CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
+NACHET_BLOB_ACCOUNT = os.getenv("NACHET_BLOB_ACCOUNT")
+NACHET_BLOB_KEY = os.getenv("NACHET_BLOB_KEY")
+NACHET_BLOB_URL = os.getenv("NACHET_BLOB_URL")
+ENVIRONMENT = os.getenv("NACHET_ENV")
+
+AZURE_BASE_CONNECTION_STRING = f"DefaultEndpointsProtocol=http{"" if ENVIRONMENT == "local" else "s"};AccountName={NACHET_BLOB_ACCOUNT};AccountKey={NACHET_BLOB_KEY};"
+CONNECTION_STRING=f"{AZURE_BASE_CONNECTION_STRING}BlobEndpoint={NACHET_BLOB_URL};"
+
 NACHET_DB_URL = os.getenv("NACHET_DB_URL")
+NACHET_DB_USER = os.getenv("NACHET_DB_USER")
+NACHET_DB_PASSWORD = os.getenv("NACHET_DB_PASSWORD")
+NACHET_DB_CONN_URL = f"postgresql://{NACHET_DB_USER}:{NACHET_DB_PASSWORD}@{NACHET_DB_URL}"
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
 if CONNECTION_STRING is None:
     raise TestMissingEnvError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
-if NACHET_DB_URL is None:
+if NACHET_DB_CONN_URL is None:
     raise TestMissingEnvError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 if NACHET_SCHEMA is None:
     raise TestMissingEnvError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
@@ -81,7 +91,7 @@ class TestCreateFolder(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(asyncio.run(response.get_data())), [self.picture_set_id])
         self.mock_mount_container.assert_called_once_with(CONNECTION_STRING, self.container_name, create_container=True)
-        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_CONN_URL, NACHET_SCHEMA)
         self.mock_cursor.assert_called_once_with(self.mock_connection)
         self.mock_create_picture_set.assert_called_once_with(self.mock_cur, self.mock_container_client, self.container_name, 0, self.folder_name)
         self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)
@@ -196,7 +206,7 @@ class TestGetFolders(unittest.TestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(json.loads(asyncio.run(response.get_data())), {"folders" : self.folders_data})
-        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_CONN_URL, NACHET_SCHEMA)
         self.mock_cursor.assert_called_once_with(self.mock_connection)
         self.mock_get_directories.assert_called_once_with(self.mock_cur, self.container_name)
         self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)
@@ -331,7 +341,7 @@ class TestGetPicture(unittest.TestCase):
         self.maxDiff = None
         self.assertDictEqual(json.loads(asyncio.run(response.get_data())), {"inference": self.inference, "image": self.image, "picture_id": self.picture_id})
         self.mock_mount_container.assert_called_once_with(CONNECTION_STRING, self.container_name, create_container=True)
-        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_CONN_URL, NACHET_SCHEMA)
         self.mock_cursor.assert_called_once_with(self.mock_connection)
         self.mock_get_inference.assert_called_once_with(self.mock_cur, self.container_name, self.picture_id)
         self.mock_get_picture_blob.assert_called_once_with(self.mock_cur, self.container_name, self.mock_container_client, self.picture_id)
@@ -406,7 +416,7 @@ class TestDeleteFolder(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(json.loads(asyncio.run(response.get_data())), self.validated_pictures_id)
         
-        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_CONN_URL, NACHET_SCHEMA)
         self.mock_cursor.assert_called_once_with(self.mock_connection)
         self.mock_delete_directory_request.assert_called_once_with(self.mock_cur, self.container_name, self.folder_uuid)
         self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)
@@ -432,7 +442,7 @@ class TestDeleteFolder(unittest.TestCase):
         self.assertTrue(json.loads(asyncio.run(response.get_data())))
 
         self.mock_mount_container.assert_called_once_with(CONNECTION_STRING, self.container_name, create_container=True)
-        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_CONN_URL, NACHET_SCHEMA)
         self.mock_cursor.assert_called_once_with(self.mock_connection)
         self.mock_delete_directory_permanently.assert_called_once_with(self.mock_cur, self.container_name, self.folder_uuid, self.mock_container_client)
         self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)
@@ -458,7 +468,7 @@ class TestDeleteFolder(unittest.TestCase):
         self.assertTrue(json.loads(asyncio.run(response.get_data())))
 
         self.mock_mount_container.assert_called_once_with(CONNECTION_STRING, self.container_name, create_container=True)
-        self.mock_connect_db.assert_called_once_with(NACHET_DB_URL, NACHET_SCHEMA)
+        self.mock_connect_db.assert_called_once_with(NACHET_DB_CONN_URL, NACHET_SCHEMA)
         self.mock_cursor.assert_called_once_with(self.mock_connection)
         self.mock_delete_with_archive.assert_called_once_with(self.mock_cur, self.container_name, self.folder_uuid, self.mock_container_client)
         self.mock_end_query.assert_called_once_with(self.mock_connection, self.mock_cur)

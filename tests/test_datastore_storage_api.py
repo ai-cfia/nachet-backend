@@ -8,9 +8,12 @@ class TestMissingEnvError(Exception):
     pass
 
 NACHET_DB_URL = os.getenv("NACHET_DB_URL")
+NACHET_DB_USER = os.getenv("NACHET_DB_USER")
+NACHET_DB_PASSWORD = os.getenv("NACHET_DB_PASSWORD")
+NACHET_DB_CONN_URL = f"postgresql://{NACHET_DB_USER}:{NACHET_DB_PASSWORD}@{NACHET_DB_URL}"
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
-if NACHET_DB_URL is None:
+if NACHET_DB_CONN_URL is None:
     raise TestMissingEnvError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
 if NACHET_SCHEMA is None:
     raise TestMissingEnvError("Missing environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING")
@@ -39,7 +42,7 @@ class TestConnection(unittest.TestCase):
         except Exception as e:
             self.fail(f"get_connection() raised an exception: {e}")
 
-    @patch('storage.datastore_storage_api.NACHET_DB_URL', 'postgresql://invalid_url')
+    @patch('storage.datastore_storage_api.NACHET_DB_CONN_URL', 'postgresql://invalid_url')
     @patch('storage.datastore_storage_api.NACHET_SCHEMA', 'nonexistent_schema')
     def test_get_connection_error_invalid_params(self):
         with self.assertRaises(datastore.DatastoreError):
