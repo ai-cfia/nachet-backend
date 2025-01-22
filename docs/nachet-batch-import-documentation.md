@@ -1,5 +1,8 @@
 # Batch Upload of images
 
+([*Le français est disponible au bas de la
+page*](#téléversement-dimages-par-lot))
+
 ## Executive summary
 
 With the development of the datastore for Nachet, new opportunities arise. One
@@ -95,3 +98,77 @@ picture_set_id as a session id
 The `/upload-picture` route is the API endpoint responsible to assure the
 transit of the picture to the database. The frontend might send the session id
 so the picture is associate to the right picture_set
+
+---
+
+## Téléversement d'images par lot
+
+## Sommaire
+
+Avec le développement du datastore pour Nachet, de nouvelles opportunités émergent. L'une d'elles consiste à créer une fonctionnalité permettant aux utilisateurs de confiance d'effectuer un import d'images par lot dans la base de données. Grâce à cette nouvelle fonctionnalité, les utilisateurs peuvent désormais importer un dossier entier d'images d'un coup, réduisant considérablement le temps et les efforts nécessaires.
+
+Auparavant, les utilisateurs devaient télécharger manuellement des images dans le blob storage, ce qui était un processus long, en particulier pour des volumes de données importants. Avec l'introduction de cette fonctionnalité, les utilisateurs peuvent directement importer des images pour l'entraînement de l'IA avec Nachet, ce qui simplifie non seulement le processus d'importation, mais améliore également l'efficacité et la convivialité globale du système.
+
+## Prérequis
+
+- L'utilisateur doit être connecté et disposer d'un conteneur Azure Storage.
+- Le backend doit avoir une connexion avec le datastore.
+
+## Solution
+
+Pour répondre au besoin des utilisateurs de télécharger un lot d'images dans le blob storage via l'interface Nachet, nous devons implémenter différents points de terminaison dans le backend. Tout d'abord, nous devons créer un dossier dans le conteneur de l'utilisateur. Dans la base de données, cela sera lié à la table `picture_set`. Une fois que nous avons l'identifiant d'un `picture_set`, il sera utilisé par le front-end pour envoyer chaque image, une par une, au deuxième point de terminaison, en mentionnant le `picture_set` auquel elle appartient. Chaque image est ensuite téléchargée dans le blob storage, et une ligne est ajoutée à la table `picture` de la base de données.
+
+Comme nous téléchargeons les images une par une, nous pourrions rencontrer des problèmes si nous devons importer un très grand nombre d'images, ce qui pourrait prendre beaucoup de temps. Pour l'instant, nous implémentons une première version de l'importation par lot avec le front-end appelant le back-end pour chaque image, mais il pourrait être nécessaire de mettre en cache les images dans le back-end et de les envoyer en lots au datastore en fonction de la quantité d'images à télécharger.
+
+## Diagramme de séquence
+
+```mermaid
+sequenceDiagram;
+   title: Importation d'images par lot 1.0.0
+  autonumber
+  actor User
+  participant Frontend
+  participant Backend
+  participant Datastore
+
+    User ->>+Frontend: Demande de session d'importation
+    Frontend->>+Backend: Requête HTTP Post
+    Backend->>+Datastore: get_all_seeds(cursor)
+    Datastore-->>-Backend: Réponse avec les graines
+    Backend-->>-Frontend: Réponse avec les graines
+    Frontend -->>-User: Afficher le formulaire de session
+    User -) User: Remplir le formulaire :<br> Sélection de graines, nb graines/image, Zoom
+    User -)+Frontend: Téléchargement : dossier d'images
+    Frontend ->>+Backend: Requête HTTP Post : /new-batch-import
+    Backend -)+ Datastore: create_picture_set (cursor, user_id, container_client, nb_pictures)
+    Datastore --)- Backend : picture_set_id
+    Backend -->>- Frontend : picture_set_id
+    loop pour chaque image à télécharger
+    Frontend ->>+Backend: Requête HTTP Post : /upload-picture
+    Backend -)Datastore: upload_picture(cursor, container_client, encoded_picture, picture_set_id, **data)
+    Note over Backend, Datastore: Les données contiennent au moins les informations suivantes :<br> nom de la graine, niveau de zoom, nb graines
+    end
+```
+# Processus de Téléversement par Lot d'Images
+
+Le diagramme complet fait partie de la documentation du **datastore**. Vous pouvez le consulter ici :
+
+[Processus de téléversement pour utilisateurs de confiance](https://github.com/ai-cfia/nachet-datastore/blob/issue13-create-process-to-upload-metadata-for-trusted-users/doc/trusted-user-upload.md)
+
+## Routes API
+
+### /get-user-id
+
+La route `/get-user-id` permet de récupérer l'identifiant utilisateur (*user-id*) associé à une adresse courriel.
+
+### /seeds
+
+La route `/seeds` retourne la liste des noms de graines nécessaires pour permettre au frontend de construire le formulaire permettant de téléverser les images dans la base de données.
+
+### /new-batch-import
+
+La route `/new-batch-import` est l'endpoint appelé par le frontend pour démarrer un téléversement par lot. Cette route enregistre le nombre d'images à importer et retourne le nouvel identifiant de *picture_set* en tant qu'identifiant de session.
+
+### /upload-picture
+
+La route `/upload-picture` est l'API responsable d'assurer le transfert d'une image vers la base de données. Le frontend doit fournir l'identifiant de session afin d'associer l'image au bon *picture_set*.

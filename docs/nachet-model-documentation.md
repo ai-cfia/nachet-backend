@@ -1,5 +1,8 @@
 # Nachet Interactive Models
 
+([*Le français est disponible au bas de la
+page*](#modèles-nachet-interactive))
+
 ## Executive Summary
 
 Nachet Interactive uses various models to detect seeds. Documentation is
@@ -88,18 +91,19 @@ seeds.
 
 ### Why topN
 
-We decided to named the top results property top N because this value can return
-n predictions. Usually in AI, the top 5 result are use to measure the accuracy
-of a model. If the correct result is the top 5, then it is considered that the
-prediction was true.
+We decided to named the top results property topN because this value can return
+n predictions. Usually in AI, the top 5 results are used to measure the accuracy
+of a model. If the correct result is the top 5, then the prediction is
+considered true.
 
-This is useful in case were the user have is attention on more then 1 result.
+This is useful in cases where the user has his attention on more than 1 result.
 
  > "Top N accuracy — Top N accuracy is when you measure how often your predicted
- > class falls in the top N values of your softmax distribution."
- [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*. Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
+ > class falls in the top N values of your softmax distribution." [Nagda, R.
+ (2019-11-08) *Evaluating models using the Top N accuracy metrics*.
+ Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
 
-### Box around seed
+### Bounding boxes
 
 The `box` key stores the value for a specific box around a seed. This helps the
 frontend application build a red rectangle around every seed on the image.
@@ -148,9 +152,9 @@ body = b64encode(image)
 
 ## Error from models
 
-A list of common error models returns to the backend.
+A list of common errors models return to the backend.
 
-> To access the error from the model, go to the model endpoint in azure and look
+> To access the error from the model, go to the model endpoint in Azure and look
 > for the logs : CFIA/ACIA/workspace/endpoint/model/logs
 
 |Error|Model|Reason|Message|
@@ -310,6 +314,331 @@ This how the file will be represented in the datastore.
             "dataset_description": "Dataset Description",
             "Accuracy": 0.9205
         },
+    ]
+}
+```
+
+---
+
+## Modèles Nachet Interactive
+
+## Résumé
+
+Nachet Interactive utilise divers modèles pour détecter les graines. Une
+documentation est essentielle pour suivre leurs fonctionnalités. Les modèles
+peuvent réaliser différentes tâches, notamment la classification d'images, la
+segmentation d'images et la détection d'objets.
+
+## Tâches
+
+Les modèles de Nachet Interactive réalisent les tâches suivantes :
+
+| Tâche | Action | Entrée/Sortie |
+|:--|:--|:-----|
+| [Classification](https://huggingface.co/tasks/image-classification) | Cette tâche consiste à attribuer une seule étiquette ou classe à chaque image que le modèle reçoit. | L'entrée pour les modèles de classification est une image, et la sortie est une prédiction de la classe à laquelle elle appartient. |
+| [Détection d'objets](https://huggingface.co/tasks/object-detection) | Identifier et localiser un objet appartenant à une classe spécifique dans une image. | Les modèles de détection d'objets prennent une image en entrée et produisent une image avec une étiquette et un cadre autour de l'objet détecté. |
+| [Segmentation](https://huggingface.co/tasks/image-segmentation) | La segmentation consiste à diviser les images en différentes parties, où chaque pixel de l'image est associé à un objet. Cela inclut la segmentation d'instances, la segmentation panoptique et la segmentation sémantique. | Les modèles de segmentation prennent une image en entrée et renvoient une image divisée en objets. |
+
+> À ce jour (22/02/2024), aucun modèle n'utilise la segmentation. Pour en savoir
+> plus sur chaque tâche, cliquez sur le lien correspondant à leur page Hugging
+> Face. Pour en savoir plus sur les tâches d'IA en général : [Tâches Hugging
+> Face](https://huggingface.co/tasks).
+
+## Liste des modèles
+
+| Modèle | Nom complet | Tâche | Fonction d'appel API | Fonction d'inférence | Actif | Précision |
+|--|--|:--:|:--:|:--:|:--:|:--:|
+| Nachet-6seeds | m-14of15seeds-6seedsmag | Détection d'objets | nachet_6seeds | Aucun | Oui | - |
+| Seed-detector | seed-detector-1 | Détection d'objets | seed_detector | process_image_slicing | Oui | - |
+| Swin | swinv1-base-dataaugv2-1 | Classification | swin | process_swin_result | Oui | - |
+
+### Fonctions de requête d'inférence
+
+Les fonctions de requête d'inférence sont utilisées pour demander une prédiction
+au modèle spécifié (par exemple, Swin, Nachet-6seeds, etc.). Si nécessaire, ces
+fonctions traitent également les données afin qu'elles soient compatibles avec
+le prochain modèle dans la chaîne. Par exemple, Seed-detector ne retourne que
+"seed" comme étiquette, et ses inférences doivent être traitées et transmises au
+modèle suivant qui attribue les étiquettes correctes aux graines.
+
+## Valeur de retour des modèles
+
+```json
+{
+    "filename": "tmp/tmp_file_name",
+    "boxes": [
+        {"box": {
+                "topX": 0.0,
+                "topY": 0.0,
+                "bottomX": 0.0,
+                "bottomY": 0.0
+            },
+        "label": "top_label_name",
+        "score": 0.912,
+        "color": "#ff0",
+        "topN": [
+            {
+                "score": 0.912,
+                "label": "top_label_name"
+            },
+            {
+                "score": 0.053,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.0029,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.005,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.001,
+                "label": "seed_name"
+            }
+        ],
+        "overlapping": false,
+        "overlappingIndices": 0
+        }
+    ],
+    "labelOccurrence": {
+        "seed_name": 1
+    },
+    "totalBoxes": 1
+}
+```
+
+### Pourquoi topN
+
+Nous avons décidé de nommer la propriété des meilleurs résultats "top N" parce
+que cette valeur peut retourner *n* prédictions. Habituellement, en IA, les 5
+meilleurs résultats sont utilisés pour mesurer la précision d'un modèle. Si le
+résultat correct se retrouve dans le top 5, la prédiction est alors considérée
+comme correcte.
+
+Cela est utile dans les cas où l'utilisateur porte son attention sur plusieurs
+résultats.
+
+> "Top N accuracy — La précision Top N est une mesure indiquant à quelle
+> fréquence la classe prédite se trouve parmi les N meilleures valeurs de votre
+> distribution softmax."  
+> [Nagda, R. (2019-11-08) *Evaluating models using the Top N accuracy metrics*.
+> Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
+
+### Cadres de contour
+
+La clé `box` stocke les valeurs pour un cadre de contour spécifique autour d'une
+graine. Cela permet à l'application frontend de dessiner un rectangle rouge
+autour de chaque graine sur l'image.
+
+![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
+
+## Différentes façons d'appeler les modèles
+
+### En-tête (Header)
+
+Le point de terminaison peut héberger plusieurs modèles, il est donc nécessaire
+de spécifier le nom du modèle dans l'en-tête pour éviter les erreurs.
+
+```python
+# L'en-tête pour chaque modèle doit être :
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': ('Bearer ' + endpoint_api_key),
+    'azureml-model-deployment': model_name
+}
+```
+
+### Corps (Body)
+
+La structure du corps de la requête varie en fonction des tâches du modèle. Un
+modèle de classification peut uniquement classifier une graine dans une image,
+tandis qu'un modèle de détection d'objets peut détecter si l'image contient une
+ou plusieurs graines. Il reste à déterminer si un modèle de segmentation
+nécessite une structure de corps différente. [Voir tâches](#tâches)
+
+```python
+# Modèle de détection d'objets
+# Exemple : Nachet-6seeds et seed-detector
+body = {
+    'input_data': {
+        'columns': ['image'],
+        'index': [0],
+        'data': [image_bytes],
+    }
+}
+
+# Modèle de classification
+# Exemple : Swin
+body = b64encode(image)
+```
+
+## Erreurs des modèles
+
+Une liste des erreurs courantes renvoyées par les modèles au backend.
+
+> Pour accéder aux erreurs des modèles, allez sur l’endpoint du modèle dans
+> Azure et consultez les journaux : CFIA/ACIA/workspace/endpoint/model/logs
+
+|Erreur|Modèle|Raison|Message|
+|--|--|--|--|
+|ValueError| Swin |Source de l'image incorrecte|Doit être une URL valide commençant par `http://` ou `https://`, un chemin valide vers un fichier image ou une chaîne encodée en base64.|
+
+## Pipeline et données des modèles
+
+Afin de construire dynamiquement le pipeline dans le backend à partir du modèle,
+la structure de données suivante a été conçue. Pour le moment, les pipelines
+auront deux clés pour leurs noms (`model_name`, `pipeline_name`) pour prendre en
+charge le code frontend jusqu'à ce qu'il soit modifié pour obtenir le nom du
+pipeline avec la clé correcte.
+
+```yaml
+version:
+date:
+pipelines:
+  - models:
+    model_name:
+    pipeline_name:
+    created_by:
+    creation_date:
+    version:
+    description:
+    job_name:
+    dataset_description:
+    accuracy:
+    default:
+
+models:
+  - task:
+    endpoint:
+    api_key:
+    content_type:
+    deployment_platform:
+    endpoint_name:
+    model_name:
+    created_by:
+    creation_date:
+    version:
+    description:
+    job_name:
+    dataset_description:
+    accuracy:
+```
+
+### Description des Clés
+
+#### Clés Spécifiques au Fichier
+
+|Clé|Description|Format Attendu|
+|--|--|--|
+|version|La version du fichier|0.0.0|
+|date|La date de téléchargement du fichier|202x-mm-jj|
+|pipelines|Une liste des pipelines disponibles||
+|models|Une liste des modèles disponibles||
+
+#### Clés Spécifiques au Pipeline
+
+|Clé|Description|Format Attendu|
+|--|--|--|
+|models|Une liste des noms de modèles utilisés par le pipeline dans l'ordre|["that_model_name", "other_model_name"]|
+|pipeline_name|Le nom du pipeline|"Premier Pipeline"|
+|created_by|Le créateur du pipeline|"Avery GoodDataScientist"|
+|version|La version du pipeline|1|
+|description|La description du pipeline|"Description du Pipeline"|
+|job_name|Le nom de la tâche associée au pipeline|"Nom de la Tâche"|
+|dataset_description|Une brève description du dataset|"Description du Dataset"|
+|Accuracy|La précision des prédictions du pipeline|0.8302|
+|default|Détermine si le pipeline est celui par défaut|true ou false|
+
+#### Clés Spécifiques au Modèle
+
+|Clé|Description|Format Attendu|
+|--|--|--|
+|tasks|La tâche effectuée par le modèle|"object-detection", "classification" ou "segmentation"|
+|endpoint|L'endpoint du modèle|["https://that-model.inference.ml.com/score"](#model-specific-keys)|
+|api_key|Clé secrète pour accéder à l'API|"SeCRetKeys"|
+|content_type|Le type de contenu que le modèle peut traiter|"application/json"|
+|deployment_platform|La plateforme d'hébergement du modèle|"azure"|
+|endpoint_name|Le nom de l'endpoint du modèle|"that-model-endpoint"|
+|model_name|Le nom du modèle|"that_model_name"|
+|created_by|Le créateur du modèle|"Avery GoodDataScientist"|
+|creation_date|La date de création du modèle|"2024-03-18"|
+|version|La version du modèle|1|
+|description|La description du modèle|"Description du Modèle"|
+|job_name|Le nom de la tâche associée au modèle|"Nom de la Tâche"|
+|dataset_description|Une brève description du dataset|"Description du Dataset"|
+|Accuracy|La précision des prédictions du modèle|0.9205|
+
+#### Représentation JSON et Exemple
+
+Voici comment le fichier sera représenté dans le datastore.
+
+```json
+{
+    "version": "0.1.0",
+    "date": "2024-02-26",
+    "pipelines":
+    [
+        {
+            "models": ["that_model_name", "other_model_name"],
+            "pipeline_name": "Premier Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-01",
+            "version": 1,
+            "description": "Description du Pipeline",
+            "job_name": "Nom de la Tâche",
+            "dataset_description": "Description du Dataset",
+            "Accuracy": 0.8302,
+            "default": true
+        },
+        {
+            "models": ["that_model_name"],
+            "pipeline_name": "Deuxième Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-02",
+            "version": 2,
+            "description": "Description du Pipeline",
+            "job_name": "Nom de la Tâche",
+            "dataset_description": "Description du Dataset",
+            "Accuracy": 0.7989,
+            "default": true
+        }
+    ],
+    "models":
+    [
+        {
+            "task": "classification",
+            "endpoint": "https://that-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "azure",
+            "endpoint_name": "that-model-endpoint",
+            "model_name": "that_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2023-12-02",
+            "version": 5,
+            "description": "Description du Modèle",
+            "job_name": "Nom de la Tâche",
+            "dataset_description": "Description du Dataset",
+            "Accuracy": 0.6908
+        },
+        {
+            "task": "object-detection",
+            "endpoint": "https://other-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "aws",
+            "endpoint_name": "other-model-endpoint",
+            "model_name": "other_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2023-11-25",
+            "version": 3,
+            "description": "Description du Modèle",
+            "job_name": "Nom de la Tâche",
+            "dataset_description": "Description du Dataset",
+            "Accuracy": 0.9205
+        }
     ]
 }
 ```

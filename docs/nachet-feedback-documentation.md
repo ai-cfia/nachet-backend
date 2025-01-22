@@ -1,10 +1,13 @@
-# User inference feedback
+# Inference feedback
+
+([*Le français est disponible au bas de la
+page*](#rétroaction-sur-linférence))
 
 ## Executive summary
 
-When seed analysts use Nachet, they should be able to give their retroaction on
-the result. A pipeline of action needs to be integrated from the Frontend to the
-database to be able to register the user feedback. The possible feedbacks types
+When seed analysts use Nachet, they should be able to give their feedback on the
+result. A pipeline of action needs to be integrated from the Frontend to the
+database to be able to register the user feedback. The possible feedback types
 are:
 
 - A perfect feedback (Doesn't change anything and validate the inference)
@@ -16,14 +19,14 @@ are:
 ## Prerequisites
 
 - The user must be signed in and have an Azure Storage Container
-- The backend need to have a connection with the datastore
+- The backend needs to have a connection with the datastore
 - The user can do an inference request
 
 ## Solution
 
 The analyst selects the box for which he or she wishes to give feedback, and
 then fills in a form containing a series of information about its correction.
-The front end adapts this information and sends it to the back end, then,
+The frontend adapts this information and sends it to the backend, then,
 according to each case of feedback, the datastore updates the inference and the
 object.
 
@@ -83,19 +86,123 @@ sequenceDiagram;
 
 ### /get-user-id
 
-The `/get-user-id` route retrieve the user-id for a given email.
+The `/get-user-id` route retrieves the user-id for a given email.
 
 ### /seeds
 
-The `/seeds` is the route to call to get the all the seeds names needed for the
-frontend to build the form to upload the pictures to the database.
+The `/seeds` route retrieves all the seed names needed for the frontend to build
+the form to upload the pictures to the database.
 
 ### /feedback-positive
 
-The `/feedback-positive` route is the endpoint that the frontend call to add a
+The `/feedback-positive` route is the endpoint that the frontend calls to add a
 positive feedback to an inference, giving the inference and the box to validate.
 
 ### /feedback-negative
 
-The `/feedback-negative` route is the API endpoint that send the informations to
-the datastore so a correction feedback is added to a given inference and box.
+The `/feedback-negative` route is the endpoint that sends the information to the
+datastore for a correction feedback to be added to a given inference and box.
+
+---
+
+## Rétroaction sur l'inférence
+
+## Sommaire
+
+Lorsque les analystes de semences utilisent Nachet, ils doivent pouvoir donner
+une rétroaction sur le résultat. Une chaîne d'actions doit être intégrée du
+Frontend à la base de données pour enregistrer les retours des utilisateurs. Les
+types de retours possibles sont :
+
+- Un retour parfait (ne modifie rien et valide l'inférence)
+- Une nouvelle hypothèse donnée par l'analyste
+- Les coordonnées de la boîte ont changé
+- La boîte est supprimée (pas une graine)
+- Une nouvelle boîte est ajoutée
+
+## Prérequis
+
+- L'utilisateur doit être connecté et disposer d'un conteneur de stockage Azure
+- Le backend doit être connecté au Datastore
+- L'utilisateur doit pouvoir effectuer une demande d'inférence
+
+## Solution
+
+L'analyste sélectionne la boîte pour laquelle il ou elle souhaite donner un
+retour, puis remplit un formulaire contenant une série d'informations sur sa
+correction. Le frontend adapte ces informations et les envoie au backend. Selon
+chaque cas de retour, le datastore met à jour l'inférence et l'objet associé.
+
+## Diagramme de séquence
+
+```mermaid
+sequenceDiagram;
+  actor Utilisateur
+  participant Frontend
+  participant Backend
+  participant Datastore
+  participant BaseDeDonnées
+  
+
+    Utilisateur ->> Frontend: Valider l'inférence
+    alt Inférence parfaite
+    Frontend -) Backend: Résultat d'inférence positif (user_id, boxes)
+    Backend -) Datastore: new_perfect_inference_feedback(inference_id, user_id, boxes_id)
+    Note over Backend, Datastore : Chaque box_id est un objet d'inférence dans la base de données
+        alt si l'inférence n'est pas encore vérifiée
+            Datastore ->> BaseDeDonnées: Définit object.valid=True & object.verified_id=object.top_id
+        end
+    else Inférence annotée
+    Frontend -) Backend: Retour sur l'inférence (inference_feedback.json, user_id, inference_id)
+    Backend ->> Datastore: Retour sur l'inférence (inference_feedback.json, user_id, inference_id)
+    Datastore -> BaseDeDonnées: Obtenir inference_result(inference_id)
+        loop Chaque boîte
+            alt La boîte a une valeur d'id
+                alt inference_feedback.box.verified= False
+                    Datastore --> Datastore: Passe à la boîte suivante & flag_all_box_verified=False
+                else
+                    Datastore -) BaseDeDonnées: Définit object.verified=True & object.verified_by=user_id
+                    Datastore -) Datastore: Compare l'étiquette et les coordonnées de la boîte
+                    alt Valeur de l'étiquette vide
+                        Datastore -) BaseDeDonnées: Définit object.top_inference=Null
+                        Datastore -) BaseDeDonnées: Définit object.modified=False                   
+                    else l'étiquette ou les coordonnées de la boîte ont changé et ne sont pas vides
+                        Datastore -) BaseDeDonnées: Met à jour object.top_inference & object.box_metadata
+                        Note over Datastore,BaseDeDonnées: si l'étiquette principale ne fait pas partie des hypothèses de seed_object, <br>une nouvelle instance de seed_object doit être créée.
+                        Datastore -) BaseDeDonnées: Définit object.modified=true
+                    else L'étiquette et la boîte n'ont pas changé
+                        Datastore -) BaseDeDonnées: Définit object.modified=False
+                    end
+                end
+            else La boîte n'a pas de valeur d'id
+                Datastore -) BaseDeDonnées: Crée un nouvel objet et seed_object
+            end
+        end
+    end
+    Datastore -) Datastore : verify_inference_status(inference_id, user_id)
+    Note over Datastore, BaseDeDonnées : Définit l'inférence comme vérifiée si tous les objets ont un verified_id
+```
+
+## Routes API
+
+### /get-user-id
+
+La route `/get-user-id` récupère l'ID utilisateur pour un e-mail donné.
+
+### /seeds
+
+La route `/seeds` permet d'obtenir tous les noms de graines nécessaires pour que
+le frontend puisse créer le formulaire d'envoi des images vers la base de
+données.
+
+### /feedback-positive
+
+La route `/feedback-positive` est le point d'entrée que le frontend appelle pour
+ajouter un retour positif à une inférence, en spécifiant l'inférence et la boîte
+à valider.
+
+### /feedback-negative
+
+La route `/feedback-negative` est le point d'entrée qui envoie les informations
+au datastore pour qu'un retour correctif soit ajouté à une inférence et une
+boîte spécifiques.
