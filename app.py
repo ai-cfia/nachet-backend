@@ -81,7 +81,11 @@ class MaxContentLengthWarning(APIWarnings):
 connection_string_regex = r"^DefaultEndpointsProtocol=https?;.*;FileEndpoint=https://[a-zA-Z0-9]+\.file\.core\.windows\.net/;$"
 pipeline_version_regex = r"\d.\d.\d"
 
-CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
+NACHET_BLOB_ACCOUNT = os.getenv("NACHET_BLOB_ACCOUNT")
+NACHET_BLOB_KEY = os.getenv("NACHET_BLOB_KEY")
+NACHET_BLOB_URL = os.getenv("NACHET_BLOB_URL")
+NACHET_CONNECTION_PROTOCOL = os.getenv("NACHET_CONNECTION_PROTOCOL")
+NACHET_STORAGE_SUFFIX = os.getenv("NACHET_STORAGE_SUFFIX")
 
 FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
@@ -89,9 +93,12 @@ PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
 NACHET_DATA = os.getenv("NACHET_DATA")
 ENVIRONMENT = os.getenv("NACHET_ENV")
-NACHET_FRONTEND_DEV_URL = os.getenv("NACHET_FRONTEND_DEV_URL")
-NACHET_FRONTEND_PUBLIC_URL = os.getenv("NACHET_FRONTEND_PUBLIC_URL")
-ALLOWED_URL = NACHET_FRONTEND_DEV_URL if ENVIRONMENT == "local" else NACHET_FRONTEND_PUBLIC_URL
+
+AZURE_BASE_CONNECTION_STRING = f"DefaultEndpointsProtocol={NACHET_CONNECTION_PROTOCOL};AccountName={NACHET_BLOB_ACCOUNT};AccountKey={NACHET_BLOB_KEY}"
+CONNECTION_STRING = f"{AZURE_BASE_CONNECTION_STRING};BlobEndpoint={NACHET_BLOB_URL};"
+NACHET_STORAGE_URL = f"{AZURE_BASE_CONNECTION_STRING};{NACHET_STORAGE_SUFFIX}"
+
+ALLOWED_URL = os.getenv("NACHET_FRONTEND_URL")
 
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
@@ -137,7 +144,7 @@ cors_settings = {
     "allow_origin": [ALLOWED_URL],
     "allow_methods": ["GET", "POST", "OPTIONS"],
     "allow_credentials": True,
-    "max_age": 86400
+    "max_age": 86400,
 }
 
 app = Quart(__name__)
@@ -170,7 +177,9 @@ async def before_serving():
             raise ServerError("Missing environment variable: NACHET_DATA")
 
         # Check: are environment variables correct?
-        if not bool(re.match(connection_string_regex, CONNECTION_STRING)):
+        if not ENVIRONMENT == "local" and not bool(
+            re.match(connection_string_regex, CONNECTION_STRING)
+        ):
             raise ServerError(
                 "Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING"
             )
@@ -208,7 +217,9 @@ async def get_user_id():
             # print(decoded_cookie)
             email = decoded_cookie["CustomClaims"]["email"]
 
-        if ENVIRONMENT == "local" and not email:  # only allow local dev requests to bypass email
+        if (
+            ENVIRONMENT == "local" and not email
+        ):  # only allow local dev requests to bypass email
             data = await request.get_json()
             email = data.get("email")
 
@@ -691,6 +702,8 @@ async def inference_request():
         cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
+        print("Mounting container")  # TODO: Transform into logging
+        print("Container name: ", container_name)  # TODO: Transform into logging
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
@@ -1113,7 +1126,10 @@ async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
             model.get("content_type"),
             model.get("deployment_platform"),
         )
-        models += (m,)
+        # only keep one if a model has the same name
+        if m not in models:
+            models += (m,)
+
     # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple(

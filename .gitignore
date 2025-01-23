@@ -1,4 +1,4 @@
-.env
+.env.*.local
 .vscode/settings.json
 *.pyc
 .vscode/settings.json
