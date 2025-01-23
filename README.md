@@ -28,8 +28,8 @@ frontend->>+backend: HTTP POST : /get-directories
 backend->>+datastore: get_picture_sets_info()
 datastore->>+database: get_picture_sets()
 database-->>-datastore: picture_sets
-datastore-->>-backend: picture_sets and pictures names
-backend-->>-frontend: directories list with pictures names
+datastore-->>-backend: picture_sets and picture names
+backend-->>-frontend: directories list with picture names
 frontend-->>-Client: display directories
 Client->>frontend: Capture seeds
 Client->>+frontend: Classify capture
@@ -53,21 +53,19 @@ frontend-->>-Client: display inference res.
 - Quart is an asyncio reimplementation of Flask
 - All HTTP requests are handled in `app.py` in the root folder
 - Calls to Azure Blob Storage and the database are handled in the
-  `nachet-backend/storage/datastore_storage_api.py` file that call the
-  [datastore](https://github.com/ai-cfia/ailab-datastore) repo that handles the
+  `nachet-backend/storage/datastore_storage_api.py` file that calls the
+  [datastore](https://github.com/ai-cfia/ailab-datastore) repo which handles the
   data
-- Inference results from model endpoint are directly handled in
+- Inference results from the model endpoint are directly handled in
   `model_inference/inference.py`
-
-****
 
 ### RUNNING NACHET-BACKEND FROM DEVCONTAINER
 
-When developping you first need to install the packages required.
+When developping you first need to install the required packages.
 
 This command must be run the **first time** you want to run the backend on your
-computer, but also **every time** you update the requirements.txt file and
-**every time** the datastore repo is updated
+computer, but also **every time** you update the requirements.txt file or if the
+datastore repo is updated.
 
 ```bash
 pip install -r requirements.txt
@@ -98,7 +96,7 @@ docker-compose up --build
 ```
 
 You can then visit the web client at `http://localhost:80`. The backend will be
-build from the Dockerfile enabling preview of local changes and the frontend
+built from the Dockerfile enabling preview of local changes and the frontend
 will be pulled from our Github registry.
 
 ### TESTING NACHET-BACKEND
@@ -120,8 +118,8 @@ backend to function, you will need to add the missing values:
 - **NACHET_BLOB_PIPELINE_NAME**: The name of the blob containing the pipeline.
 - **NACHET_BLOB_PIPELINE_VERSION**: The version of the file containing the
   pipeline used.
-- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**: The key to decrypt sensible data from
-  the models.
+- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**: The key to decrypt sensitigve data
+  from the models.
 - **NACHET_VALID_EXTENSION**: Contains the valid image extensions that are
   accepted by the backend
 - **NACHET_VALID_DIMENSION**: Contains the valid dimensions for an image to be
@@ -137,12 +135,10 @@ backend to function, you will need to add the missing values:
 - **NACHET_MODEL_ENDPOINT_REST_URL**: Endpoint to communicate with deployed
   model for inferencing.
 - **NACHET_MODEL_ENDPOINT_ACCESS_KEY**: Key used when consuming online endpoint.
-- **NACHET_SUBSCRIPTION_ID**: Was used to retrieve models metadata
-- **NACHET_WORKSPACE**: Was used to retrieve models metadata
-- **NACHET_RESOURCE_GROUP**: Was used to retrieve models metadata
-- **NACHET_MODEL**: Was used to retrieve models metadata
-
-****
+- **NACHET_SUBSCRIPTION_ID**: Was used to retrieve model metadata
+- **NACHET_WORKSPACE**: Was used to retrieve model metadata
+- **NACHET_RESOURCE_GROUP**: Was used to retrieve model metadata
+- **NACHET_MODEL**: Was used to retrieve model metadata
 
 ### DEPLOYING NACHET
 
@@ -181,19 +177,19 @@ database-->>-datastore: picture_sets
 datastore-->>-backend: ensembles d'images et noms des images
 backend-->>-frontend: liste des répertoires avec noms d'images
 frontend-->>-Client: afficher les répertoires
-Client->>frontend: Capturer des graines
+Client->>frontend: Capturer des images de graines
 Client->>+frontend: Classifier la capture
 frontend->>backend: HTTP POST /inf
 backend->>+datastore: upload_picture(image)
 datastore->>database: new_picture()
 datastore->>AzureStorageAPI: upload_image(image)
 datastore-->>-backend: picture_id
-backend->>backend: traiter le résultat inf.
+backend->>backend: traiter le résultat de l'inférence
 backend->>+datastore: save_inference_result(inf)
 datastore->>database: new_inference()
-datastore-->>-backend: résultat d'inférence
-backend-->>frontend: résultat d'inférence
-frontend-->>-Client: afficher le résultat d'inférence
+datastore-->>-backend: résultat de l'inférence
+backend-->>frontend: résultat de l'inférence
+frontend-->>-Client: afficher le résultat de l'inférence
 ```
 
 ### Détails
@@ -209,21 +205,20 @@ frontend-->>-Client: afficher le résultat d'inférence
 - Les résultats d'inférences provenant du point de terminaison du modèle sont
   directement traités dans `model_inference/inference.py`.
 
-****
 
-### EXÉCUTER NACHET-BACKEND DEPUIS LE DEVCONTAINER
+### EXÉCUTER NACHET-BACKEND DEPUIS UN DEVCONTAINER
 
 Lors du développement, vous devez d'abord installer les paquets nécessaires.
 
 Cette commande doit être exécutée **la première fois** que vous lancez le
 backend sur votre ordinateur, mais aussi **à chaque mise à jour** du fichier
-`requirements.txt` et **à chaque mise à jour** du dépôt datastore.
+`requirements.txt` ou du dépôt datastore.
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Ensuite, vous pouvez exécuter le backend dans le devcontainer avec cette
+Ensuite, vous pouvez exécuter le backend dans un devcontainer avec cette
 commande :
 
 ```bash
@@ -266,8 +261,8 @@ python -m unittest discover -s tests
 Commencez par faire une copie de `.env.template` et renommez-la en `.env`. Pour
 que le backend fonctionne, vous devrez compléter les valeurs manquantes :
 
-- **NACHET_AZURE_STORAGE_CONNECTION_STRING** : Chaîne de connexion pour accéder
-  au stockage externe (Azure Blob Storage).
+- **NACHET_AZURE_STORAGE_CONNECTION_STRING** : Pour accéder au stockage externe
+  (Azure Blob Storage).
 - **NACHET_DATA** : URL pour accéder au dépôt nachet-data.
 - **NACHET_BLOB_PIPELINE_NAME** : Nom du blob contenant le pipeline.
 - **NACHET_BLOB_PIPELINE_VERSION** : Version du fichier contenant le pipeline
@@ -296,8 +291,6 @@ que le backend fonctionne, vous devrez compléter les valeurs manquantes :
 - **NACHET_RESOURCE_GROUP** : Utilisé pour récupérer les métadonnées des
   modèles.
 - **NACHET_MODEL** : Utilisé pour récupérer les métadonnées des modèles.
-
-****
 
 ### DÉPLOYER NACHET
 

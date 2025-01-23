@@ -1,13 +1,12 @@
 # Nachet Interactive Models
 
-([*Le français est disponible au bas de la
-page*](#modèles-nachet-interactive))
+([*Le français est disponible au bas de la page*](#modèles-nachet-interactive))
 
 ## Executive Summary
 
 Nachet Interactive uses various models to detect seeds. Documentation is
 essential to keep track of their features. The models can perform different
-tasks, including Image Classification, Image Segmentation, and Object Detection.
+tasks, including Image Classification, Image Segmentation, or Object Detection.
 
 ## Task
 
@@ -19,9 +18,9 @@ Nachet Interactive's models perfom the following tasks:
 |[Object Detection](https://huggingface.co/tasks/object-detection) | Identify and locate an object belonging to a specific class within an image. |The object detection models take an image as an input and output the image with a label and a box around the detected object. |
 |[Segmentation](https://huggingface.co/tasks/image-segmentation) | Segmentation is the task of dividing images into different parts, where each pixel in the image is mapped to an object. It includes instance segmentation, panoptic segmentation, and semantic segmentation.| The segmentation models take an image as input and return an image divided into objects. |
 
-> As of today (2024-02-22), no model uses segmentation. To know more about each
-> task, click on the task to follow the link to their hugging face page. To know
-> more about AI tasks in general: [Hugging Face
+> As of today (2024-02-22), none of our models use segmentation. To know more
+> about each task, click on the task to follow the link to their hugging face
+> page. To know more about AI tasks in general: [Hugging Face
 > Tasks](https://huggingface.co/tasks)
 
 ## List of models
@@ -91,12 +90,13 @@ seeds.
 
 ### Why topN
 
-We decided to named the top results property topN because this value can return
+We decided to name the top results property `topN` because this value can return
 n predictions. Usually in AI, the top 5 results are used to measure the accuracy
 of a model. If the correct result is the top 5, then the prediction is
 considered true.
 
-This is useful in cases where the user has his attention on more than 1 result.
+This is helpful in situations where the user needs to focus on multiple results
+simultaneously.
 
  > "Top N accuracy — Top N accuracy is when you measure how often your predicted
  > class falls in the top N values of your softmax distribution." [Nagda, R.
@@ -106,7 +106,7 @@ This is useful in cases where the user has his attention on more than 1 result.
 ### Bounding boxes
 
 The `box` key stores the value for a specific box around a seed. This helps the
-frontend application build a red rectangle around every seed on the image.
+frontend draw a red rectangle around every seed on the image.
 
 ![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
 
@@ -128,11 +128,10 @@ headers = {
 
 ### Body
 
-The body structure difference is based on the model tasks. A classification
-model can only classify one seed in an image, whereas an object detection model
-can detect if the image contains one or multiple seeds. It remains to be
-determined whether a segmentation model requires a different body structure.
-[See task](#task)
+The body structure is dependant on the model tasks. A classification model can
+only classify one seed in an image, whereas an object detection model can detect
+if the image contains one or multiple seeds. It remains to be determined whether
+a segmentation model requires a different body structure. [See task](#task)
 
 ```python
 # Object Detection model
@@ -234,7 +233,7 @@ models:
 |endpoint|The model endpoint|["https://that-model.inference.ml.com/score"](#model-specific-keys)|
 |api_key|Secret key to access the API|"SeCRetKeys"|
 |content_type|The content type the model can process|"application/json"|
-|deployment_platform|The platform where the model is host|"azure"|
+|deployment_platform|The platform where the model is hosted|"azure"|
 |endpoint_name|The model endpoint name|"that-model-endpoint"|
 |model_name|The name of the model|"that_model_name"|
 |created_by|The creator of the model|"Avery GoodDataScientist"|
@@ -247,7 +246,7 @@ models:
 
 #### JSON Representation and Example
 
-This how the file will be represented in the datastore.
+This how the file is represented in the datastore.
 
 ```json
 {
@@ -429,8 +428,8 @@ résultats.
 ### Cadres de contour
 
 La clé `box` stocke les valeurs pour un cadre de contour spécifique autour d'une
-graine. Cela permet à l'application frontend de dessiner un rectangle rouge
-autour de chaque graine sur l'image.
+graine. Cela permet au frontend de dessiner un rectangle rouge autour de chaque
+graine sur l'image.
 
 ![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
 
@@ -526,9 +525,9 @@ models:
     accuracy:
 ```
 
-### Description des Clés
+### Description des clés
 
-#### Clés Spécifiques au Fichier
+#### Clés spécifiques au fichier
 
 |Clé|Description|Format Attendu|
 |--|--|--|
@@ -537,7 +536,7 @@ models:
 |pipelines|Une liste des pipelines disponibles||
 |models|Une liste des modèles disponibles||
 
-#### Clés Spécifiques au Pipeline
+#### Clés spécifiques au pipeline
 
 |Clé|Description|Format Attendu|
 |--|--|--|
@@ -551,7 +550,7 @@ models:
 |Accuracy|La précision des prédictions du pipeline|0.8302|
 |default|Détermine si le pipeline est celui par défaut|true ou false|
 
-#### Clés Spécifiques au Modèle
+#### Clés spécifiques au modèle
 
 |Clé|Description|Format Attendu|
 |--|--|--|
@@ -570,7 +569,7 @@ models:
 |dataset_description|Une brève description du dataset|"Description du Dataset"|
 |Accuracy|La précision des prédictions du modèle|0.9205|
 
-#### Représentation JSON et Exemple
+#### Représentation JSON et exemple
 
 Voici comment le fichier sera représenté dans le datastore.
 

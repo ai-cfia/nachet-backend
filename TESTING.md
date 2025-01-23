@@ -1,7 +1,6 @@
 # Testing documentation
 
-([*Le français est disponible au bas de la
-page*](#documentation-des-tests))
+([*Le français est disponible au bas de la page*](#documentation-des-tests))
 
 To start the automatic test, you can use the following command:
 
@@ -9,18 +8,18 @@ To start the automatic test, you can use the following command:
 python -m unittest discover -s tests
 ```
 
-You also have the option to run automatic test in run_test.py or manually test
+You also have the option to run automatic tests in run_test.py or manually test
 the functionality with the frontend. [See frontend testing
 documentation](https://github.com/ai-cfia/nachet-frontend/blob/main/TESTING.md)
 
-To perform the following test, you will need the frontend repository for the
-Nachet Interactive's application. The frontend can be found at: [Nachet Frontend
-GitHub Repository](https://github.com/ai-cfia/nachet-frontend).
+To perform the following test, you will need the Nachet's frontend repository.
+It can be found at: [Nachet Frontend GitHub
+Repository](https://github.com/ai-cfia/nachet-frontend).
 
 You will also need the list of the available pipelines. The list can be found
 [here](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-inference-documentation.md#available-version-of-the-json-file).
 
-## Test Case: Populate model selection with pipelines information
+## Test Case: Populate model selection component with pipelines information
 
 **Objective**: Verify that the model selection component gets populated with the
 pipeline information.
@@ -77,11 +76,11 @@ expected.
 1. Upload a seed image
 1. Select the first model (pipeline)
 1. Click on the classify button
-1. Wait until the results populated on the canvas
+1. Wait until the results populate on the canvas
 1. Repeat the process for every model (pipeline)
 
-|:boom: Warning| |:--:| |Displaying results from two different models will
-overlap and become unreadable.|
+|:boom: Warning| |----------------------| |Displaying results from two different
+models will overlap and become unreadable.|
 
 ### Expected Results:
 
@@ -95,10 +94,10 @@ overlap and become unreadable.|
 
 ### Pass/Fail Criteria:
 
-- [ ] Pass if the data populates both the canvas and the results components with
-  the prediction of the model (pipeline).
+- [ ] Pass if the data is populated on both the canvas and the results component
+  with the prediction of the model (pipeline).
 - [ ] Fail if an alert is displayed with an error message.
-- [ ] Fail if the data does not populates the canvas and the results component
+- [ ] Fail if the data is not populated on the canvas and the results component
 - [ ] Fail if the inference is stuck in an infinite loop
 
 ---
@@ -111,19 +110,27 @@ Pour lancer les tests automatiques, vous pouvez utiliser la commande suivante :
 python -m unittest discover -s tests
 ```
 
-Vous avez également la possibilité d'exécuter les tests automatiques dans `run_test.py` ou de tester manuellement les fonctionnalités avec le frontend. [Voir la documentation des tests du frontend](https://github.com/ai-cfia/nachet-frontend/blob/main/TESTING.md).
+Vous avez également la possibilité d'exécuter les tests automatiques dans
+`run_test.py` ou de tester manuellement les fonctionnalités avec le frontend.
+[Voir la documentation des tests du
+frontend](https://github.com/ai-cfia/nachet-frontend/blob/main/TESTING.md).
 
-Pour effectuer les tests suivants, vous aurez besoin du dépôt frontend de l'application Nachet Interactive. Le frontend se trouve ici : [Dépôt GitHub du frontend Nachet](https://github.com/ai-cfia/nachet-frontend).
+Pour effectuer les tests suivants, vous aurez besoin du dépôt frontend de
+l'application Nachet Interactive. Le frontend se trouve ici : [Dépôt GitHub du
+frontend Nachet](https://github.com/ai-cfia/nachet-frontend).
 
-Vous aurez également besoin de la liste des pipelines disponibles. La liste se trouve [ici](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-inference-documentation.md#available-version-of-the-json-file).
+Vous aurez également besoin de la liste des pipelines disponibles. La liste se
+trouve
+[ici](https://github.com/ai-cfia/nachet-backend/blob/51-implementing-2-models/docs/nachet-inference-documentation.md#available-version-of-the-json-file).
 
-## Cas de Test : Population de la sélection de modèles avec les informations des pipelines
+## Cas de Test : Remplir le composant de sélection de modèle avec les informations des pipelines
 
-### Objectif** : Vérifier que le composant de sélection de modèles est correctement peuplé avec les informations des pipelines.
+### Objectif : Vérifier que le composant de sélection de modèle est correctement rempli avec les informations des pipelines
 
 ### Prérequis :
 
-- [ ] Le backend Nachet est configuré et en cours d'exécution. Utilisez la commande `hypercorn -b :8080 app:app` pour démarrer le serveur Quart.
+- [ ] Le backend Nachet est configuré et en cours d'exécution. Utilisez la
+  commande `hypercorn -b :8080 app:app` pour démarrer le serveur Quart.
 - [ ] Les variables d'environnement sont correctement configurées.
 - [ ] :exclamation: Le frontend n'est pas encore démarré.
 
@@ -135,9 +142,12 @@ Vous aurez également besoin de la liste des pipelines disponibles. La liste se 
 
 ### Résultats Attendus :
 
-- [ ] En cas de problème lors de la récupération des données, une erreur doit empêcher le serveur de démarrer.
-- [ ] En cas de problème sans erreur levée, le composant de sélection de modèles doit rester vide.
-- [ ] Si tout fonctionne correctement, le composant de sélection de modèles doit afficher les métadonnées des pipelines.
+- [ ] En cas de problème lors de la récupération des données, une erreur doit
+  empêcher le serveur de démarrer.
+- [ ] En cas de problème sans erreur levée, le composant de sélection de modèles
+  doit rester vide.
+- [ ] Si tout fonctionne correctement, le composant de sélection de modèles doit
+  afficher les métadonnées des pipelines.
 
 ### Résultats Réels :
 
@@ -146,15 +156,17 @@ Vous aurez également besoin de la liste des pipelines disponibles. La liste se 
 ### Critères de Succès/Échec :
 
 - [ ] Succès si les métadonnées des pipelines disponibles sont affichées.
-- [ ] Échec si les métadonnées ne sont pas affichées et aucune erreur n'a été levée.
+- [ ] Échec si les métadonnées ne sont pas affichées et aucune erreur n'a été
+  levée.
 
 ## Cas de Test : Requête d'Inférence
 
-### Objectif** : Vérifier que le point de terminaison `/inf` de requête d'inférence se comporte comme prévu.
+### Objectif** : Vérifier que le point de terminaison `/inf` de requête d'inférence se comporte comme prévu
 
 ### Prérequis :
 
-- [ ] Le backend Nachet est configuré et en cours d'exécution. Utilisez la commande `hypercorn -b :8080 app:app` pour démarrer le serveur Quart.
+- [ ] Le backend Nachet est configuré et en cours d'exécution. Utilisez la
+  commande `hypercorn -b :8080 app:app` pour démarrer le serveur Quart.
 - [ ] Les variables d'environnement sont correctement configurées.
 - [ ] Le frontend est démarré.
 - [ ] Cliquez sur le bouton de sélection de modèles.
@@ -170,11 +182,13 @@ Vous aurez également besoin de la liste des pipelines disponibles. La liste se 
 
 | :boom: Avertissement |  
 |----------------------|  
-| Les résultats affichés de deux modèles différents se superposent et deviennent illisibles. |
+| Les résultats affichés de deux modèles différents se superposent et deviennent
+illisibles. |
 
 ### Résultats Attendus :
 
-- [ ] Les données peuplent à la fois le canevas et les composants de résultats avec les prédictions du modèle (pipeline).
+- [ ] Les données peuplent à la fois le canevas et les composants de résultats
+  avec les prédictions du modèle (pipeline).
 - [ ] Une alerte avec une erreur des ports 3000 ou 8080 est affichée.
 
 ### Résultats Réels :
@@ -183,7 +197,9 @@ Vous aurez également besoin de la liste des pipelines disponibles. La liste se 
 
 ### Critères de Succès/Échec :
 
-- [ ] Succès si les données peuplent le canevas et les composants de résultats avec les prédictions du modèle (pipeline).
+- [ ] Succès si les données peuplent le canevas et les composants de résultats
+  avec les prédictions du modèle (pipeline).
 - [ ] Échec si une alerte est affichée avec un message d'erreur.
-- [ ] Échec si les données ne peuplent pas le canevas et les composants de résultats.
+- [ ] Échec si les données ne peuplent pas le canevas et les composants de
+  résultats.
 - [ ] Échec si la requête d'inférence reste bloquée dans une boucle infinie.

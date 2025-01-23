@@ -1,15 +1,13 @@
 # Manage folders
 
-([*Le français est disponible au bas de la
-page*](#gérer-les-dossiers))
+([*Le français est disponible au bas de la page*](#gérer-les-dossiers))
 
 ## Executive summary
 
 A user is able to have a preview of his blob storage container in the Nachet
 application. He can have many folders in his container and pictures in it. Since
 we have the database, those folders are related to the picture_set table and
-each pictures is also saved in the database. Here is the schema of actual
-database.
+each picture is also saved in the database. Here is its schema:
 
 ``` mermaid
 ---
@@ -55,14 +53,15 @@ inference{
 
 ```
 
-From the Nachet Interactive application, a user can create and delete folders, so the blob storage and the database must be correctly updated.
+From the Nachet Interactive application, a user can create and delete folders,
+so the blob storage and the database must be correctly updated.
 
-When a folder is created, it takes on a name and is created as a picture_set in
-the database and as a folder in the blob storage container of the user.
+When a folder is created, it takes on a name and is created as a `picture_set`
+in the database and as a folder in the blob storage container of the user.
 
 There are more issues when the user wants to delete a folder. If the folder
 contains validated pictures, it may be useful for training purpose, because it
-means there is a valid inference associate with each seed on the picture. The
+means there is a valid inference associated with each seed on the picture. The
 same applies to pictures imported in batches, which have been downloaded for
 training purposes. Our solution is to request confirmation from the user, who
 can decide to delete pictures from his container but let us save them, or he can
@@ -71,7 +70,7 @@ delete everything anyway, for example if there has been a missed click.
 ## Prerequisites
 
 - The user must be signed in and have an Azure Storage Container
-- The backend need to have a connection with the datastore
+- The backend needs a connection to the datastore
 
 ## Sequence Diagram
 
@@ -144,13 +143,13 @@ note left of FE : "Are you sure ? Everything in this folder will be deleted and 
 
 ### /create-dir
 
-The `create-dir` route need a folder_name and create the folder in database and
-in Azure Blob storage.
+The `create-dir` route needs a `folder_name` and creates the folder in the
+database and in Azure blob storage.
 
 ### /get-directories
 
 The `get-directories` route retreives all user directories from the database
-with their pictures as a json. There is 4 different cases for the pictures :
+with their pictures as a JSON. There are 4 different cases for the pictures :
 
 | **is_verified \\ inference_exist** | **false**              | **true**             |
 |------------------------------------|----------------------|-----------------------|
@@ -180,7 +179,7 @@ with their pictures as a json. There is 4 different cases for the pictures :
 
 ### /get-picture
 
-The `get-picture` route retreives selected picture as a json :
+The `get-picture` route retreives the selected picture as a JSON :
 
 ```json
 {
@@ -199,7 +198,8 @@ given folder or else returns False.
 ### /delete-permanently
 
 The `delete-permanently`route deletes the given folder, meaning it deletes the
-picture_set and everything related in the database, and it deletes all blobs in the azure blob storage.
+`picture_set` and everything related in the database, as well as all blobs in
+the Azure blob storage.
 
 ### /delete-with-archive
 
@@ -212,7 +212,11 @@ but moves everything in the dev container.
 
 ## Sommaire
 
-Un utilisateur peut obtenir un aperçu de son conteneur de stockage blob dans l'application Nachet. Il peut posséder plusieurs dossiers dans son conteneur ainsi que des images. Étant donné que nous utilisons une base de données, ces dossiers sont liés à la table `picture_set`, et chaque image est également enregistrée dans la base de données. Voici le schéma actuel de la base de données.
+Un utilisateur peut obtenir un aperçu de son conteneur de stockage blob dans
+l'application Nachet. Il peut posséder plusieurs dossiers dans son conteneur
+ainsi que des images. Étant donné que nous utilisons une base de données, ces
+dossiers sont liés à la table `picture_set`, et chaque image est également
+enregistrée dans la base de données. Voici son schéma actuel:
 
 ```mermaid
 ---
@@ -257,18 +261,29 @@ erDiagram
   inference ||--|| picture: déduit
 ```
 
-Depuis l'application Nachet Interactive, un utilisateur peut créer et supprimer des dossiers, ce qui nécessite une mise à jour correcte du stockage blob et de la base de données.
+Depuis l'application Nachet Interactive, un utilisateur peut créer et supprimer
+des dossiers, ce qui nécessite une mise à jour correcte du stockage blob et de
+la base de données.
 
-Lorsqu'un dossier est créé, il reçoit un nom et est enregistré en tant que `picture_set` dans la base de données et comme dossier dans le conteneur de stockage blob de l'utilisateur.
+Lorsqu'un dossier est créé, il reçoit un nom et est enregistré en tant que
+`picture_set` dans la base de données et comme dossier dans le conteneur de
+stockage blob de l'utilisateur.
 
-La suppression de dossiers pose plus de défis. Si le dossier contient des images validées, celles-ci peuvent être utiles pour l'entraînement, car elles sont associées à une inférence valide pour chaque graine présente sur l'image. Il en va de même pour les images importées en lots, qui ont été téléchargées à des fins d'entraînement. Notre solution consiste à demander une confirmation à l'utilisateur, qui peut choisir de supprimer les images de son conteneur tout en nous permettant de les conserver, ou de tout supprimer en cas de clic accidentel, par exemple.
+La suppression de dossiers pose plus de défis. Si le dossier contient des images
+validées, celles-ci peuvent être utiles pour l'entraînement, car elles sont
+associées à une inférence valide pour chaque graine présente sur l'image. Il en
+va de même pour les images importées en lots, qui ont été téléchargées à des
+fins d'entraînement. Notre solution consiste à demander une confirmation à
+l'utilisateur, qui peut choisir de supprimer les images de son conteneur tout en
+nous permettant de les conserver, ou de tout supprimer en cas de clic
+accidentel, par exemple.
 
 ## Prérequis
 
 - L'utilisateur doit être connecté et disposer d'un conteneur Azure Storage.
 - Le backend doit être connecté au datastore.
 
-## Diagramme de Séquence
+## Diagramme de séquence
 
 ### Cas d'utilisation : Suppression
 
@@ -338,11 +353,14 @@ note left of FE : "Êtes-vous sûr ? Tout dans ce dossier sera supprimé de faç
 
 ### /create-dir
 
-La route `create-dir` nécessite un `folder_name` et crée le dossier dans la base de données ainsi que dans le stockage Azure Blob.
+La route `create-dir` nécessite un `folder_name` et crée le dossier dans la base
+de données ainsi que dans le stockage blob d'Azure.
 
 ### /get-directories
 
-La route `get-directories` récupère tous les répertoires de l'utilisateur depuis la base de données avec leurs images au format JSON. Il existe 4 cas différents pour les images :
+La route `get-directories` récupère tous les répertoires de l'utilisateur depuis
+la base de données avec leurs images au format JSON. Il existe 4 cas différents
+pour les images :
 
 | **is_verified \\ inference_exist** | **false**              | **true**               |
 |------------------------------------|------------------------|-------------------------|
@@ -383,15 +401,17 @@ La route `get-picture` récupère l'image sélectionnée en format JSON :
 ```
 ### /delete-request
 
-La route `delete-request` renvoie `True` s'il y a des images validées dans le dossier donné, ou `False` sinon.
+La route `delete-request` renvoie `True` s'il y a des images validées dans le
+dossier donné, ou `False` sinon.
 
 ### /delete-permanently
 
-La route `delete-permanently` supprime le dossier spécifié, ce qui inclut la suppression du `picture_set` et de tous les éléments associés dans la base de données, ainsi que la suppression de tous les blobs dans le stockage Azure Blob.
+La route `delete-permanently` supprime le dossier spécifié, ce qui inclut la
+suppression du `picture_set` et de tous les éléments associés dans la base de
+données, ainsi que la suppression de tous les blobs dans le stockage blob
+d'Azure.
 
 ### /delete-with-archive
 
-La route `delete-with-archive` supprime le dossier donné du conteneur utilisateur, mais déplace tout son contenu vers le conteneur de développement.
-
----
-
+La route `delete-with-archive` supprime le dossier donné du conteneur
+utilisateur, mais déplace tout son contenu vers le conteneur de développement.

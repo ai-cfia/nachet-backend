@@ -10,7 +10,7 @@ result. A pipeline of action needs to be integrated from the Frontend to the
 database to be able to register the user feedback. The possible feedback types
 are:
 
-- A perfect feedback (Doesn't change anything and validate the inference)
+- A perfect feedback (Doesn't change anything and validates the inference)
 - A new guess is given by the analyst
 - The box coordinates have changed
 - The box is deleted (not a seed)
@@ -19,13 +19,13 @@ are:
 ## Prerequisites
 
 - The user must be signed in and have an Azure Storage Container
-- The backend needs to have a connection with the datastore
+- The backend needs to have a connection to the datastore
 - The user can do an inference request
 
 ## Solution
 
 The analyst selects the box for which he or she wishes to give feedback, and
-then fills in a form containing a series of information about its correction.
+then fills in a form containing information about its correction.
 The frontend adapts this information and sends it to the backend, then,
 according to each case of feedback, the datastore updates the inference and the
 object.
@@ -60,11 +60,11 @@ sequenceDiagram;
                     Datastore --> Datastore: Next box & flag_all_box_verified=False
                 else
                     Datastore -) Database: Set object.verified=True & object.verified_by=user_id
-                    Datastore -) Datastore: Compare label & box coordinate
+                    Datastore -) Datastore: Compare label & box coordinates
                     alt label value empty
                         Datastore -) Database: Set object.top_inference=Null
                         Datastore -) Database: Set object.modified=False                   
-                    else label or box coordinate are changed & not empty
+                    else label or box coordinates are changed & not empty
                         Datastore -) Database: Update object.top_inference & object.box_metadata
                         Note over Datastore,Database: if the top label is not part of the seed_object guesses, <br>we will need to create a new instance of seed_object.
                         Datastore -) Database: Set object.modified=true
