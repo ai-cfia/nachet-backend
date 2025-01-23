@@ -58,7 +58,7 @@ pipeline information.
 
 ## Test Case: Inference Request
 
-### Objective: Verify that the inference request endpoint `/inf` behaves as expected.
+### Objective: Verify that the inference request endpoint `/inf` behaves as expected
 
 ### Preconditions
 

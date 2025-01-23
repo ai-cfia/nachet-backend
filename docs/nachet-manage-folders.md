@@ -399,6 +399,7 @@ pour les images :
   "image": "data:image/...;base64,xxxxxxxx"
 }
 ```
+
 ### Route /delete-request
 
 `delete-request` renvoie `True` s'il y a des images validées dans le
