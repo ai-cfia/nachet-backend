@@ -126,7 +126,7 @@ types de retours possibles sont :
 - Le backend doit être connecté au Datastore
 - L'utilisateur doit pouvoir effectuer une demande d'inférence
 
-## Solution
+## La solution
 
 L'analyste sélectionne la boîte pour laquelle il ou elle souhaite donner un
 retour, puis remplit un formulaire contenant une série d'informations sur sa
@@ -183,26 +183,26 @@ sequenceDiagram;
     Note over Datastore, BaseDeDonnées : Définit l'inférence comme vérifiée si tous les objets ont un verified_id
 ```
 
-## Routes API
+## API
 
-### /get-user-id
+### Route /get-user-id
 
-La route `/get-user-id` récupère l'ID utilisateur pour un e-mail donné.
+`/get-user-id` récupère l'ID utilisateur pour un e-mail donné.
 
-### /seeds
+### Route /seeds
 
-La route `/seeds` permet d'obtenir tous les noms de graines nécessaires pour que
+`/seeds` permet d'obtenir tous les noms de graines nécessaires pour que
 le frontend puisse créer le formulaire d'envoi des images vers la base de
 données.
 
-### /feedback-positive
+### Route /feedback-positive
 
-La route `/feedback-positive` est le point d'entrée que le frontend appelle pour
+`/feedback-positive` est le point d'entrée que le frontend appelle pour
 ajouter un retour positif à une inférence, en spécifiant l'inférence et la boîte
 à valider.
 
-### /feedback-negative
+### Route /feedback-negative
 
-La route `/feedback-negative` est le point d'entrée qui envoie les informations
+`/feedback-negative` est le point d'entrée qui envoie les informations
 au datastore pour qu'un retour correctif soit ajouté à une inférence et une
 boîte spécifiques.

@@ -349,16 +349,16 @@ note left of FE : "Êtes-vous sûr ? Tout dans ce dossier sera supprimé de faç
     end
 ```
 
-## Routes API
+## API
 
-### /create-dir
+### Route /create-dir
 
-La route `create-dir` nécessite un `folder_name` et crée le dossier dans la base
+`create-dir` nécessite un `folder_name` et crée le dossier dans la base
 de données ainsi que dans le stockage blob d'Azure.
 
-### /get-directories
+### Route /get-directories
 
-La route `get-directories` récupère tous les répertoires de l'utilisateur depuis
+`get-directories` récupère tous les répertoires de l'utilisateur depuis
 la base de données avec leurs images au format JSON. Il existe 4 cas différents
 pour les images :
 
@@ -388,9 +388,9 @@ pour les images :
 }
 ```
 
-### /get-picture
+### Route /get-picture
 
-La route `get-picture` récupère l'image sélectionnée en format JSON :
+`get-picture` récupère l'image sélectionnée en format JSON :
 
 ```json
 {
@@ -399,19 +399,19 @@ La route `get-picture` récupère l'image sélectionnée en format JSON :
   "image": "data:image/...;base64,xxxxxxxx"
 }
 ```
-### /delete-request
+### Route /delete-request
 
-La route `delete-request` renvoie `True` s'il y a des images validées dans le
+`delete-request` renvoie `True` s'il y a des images validées dans le
 dossier donné, ou `False` sinon.
 
-### /delete-permanently
+### Route /delete-permanently
 
-La route `delete-permanently` supprime le dossier spécifié, ce qui inclut la
+`delete-permanently` supprime le dossier spécifié, ce qui inclut la
 suppression du `picture_set` et de tous les éléments associés dans la base de
 données, ainsi que la suppression de tous les blobs dans le stockage blob
 d'Azure.
 
-### /delete-with-archive
+### Route /delete-with-archive
 
-La route `delete-with-archive` supprime le dossier donné du conteneur
+`delete-with-archive` supprime le dossier donné du conteneur
 utilisateur, mais déplace tout son contenu vers le conteneur de développement.

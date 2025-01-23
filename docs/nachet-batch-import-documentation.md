@@ -173,7 +173,8 @@ sequenceDiagram;
     Note over Backend, Datastore: Les données contiennent au moins les informations suivantes :<br> nom de la graine, niveau de zoom, nb graines
     end
 ```
-# Processus de téléversement d'images par lot
+
+## Processus de téléversement d'images par lot
 
 Le diagramme complet fait partie de la documentation du **datastore**. Vous
 pouvez le consulter ici :
@@ -181,27 +182,27 @@ pouvez le consulter ici :
 [Processus de téléversement pour utilisateurs de
 confiance](https://github.com/ai-cfia/nachet-datastore/blob/issue13-create-process-to-upload-metadata-for-trusted-users/doc/trusted-user-upload.md)
 
-## Routes API
+## API
 
-### /get-user-id
+### Route /get-user-id
 
 La route `/get-user-id` permet de récupérer l'identifiant utilisateur
 (`user-id`) associé à une adresse courriel.
 
-### /seeds
+### Route /seeds
 
 La route `/seeds` retourne la liste des noms de graines nécessaires pour
 permettre au frontend de construire le formulaire permettant de téléverser les
 images dans la base de données.
 
-### /new-batch-import
+### Route /new-batch-import
 
 La route `/new-batch-import` est le point de terminaison appelé par le frontend
 pour démarrer un téléversement par lot. Cette route enregistre le nombre
 d'images à importer et retourne le nouvel identifiant de `picture_set` en tant
 qu'identifiant de session.
 
-### /upload-picture
+### Route /upload-picture
 
 La route `/upload-picture` est responsable d'assurer le transfert d'une image
 vers la base de données. Le frontend doit fournir l'identifiant de session afin

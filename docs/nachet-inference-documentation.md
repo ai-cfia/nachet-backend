@@ -606,11 +606,11 @@ modèles et des pipelines.
 
 Pour utiliser le script, trois variables d'environnement sont nécessaires :
 
-- **NACHET_BLOB_PIPELINE_NAME**  
+* **NACHET_BLOB_PIPELINE_NAME**  
   Contient le nom du blob où les pipelines sont stockés.
-- **NACHET_BLOB_PIPELINE_VERSION**  
+* **NACHET_BLOB_PIPELINE_VERSION**  
   Contient la version que l'utilisateur souhaite sélectionner.
-- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**  
+* **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**  
   La clé permettant de déchiffrer les données sensibles telles que la clé API et
   l'endpoint d'un modèle.
 
