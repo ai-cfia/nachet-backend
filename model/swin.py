@@ -48,6 +48,8 @@ async def request_inference_from_swin(model: namedtuple, previous_result: 'list[
         ProcessInferenceResultsError: If an error occurs while processing the request.
     """
     try:
+
+        print(model.endpoint)
         results = []
         for img in previous_result.get("images"):
             headers = {
