@@ -91,6 +91,8 @@ async def request_inference_from_seed_detector(model: namedtuple, previous_resul
             }
         }
 
+        print(model.endpoint)
+
         body = str.encode(json.dumps(data))
         req = Request(model.endpoint, body, headers, method="POST")
         # req = Request("http://192.168.x.x:12380/score", body, headers, method="POST")
