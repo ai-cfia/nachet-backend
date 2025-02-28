@@ -1,4 +1,4 @@
-nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@v1.0.0-nachet-datastore
+nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@js-debug
 numpy==1.26.4
 azure-storage-blob
 azure-identity
