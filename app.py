@@ -169,12 +169,6 @@ async def before_serving():
         if NACHET_DATA is None:
             raise ServerError("Missing environment variable: NACHET_DATA")
 
-        # Check: are environment variables correct?
-        if not bool(re.match(connection_string_regex, CONNECTION_STRING)):
-            raise ServerError(
-                "Incorrect environment variable: NACHET_AZURE_STORAGE_CONNECTION_STRING"
-            )
-
         if not bool(re.match(pipeline_version_regex, PIPELINE_VERSION)):
             raise ServerError("Incorrect environment variable: PIPELINE_VERSION")
 
@@ -721,12 +715,15 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
 
+        print("Record model")  # TODO: Transform into logging
+
         await record_model(pipeline, processed_result_json)
 
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
 
+        print("Save inference result")  # TODO: Transform into logging
         saved_result_json = await datastore.save_inference_result(
             cursor, user_id, processed_result_json[0], picture_id, pipeline_name, 1
         )
@@ -1113,7 +1110,9 @@ async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
             model.get("content_type"),
             model.get("deployment_platform"),
         )
-        models += (m,)
+        # if the model is not already in the tuple
+        if m not in models:
+            models += (m,)
     # Build the pipeline to call the models in order in the inference request
     for pipeline in result_json.get("pipelines"):
         CACHE["pipelines"][pipeline.get("pipeline_name")] = tuple(

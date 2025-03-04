@@ -1,9 +1,20 @@
-# Inference feedback
+# Inference Feedback
 
-([*Le français est disponible au bas de la
-page*](#rétroaction-sur-linférence))
+([*Le français est disponible au bas de la page*](#rétroaction-sur-linférence))
 
-## Executive summary
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Prerequisites](#prerequisites)
+- [Solution](#solution)
+- [Sequence Diagram](#sequence-diagram)
+- [API Routes](#api-routes)
+  - [/get-user-id](#get-user-id)
+  - [/seeds](#seeds)
+  - [/feedback-positive](#feedback-positive)
+  - [/feedback-negative](#feedback-negative)
+
+## Executive Summary
 
 When seed analysts use Nachet, they should be able to give their feedback on the
 result. A pipeline of action needs to be integrated from the Frontend to the
@@ -105,7 +116,19 @@ datastore for a correction feedback to be added to a given inference and box.
 
 ---
 
-## Rétroaction sur l'inférence
+## Rétroaction sur l'Inférence
+
+## Table des matières
+
+- [Sommaire](#sommaire)
+- [Prérequis](#prérequis)
+- [La Solution](#la-solution)
+- [Diagramme de Séquence](#diagramme-de-séquence)
+- [API](#api)
+  - [Route /get-user-id](#route-get-user-id)
+  - [Route /seeds](#route-seeds)
+  - [Route /feedback-positive](#route-feedback-positive)
+  - [Route /feedback-negative](#route-feedback-negative)
 
 ## Sommaire
 
@@ -126,14 +149,14 @@ types de retours possibles sont :
 - Le backend doit être connecté au Datastore
 - L'utilisateur doit pouvoir effectuer une demande d'inférence
 
-## La solution
+## La Solution
 
 L'analyste sélectionne la boîte pour laquelle il ou elle souhaite donner un
 retour, puis remplit un formulaire contenant une série d'informations sur sa
 correction. Le frontend adapte ces informations et les envoie au backend. Selon
 chaque cas de retour, le datastore met à jour l'inférence et l'objet associé.
 
-## Diagramme de séquence
+## Diagramme de Séquence
 
 ```mermaid
 sequenceDiagram;

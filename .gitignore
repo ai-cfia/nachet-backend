@@ -12,3 +12,4 @@ share/
 lib/
 include/
 __pycache__/
+**/*.local

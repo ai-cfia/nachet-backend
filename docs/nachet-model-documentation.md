@@ -2,6 +2,26 @@
 
 ([*Le français est disponible au bas de la page*](#modèles-nachet-interactive))
 
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Task](#task)
+- [List of Models](#list-of-models)
+  - [Request Inference Function](#request-inference-function)
+  - [Return Value of Models](#return-value-of-models)
+  - [Why topN](#why-topn)
+  - [Bounding Boxes](#bounding-boxes)
+- [Different Ways of Calling Models](#different-ways-of-calling-models)
+  - [Header](#header)
+  - [Body](#body)
+- [Error from Models](#error-from-models)
+- [Pipeline and Model Data](#pipeline-and-model-data)
+  - [Key Description](#key-description)
+    - [File Specific Keys](#file-specific-keys)
+    - [Pipeline Specific Keys](#pipeline-specific-keys)
+    - [Model Specific Keys](#model-specific-keys)
+  - [JSON Representation and Example](#json-representation-and-example)
+
 ## Executive Summary
 
 Nachet Interactive uses various models to detect seeds. Documentation is
@@ -23,7 +43,7 @@ Nachet Interactive's models perfom the following tasks:
 > page. To know more about AI tasks in general: [Hugging Face
 > Tasks](https://huggingface.co/tasks)
 
-## List of models
+## List of Models
 
 |Model|Full name|Task|API Call Function|Inference Function|Active|Accuracy|
 |--|--|:--:|:--:|:--:|:--:|:--:|
@@ -40,7 +60,7 @@ Seed-detector only returns "seed" as a label, and its inference needs to be
 processed and passed to the next model which assigns the correct label to the
 seeds.
 
-## Return value of models
+## Return Value of Models
 
 ```json
 {
@@ -103,14 +123,14 @@ simultaneously.
  (2019-11-08) *Evaluating models using the Top N accuracy metrics*.
  Medium](https://medium.com/nanonets/evaluating-models-using-the-top-n-accuracy-metrics-c0355b36f91b)
 
-### Bounding boxes
+### Bounding Boxes
 
 The `box` key stores the value for a specific box around a seed. This helps the
 frontend draw a red rectangle around every seed on the image.
 
 ![image](https://github.com/ai-cfia/nachet-backend/assets/96267006/469add8d-f40a-483f-b090-0ebcb7a8396b)
 
-## Different ways of calling models
+## Different Ways of Calling Models
 
 ### Header
 
@@ -149,7 +169,7 @@ body = {
 body = b64encode(image)
 ```
 
-## Error from models
+## Error from Models
 
 A list of common errors models return to the backend.
 
@@ -160,7 +180,7 @@ A list of common errors models return to the backend.
 |--|--|--|--|
 |ValueError| Swin |Incorrect image source|Must be a valid url starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string|
 
-## Pipeline and model data
+## Pipeline and Model Data
 
 In order to dynamically build the pipeline in the backend from the model, the
 following data structure was designed. For now, the pipelines will have two keys
@@ -320,6 +340,26 @@ This how the file is represented in the datastore.
 ---
 
 ## Modèles Nachet Interactive
+
+## Table des matières
+
+- [Résumé](#résumé)
+- [Tâches](#tâches)
+- [Liste des modèles](#liste-des-modèles)
+  - [Fonctions de requête d'inférence](#fonctions-de-requête-dinférence)
+  - [Valeur de retour des modèles](#valeur-de-retour-des-modèles)
+  - [Pourquoi topN](#pourquoi-topn)
+  - [Cadres de contour](#cadres-de-contour)
+- [Différentes façons d'appeler les modèles](#différentes-façons-dappeler-les-modèles)
+  - [En-tête (Header)](#en-tête-header)
+  - [Corps (Body)](#corps-body)
+- [Erreurs des modèles](#erreurs-des-modèles)
+- [Pipeline et données des modèles](#pipeline-et-données-des-modèles)
+  - [Description des clés](#description-des-clés)
+    - [Clés spécifiques au fichier](#clés-spécifiques-au-fichier)
+    - [Clés spécifiques au pipeline](#clés-spécifiques-au-pipeline)
+    - [Clés spécifiques au modèle](#clés-spécifiques-au-modèle)
+  - [Représentation JSON et exemple](#représentation-json-et-exemple)
 
 ## Résumé
 

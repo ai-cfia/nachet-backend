@@ -1,7 +1,28 @@
 # :microscope: nachet-backend 🌱
 
 ([*Le français est disponible au bas de la
-page*](#microscope-nachet-backend-fr-🌱))
+page*](#nachet-backend-fr))
+
+## Table of Contents
+
+- [High level sequence diagram](#high-level-sequence-diagram)
+- [Details](#details)
+- [RUNNING NACHET-BACKEND FROM DEVCONTAINER](#running-nachet-backend-from-devcontainer)
+- [RUNNING NACHET-BACKEND AS A DOCKER CONTAINER](#running-nachet-backend-as-a-docker-container)
+  - [RUNNING NACHET-BACKEND WITH THE FRONTEND IN DOCKER](#running-nachet-backend-with-the-frontend-in-docker)
+- [TESTING NACHET-BACKEND](#testing-nachet-backend)
+- [ENVIRONMENT VARIABLES](#environment-variables)
+  - [DEPRECATED](#deprecated)
+- [DEPLOYING NACHET](#deploying-nachet)
+- [Diagramme de séquence haut niveau](#diagramme-de-séquence-haut-niveau)
+- [Détails](#détails)
+- [EXÉCUTER NACHET-BACKEND DEPUIS UN DEVCONTAINER](#exécuter-nachet-backend-depuis-un-devcontainer)
+- [EXÉCUTER NACHET-BACKEND EN TANT QUE CONTENEUR DOCKER](#exécuter-nachet-backend-en-tant-que-conteneur-docker)
+  - [EXÉCUTER NACHET-BACKEND AVEC LE FRONTEND DANS DOCKER](#exécuter-nachet-backend-avec-le-frontend-dans-docker)
+- [TESTER NACHET-BACKEND](#tester-nachet-backend)
+- [VARIABLES D'ENVIRONNEMENT](#variables-denvironnement)
+  - [DÉPRÉCIÉES](#dépréciées)
+- [DÉPLOYER NACHET](#déployer-nachet)
 
 ## High level sequence diagram
 
@@ -95,7 +116,7 @@ If you want to run the frontend and backend together in Docker, use:
 docker-compose up --build
 ```
 
-You can then visit the web client at `http://localhost:80`. The backend will be
+You can then visit the web client at `http localhost:80`. The backend will be
 built from the Dockerfile enabling preview of local changes and the frontend
 will be pulled from our Github registry.
 
@@ -147,7 +168,7 @@ If you need help deploying Nachet for your own needs, please contact us at
 
 ---
 
-## :microscope: nachet-backend (FR) 🌱
+## nachet-backend (FR)
 
 ## Diagramme de séquence haut niveau
 
@@ -242,7 +263,7 @@ Pour exécuter le frontend et le backend ensemble dans Docker, utilisez :
 docker-compose up --build
 ```
 
-Vous pouvez ensuite accéder au client web à l'adresse <http://localhost:80>. Le
+Vous pouvez ensuite accéder au client web à l'adresse 'http localhost:80'. Le
 backend sera construit à partir du Dockerfile, permettant un aperçu des
 modifications locales, et le frontend sera récupéré depuis notre registre
 GitHub.
