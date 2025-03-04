@@ -14,13 +14,6 @@ class SwinModelAPIError(ModelAPIError):
     pass
 
 
-SPECIES_LIST = [
-    "012 Ambrosia artemisiifolia",
-    "013 Ambrosia trifida",
-    "014 Ambrosia psilostachya",
-]
-
-
 def process_swin_result(img_box: dict, results: dict) -> list:
     """
     Args:
@@ -63,7 +56,7 @@ async def request_inference_from_torch_swin(model: namedtuple, previous_result: 
                 "Authorization": ("Bearer " + model.api_key),
                 model.deployment_platform: model.name,
             }
-            body = json.dumps({"image_data": img}).encode("utf-8")
+            body = img
             req = Request(model.endpoint, body, headers, method="POST")
             response = urlopen(req)
             result = response.read()

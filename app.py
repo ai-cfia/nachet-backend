@@ -715,12 +715,15 @@ async def inference_request():
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
 
+        print("Record model")  # TODO: Transform into logging
+
         await record_model(pipeline, processed_result_json)
 
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
 
+        print("Save inference result")  # TODO: Transform into logging
         saved_result_json = await datastore.save_inference_result(
             cursor, user_id, processed_result_json[0], picture_id, pipeline_name, 1
         )
