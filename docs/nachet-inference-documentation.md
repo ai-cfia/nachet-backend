@@ -275,12 +275,12 @@ model and pipeline history.
 
 To use the script, 3 environment variables are necessary:
 
-* NACHET_BLOB_PIPELINE_NAME
-  * Containing the blob name where the pipelines are stored
-* NACHET_BLOB_PIPELINE_VERSION
-  * Containing the version the user wants to select
-* NACHET_BLOB_PIPELINE_DECRYPTION_KEY
-  * The key to decrypt sensitive data such as the API key and the endpoint of a
+- NACHET_BLOB_PIPELINE_NAME
+  - Containing the blob name where the pipelines are stored
+- NACHET_BLOB_PIPELINE_VERSION
+  - Containing the version the user wants to select
+- NACHET_BLOB_PIPELINE_DECRYPTION_KEY
+  - The key to decrypt sensitive data such as the API key and the endpoint of a
     model.
 
 #### In the Code
@@ -635,11 +635,11 @@ modèles et des pipelines.
 
 Pour utiliser le script, trois variables d'environnement sont nécessaires :
 
-* **NACHET_BLOB_PIPELINE_NAME**  
+- **NACHET_BLOB_PIPELINE_NAME**  
   Contient le nom du blob où les pipelines sont stockés.
-* **NACHET_BLOB_PIPELINE_VERSION**  
+- **NACHET_BLOB_PIPELINE_VERSION**  
   Contient la version que l'utilisateur souhaite sélectionner.
-* **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**  
+- **NACHET_BLOB_PIPELINE_DECRYPTION_KEY**  
   La clé permettant de déchiffrer les données sensibles telles que la clé API et
   l'endpoint d'un modèle.
 
