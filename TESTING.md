@@ -2,6 +2,14 @@
 
 ([*Le français est disponible au bas de la page*](#documentation-des-tests))
 
+## Table of Contents
+
+- [Test Case: Populate model selection component with pipelines information](#test-case-populate-model-selection-component-with-pipelines-information)
+- [Test Case: Inference Request](#test-case-inference-request)
+- [Documentation des tests](#documentation-des-tests)
+- [Cas de Test : Remplir le composant de sélection de modèle avec les informations des pipelines](#cas-de-test--remplir-le-composant-de-sélection-de-modèle-avec-les-informations-des-pipelines)
+- [Cas de test : requête d'inférence](#cas-de-test--requête-dinférence)
+
 To start the automatic test, you can use the following command:
 
 ```bash
@@ -60,7 +68,7 @@ pipeline information.
 
 ### Objective: Verify that the inference request endpoint `/inf` behaves as expected
 
-### Preconditions
+### Preconditions_
 
 - [ ] Nachet backend is set up and running. Use the command `hypercorn -b :8080
   app:app` to start the quart server.
@@ -70,7 +78,7 @@ pipeline information.
 - [ ] Click on the model selection button
 - [ ] Validate that the current pipeline is selectable
 
-### Test Steps
+### Test Steps_
 
 1. Upload a seed image
 1. Select the first model (pipeline)
@@ -81,17 +89,17 @@ pipeline information.
 |:boom: Warning| |----------------------| |Displaying results from two different
 models will overlap and become unreadable.|
 
-### Expected Results
+### Expected Results_
 
 - [ ] The data populates both the canvas and the results components with the
   prediction data from the model (pipeline).
 - [ ] An alert with an error from port 3000 or 8080 is displayed.
 
-### Actual Results
+### Actual Results_
 
 - [ ] Describe the actual outcome of the test
 
-### Pass/Fail Criteria
+### Pass/Fail Criteria_
 
 - [ ] Pass if the data is populated on both the canvas and the results component
   with the prediction of the model (pipeline).
@@ -162,7 +170,7 @@ trouve
 
 ### Objectif** : Vérifier que le point de terminaison `/inf` de requête d'inférence se comporte comme prévu
 
-### Prérequis
+### Prérequis_
 
 - [ ] Le backend Nachet est configuré et en cours d'exécution. Utilisez la
   commande `hypercorn -b :8080 app:app` pour démarrer le serveur Quart.
@@ -171,7 +179,7 @@ trouve
 - [ ] Cliquez sur le bouton de sélection de modèles.
 - [ ] Validez que le pipeline actuel est sélectionnable.
 
-### Étapes de test
+### Étapes de test_
 
 1. Téléversez une image de graine.
 2. Sélectionnez le premier modèle (pipeline).
@@ -181,16 +189,15 @@ trouve
 
 | :boom: Avertissement |  
 |----------------------|  
-| Les résultats affichés de deux modèles différents se superposent et deviennent
-illisibles. |
+| Les résultats affichés de deux modèles différents se superposent et deviennent illisibles. |
 
-### Résultats attendus
+### Résultats attendus_
 
 - [ ] Les données peuplent à la fois le canevas et les composants de résultats
   avec les prédictions du modèle (pipeline).
 - [ ] Une alerte avec une erreur des ports 3000 ou 8080 est affichée.
 
-### Résultats réels
+### Résultats réels_
 
 - [ ] Décrivez les résultats réels du test.
 

@@ -1,7 +1,28 @@
 # :microscope: nachet-backend 🌱
 
 ([*Le français est disponible au bas de la
-page*](#microscope-nachet-backend-fr-🌱))
+page*](#nachet-backend-fr))
+
+## Table of Contents
+
+- [High level sequence diagram](#high-level-sequence-diagram)
+- [Details](#details)
+- [RUNNING NACHET-BACKEND FROM DEVCONTAINER](#running-nachet-backend-from-devcontainer)
+- [RUNNING NACHET-BACKEND AS A DOCKER CONTAINER](#running-nachet-backend-as-a-docker-container)
+  - [RUNNING NACHET-BACKEND WITH THE FRONTEND IN DOCKER](#running-nachet-backend-with-the-frontend-in-docker)
+- [TESTING NACHET-BACKEND](#testing-nachet-backend)
+- [ENVIRONMENT VARIABLES](#environment-variables)
+  - [DEPRECATED](#deprecated)
+- [DEPLOYING NACHET](#deploying-nachet)
+- [Diagramme de séquence haut niveau](#diagramme-de-séquence-haut-niveau)
+- [Détails](#détails)
+- [EXÉCUTER NACHET-BACKEND DEPUIS UN DEVCONTAINER](#exécuter-nachet-backend-depuis-un-devcontainer)
+- [EXÉCUTER NACHET-BACKEND EN TANT QUE CONTENEUR DOCKER](#exécuter-nachet-backend-en-tant-que-conteneur-docker)
+  - [EXÉCUTER NACHET-BACKEND AVEC LE FRONTEND DANS DOCKER](#exécuter-nachet-backend-avec-le-frontend-dans-docker)
+- [TESTER NACHET-BACKEND](#tester-nachet-backend)
+- [VARIABLES D'ENVIRONNEMENT](#variables-denvironnement)
+  - [DÉPRÉCIÉES](#dépréciées)
+- [DÉPLOYER NACHET](#déployer-nachet)
 
 ## High level sequence diagram
 
@@ -147,7 +168,7 @@ If you need help deploying Nachet for your own needs, please contact us at
 
 ---
 
-## :microscope: nachet-backend (FR) 🌱
+## nachet-backend (FR)
 
 ## Diagramme de séquence haut niveau
 

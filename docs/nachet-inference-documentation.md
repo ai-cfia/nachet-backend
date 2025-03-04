@@ -210,7 +210,7 @@ The inference request will process the following parameters:
 |container_name | The user's container|
 |imageDims | The dimension of the image|
 |image | The image encoded in b64 (ASCII)|
-|userId | The user's id in db
+|userId | The user's id in db |
 
 Note that since the information is received from the frontend, the `model_name`
 is an abstraction for a pipeline.
