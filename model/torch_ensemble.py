@@ -4,6 +4,7 @@ the swin model.
 """
 
 import json
+import time
 from copy import deepcopy
 from collections import namedtuple
 from urllib.error import URLError
@@ -60,7 +61,8 @@ async def request_inference_ensemble_a(model: namedtuple, previous_result: "dict
         print(f"Endpoint: {model.endpoint}")
 
         inf_results = []
-        for img in previous_result.get("images"):
+        img_count = len(previous_result.get("images"))
+        for idx, img in enumerate(previous_result.get("images")):
             headers = {
                 "Content-Type": model.content_type,
                 "Authorization": ("Bearer " + model.api_key),
@@ -68,13 +70,13 @@ async def request_inference_ensemble_a(model: namedtuple, previous_result: "dict
             }
             body = img
 
-            print(f"Headers: {headers}")
+            print(f"Processing image {idx + 1} of {img_count}")
             req = Request(model.endpoint, body, headers, method="POST")
             response = urlopen(req)
             inf_result = response.read()
             inf_result_json = json.loads(inf_result.decode("utf8"))
-            print(f"Result: {inf_result_json}")
             inf_results.append(inf_result_json)
+            time.sleep(1)
 
         print(json.dumps(inf_results, indent=4))  # TODO Transform into logging
 
