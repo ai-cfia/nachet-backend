@@ -703,10 +703,12 @@ async def inference_request():
 
         pipeline = pipelines_endpoints.get(pipeline_name)
 
+        
         for idx, model in enumerate(pipeline):
             print(
                 f"Entering {model.name.upper()} model"
-            )  # TODO: Transform into logging
+            )  
+            print(f"Request function: {model.request_function}")  # TODO: Transform into logging
             result_json = await model.request_function(model, cache_json_result[idx])
             cache_json_result.append(result_json)
 
