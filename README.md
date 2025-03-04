@@ -116,7 +116,7 @@ If you want to run the frontend and backend together in Docker, use:
 docker-compose up --build
 ```
 
-You can then visit the web client at `http://localhost:80`. The backend will be
+You can then visit the web client at `http localhost:80`. The backend will be
 built from the Dockerfile enabling preview of local changes and the frontend
 will be pulled from our Github registry.
 
