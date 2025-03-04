@@ -56,14 +56,20 @@ async def request_inference_ensemble_a(model: namedtuple, previous_result: "dict
         ProcessInferenceResultsError: If an error occurs while processing the request.
     """
     try:
+        print(f"Requesting inference from {model.name}")
+        print(f"Endpoint: {model.endpoint}")
+
         inf_results = []
-        for img in previous_result.get("images"):
+        img_count = len(previous_result.get("images"))
+        for idx, img in enumerate(previous_result.get("images")):
             headers = {
                 "Content-Type": model.content_type,
                 "Authorization": ("Bearer " + model.api_key),
                 model.deployment_platform: model.name,
             }
             body = img
+
+            print(f"Processing image {idx + 1} of {img_count}")
             req = Request(model.endpoint, body, headers, method="POST")
             response = urlopen(req)
             inf_result = response.read()
@@ -96,6 +102,8 @@ async def request_inference_ensemble_b(model: namedtuple, previous_result: "dict
     Perform inference on images that are in the specified species list.
     """
     try:
+        print(f"Requesting inference from {model.name}")
+        print(f"Endpoint: {model.endpoint}")
         amended_result = deepcopy(previous_result.get("result_json"))
 
         for i, result in enumerate(previous_result.get("result_json")[0]["boxes"]):

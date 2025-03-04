@@ -685,6 +685,7 @@ async def inference_request():
         cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
+        print(f"Mounting container {container_name}")  # TODO: Transform into logging
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
@@ -693,6 +694,7 @@ async def inference_request():
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
 
+        print("Get picture id")  # TODO: Transform into logging
         picture_id = await datastore.get_picture_id(
             cursor, user_id, image_bytes, container_client
         )
@@ -701,16 +703,18 @@ async def inference_request():
 
         pipeline = pipelines_endpoints.get(pipeline_name)
 
+        
         for idx, model in enumerate(pipeline):
             print(
                 f"Entering {model.name.upper()} model"
-            )  # TODO: Transform into logging
+            )  
+            print(f"Request function: {model.request_function}")  # TODO: Transform into logging
             result_json = await model.request_function(model, cache_json_result[idx])
             cache_json_result.append(result_json)
 
         print("End of inference request")  # TODO: Transform into logging
+        
         print("Process results")  # TODO: Transform into logging
-
         processed_result_json = await inference.process_inference_results(
             cache_json_result[-1], imageDims, area_ratio, color_format
         )
