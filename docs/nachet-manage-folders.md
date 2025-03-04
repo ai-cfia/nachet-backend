@@ -1,8 +1,22 @@
-# Manage folders
+# Manage Folders
 
 ([*Le français est disponible au bas de la page*](#gérer-les-dossiers))
 
-## Executive summary
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Prerequisites](#prerequisites)
+- [Sequence Diagram](#sequence-diagram)
+  - [Delete Use Case](#delete-use-case)
+- [API Routes](#api-routes)
+  - [/create-dir](#create-dir)
+  - [/get-directories](#get-directories)
+  - [/get-picture](#get-picture)
+  - [/delete-request](#delete-request)
+  - [/delete-permanently](#delete-permanently)
+  - [/delete-with-archive](#delete-with-archive)
+
+## Executive Summary
 
 A user is able to have a preview of his blob storage container in the Nachet
 application. He can have many folders in his container and pictures in it. Since
@@ -74,7 +88,7 @@ delete everything anyway, for example if there has been a missed click.
 
 ## Sequence Diagram
 
-### Delete use case
+### Delete Use Case
 
 ```mermaid
 sequenceDiagram
@@ -208,7 +222,21 @@ but moves everything in the dev container.
 
 ---
 
-## Gérer les dossiers
+## Gérer les Dossiers
+
+## Table des matières
+
+- [Sommaire](#sommaire)
+- [Prérequis](#prérequis)
+- [Diagramme de Séquence](#diagramme-de-séquence)
+  - [Cas d'Utilisation : Suppression](#cas-dutilisation--suppression)
+- [API](#api)
+  - [Route /create-dir](#route-create-dir)
+  - [Route /get-directories](#route-get-directories)
+  - [Route /get-picture](#route-get-picture)
+  - [Route /delete-request](#route-delete-request)
+  - [Route /delete-permanently](#route-delete-permanently)
+  - [Route /delete-with-archive](#route-delete-with-archive)
 
 ## Sommaire
 
@@ -283,9 +311,9 @@ accidentel, par exemple.
 - L'utilisateur doit être connecté et disposer d'un conteneur Azure Storage.
 - Le backend doit être connecté au datastore.
 
-## Diagramme de séquence
+## Diagramme de Séquence
 
-### Cas d'utilisation : Suppression
+### Cas d'Utilisation : Suppression
 
 ```mermaid
 sequenceDiagram

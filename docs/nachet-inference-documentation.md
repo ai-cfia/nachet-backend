@@ -1,9 +1,23 @@
-# Inference Request with n-models pipelines
+# Inference Request with n-models Pipelines
 
-([*Le français est disponible au bas de la
-page*](#demande-dinférence-avec-des-pipelines-multi-modèles))
+([*Le français est disponible au bas de la page*](#demande-dinférence-avec-des-pipelines-multi-modèles))
 
-## Executive summary
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Glossary](#glossary)
+  - [Pipelines](#pipelines)
+    - [Pipelines Flowchart 1.0.0](#pipelines-flowchart-100)
+  - [Models](#models)
+  - [Model from Frontend](#model-from-frontend)
+- [Sequence Diagram for Inference Request 1.2.1](#sequence-diagram-for-inference-request-121)
+- [Inference Request Function](#inference-request-function)
+- [Input and Output for Inference Request](#input-and-output-for-inference-request)
+- [Blob Storage and Pipeline Versioning](#blob-storage-and-pipeline-versioning)
+  - [In the Code](#in-the-code)
+- [Available Version of the JSON File](#available-version-of-the-json-file)
+
+## Executive Summary
 
 We are currently working on improving Nachet Interactive's effectiveness and
 user experience for detecting regulated seeds. To achieve this goal, we are
@@ -27,7 +41,7 @@ Pipelines are defined as a set of models that follow each other, where the
 output of one model is used as input for the next model, and so on. A pipeline
 contains from 1 to n models.
 
-#### Pipelines flowchart 1.0.0
+#### Pipelines Flowchart 1.0.0
 
 ```mermaid
 flowchart LR
@@ -60,7 +74,7 @@ and receive the result.
 
 *Suggestion: we could call the pipeline a method if we don't want to mix terms.*
 
-## Sequence Diagram for inference request 1.2.1
+## Sequence Diagram for Inference Request 1.2.1
 
 ```mermaid
 sequenceDiagram
@@ -165,7 +179,7 @@ sequenceDiagram
 
 ![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
 
-### Inference Request function
+### Inference Request Function
 
 The inference request function plays a crucial role in Nachet Interactive's
 backend. It requests actions from selected models or pipelines based on certain
@@ -185,7 +199,7 @@ the datastore. The inferences are saved so the users could give feedback for
 training and collect statistics. The inference result is then sent to the
 frontend.
 
-### Input and Output for inference request
+### Input and Output for Inference Request
 
 The inference request will process the following parameters:
 
@@ -252,7 +266,7 @@ seed| |bottomY| 2 | The bottom y value of the box around a seed|
 ]
 ```
 
-### Blob storage and Pipeline versioning
+### Blob Storage and Pipeline Versioning
 
 To keep track of the various pipeline iterations and versions, JSON files are
 stored in the blob storage. Users can add the JSON to the blob storage using the
@@ -269,7 +283,7 @@ To use the script, 3 environment variables are necessary:
   * The key to decrypt sensitive data such as the API key and the endpoint of a
     model.
 
-#### In the code
+#### In the Code
 
 In the backend, the pipelines are retrieved using the `get_pipelines` function
 which calls the `get_ml_structure` in the datastore. This function retrieves the
@@ -329,7 +343,7 @@ async def get_pipelines() -> list:
 
 ```
 
-### Available Version of the JSON file
+### Available Version of the JSON File
 
 |Version|Creation Date| Pipelines|
 |--|--|--|
@@ -340,7 +354,22 @@ async def get_pipelines() -> list:
 
 ---
 
-## Demande d'inférence avec des pipelines multi-modèles
+## Demande d'Inférence avec des Pipelines Multi-Modèles
+
+## Table des matières
+
+- [Sommaire](#sommaire)
+- [Glossaire](#glossaire)
+  - [Les Pipelines](#les-pipelines)
+    - [Diagramme de Flux des Pipelines 1.0.0](#diagramme-de-flux-des-pipelines-100)
+  - [Modèles](#modèles)
+  - [Modèle depuis le Frontend](#modèle-depuis-le-frontend)
+- [Diagramme de Séquence pour une Requête d'Inférence 1.2.1](#diagramme-de-séquence-pour-une-requête-dinférence-121)
+- [Fonction de Requête d'Inférence](#fonction-de-requête-dinférence)
+- [Entrée et Sortie de la Requête d'Inférence](#entrée-et-sortie-de-la-requête-dinférence)
+- [Stockage Blob et Gestion des Versions des Pipelines](#stockage-blob-et-gestion-des-versions-des-pipelines)
+  - [Dans le Code](#dans-le-code)
+- [Versions Disponibles du Fichier JSON](#versions-disponibles-du-fichier-json)
 
 ## Sommaire
 
@@ -361,13 +390,13 @@ pipeline utilisé est sélectionné via un paramètre.
 
 ## Glossaire
 
-### Les pipelines
+### Les Pipelines
 
 Les pipelines sont définis comme un ensemble de modèles qui se succèdent, où la
 sortie d'un modèle est utilisée comme entrée pour les modèles suivants, et ainsi
 de suite. Un pipeline peut contenir entre 1 et n modèles.
 
-#### Diagramme de flux des pipelines 1.0.0
+#### Diagramme de Flux des Pipelines 1.0.0
 
 ```mermaid
 flowchart LR
@@ -390,7 +419,7 @@ en entrée et retourne un JSON en sortie. Généralement, ce JSON contient les
 coordonnées des objets présents dans l’image source. Ces données peuvent être
 transmises au modèle suivant dans le pipeline.
 
-### Modèle depuis le frontend
+### Modèle depuis le Frontend
 
 Dans le frontend, un pipeline sera appelé un modèle, car l’utilisateur ne sera
 pas conscient de la différence. Du point de vue de l’utilisateur, il envoie des
@@ -399,7 +428,7 @@ données à un modèle et reçoit le résultat.
 *Suggestion : Nous pourrions appeler le pipeline une méthode si nous voulons
 éviter de mélanger les termes.*
 
-## Diagramme de séquence pour une requête d'inférence 1.2.1
+## Diagramme de Séquence pour une Requête d'Inférence 1.2.1
 
 ```mermaid
 sequenceDiagram
@@ -504,7 +533,7 @@ sequenceDiagram
 
 ![footer_for_diagram](https://github.com/ai-cfia/nachet-backend/assets/96267006/cf378d6f-5b20-4e1d-8665-2ba65ed54f8e)
 
-### Fonction de requête d'inférence
+### Fonction de Requête d'Inférence
 
 La fonction de requête d'inférence joue un rôle crucial dans le backend de
 Nachet Interactive. Elle demande des actions aux modèles ou pipelines
@@ -526,7 +555,7 @@ enregistré par le datastore. Les inférences sont sauvegardées afin que les
 utilisateurs puissent fournir des commentaires à des fins de formation et de
 statistiques. Le résultat d'inférence est ensuite envoyé au frontend.
 
-### Entrée et sortie de la requête d'inférence
+### Entrée et Sortie de la Requête d'Inférence
 
 La requête d'inférence traitera les paramètres suivants :
 
@@ -596,7 +625,7 @@ inférieure de la boîte autour d'une graine |
 ]
 ```
 
-### Stockage blob et gestion des versions des pipelines
+### Stockage Blob et Gestion des Versions des Pipelines
 
 Pour suivre les différentes itérations et versions des pipelines, des fichiers
 JSON sont stockés dans le stockage blob. Les utilisateurs peuvent ajouter ces
@@ -614,7 +643,7 @@ Pour utiliser le script, trois variables d'environnement sont nécessaires :
   La clé permettant de déchiffrer les données sensibles telles que la clé API et
   l'endpoint d'un modèle.
 
-#### Dans le code
+#### Dans le Code
 
 Dans le backend, les pipelines sont récupérés via la fonction `get_pipelines`,
 qui appelle la méthode `get_ml_structure` du datastore. Cette fonction récupère
@@ -674,7 +703,7 @@ async def get_pipelines() -> list:
         raise GetPipelinesError(error.args[0])
 ```
 
-### Versions disponibles du fichier JSON
+### Versions Disponibles du Fichier JSON
 
 | Version  | Date de création | Pipelines                               |
 |----------|------------------|----------------------------------------|

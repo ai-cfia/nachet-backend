@@ -3,6 +3,7 @@
 ([*Le français est disponible au bas de la page*](#téléversement-dimages-par-lot))
 
 ## Table of Contents
+
 - [Executive Summary](#executive-summary)
 - [Prerequisites](#prerequisites)
 - [Solution](#solution)
@@ -15,7 +16,7 @@
 - [Téléversement d'images par lot](#téléversement-dimages-par-lot)
   - [Sommaire](#sommaire)
   - [Prérequis](#prérequis)
-  - [Solution](#solution-1)
+  - [Solution](#solution_)
   - [Diagramme de séquence](#diagramme-de-séquence)
   - [API](#api)
     - [Route /get-user-id](#route-get-user-id)
@@ -144,7 +145,7 @@ améliore également l'efficacité et la convivialité globale du système.
 - L'utilisateur doit être connecté et disposer d'un conteneur Azure Storage.
 - Le backend doit avoir une connexion avec le datastore.
 
-## Solution
+## Solution_
 
 Pour répondre au besoin des utilisateurs de télécharger un lot d'images dans le
 blob storage via l'interface Nachet, nous devons implémenter différents points
