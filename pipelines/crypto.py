@@ -2,7 +2,7 @@ import os
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv('./.env.crypto.local')
 
 KEY = os.getenv("DECRYPTION_KEY")
 VALUE = os.getenv("VALUE")
