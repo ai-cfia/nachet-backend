@@ -73,6 +73,7 @@ async def request_inference_ensemble_a(model: namedtuple, previous_result: "dict
             response = urlopen(req)
             inf_result = response.read()
             inf_result_json = json.loads(inf_result.decode("utf8"))
+            print(f"Result: {inf_result_json}")
             inf_results.append(inf_result_json)
 
         print(json.dumps(inf_results, indent=4))  # TODO Transform into logging
