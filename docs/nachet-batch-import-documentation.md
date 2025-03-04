@@ -1,9 +1,29 @@
-# Batch Upload of images
+# Batch Upload of Images
 
-([*Le français est disponible au bas de la
-page*](#téléversement-dimages-par-lot))
+([*Le français est disponible au bas de la page*](#téléversement-dimages-par-lot))
 
-## Executive summary
+## Table of Contents
+- [Executive Summary](#executive-summary)
+- [Prerequisites](#prerequisites)
+- [Solution](#solution)
+- [Sequence Diagram](#sequence-diagram)
+- [API Routes](#api-routes)
+  - [/get-user-id](#get-user-id)
+  - [/seeds](#seeds)
+  - [/new-batch-import](#new-batch-import)
+  - [/upload-picture](#upload-picture)
+- [Téléversement d'images par lot](#téléversement-dimages-par-lot)
+  - [Sommaire](#sommaire)
+  - [Prérequis](#prérequis)
+  - [Solution](#solution-1)
+  - [Diagramme de séquence](#diagramme-de-séquence)
+  - [API](#api)
+    - [Route /get-user-id](#route-get-user-id)
+    - [Route /seeds](#route-seeds)
+    - [Route /new-batch-import](#route-new-batch-import)
+    - [Route /upload-picture](#route-upload-picture)
+
+## Executive Summary
 
 With the development of the datastore for Nachet, new opportunities arise. One
 of them is to build a functionality to allow our trusted users to perform a
