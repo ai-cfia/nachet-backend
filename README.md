@@ -263,7 +263,7 @@ Pour exécuter le frontend et le backend ensemble dans Docker, utilisez :
 docker-compose up --build
 ```
 
-Vous pouvez ensuite accéder au client web à l'adresse <http://localhost:80>. Le
+Vous pouvez ensuite accéder au client web à l'adresse 'http localhost:80'. Le
 backend sera construit à partir du Dockerfile, permettant un aperçu des
 modifications locales, et le frontend sera récupéré depuis notre registre
 GitHub.
