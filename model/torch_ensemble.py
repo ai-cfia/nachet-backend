@@ -4,7 +4,6 @@ the swin model.
 """
 
 import json
-import time
 from copy import deepcopy
 from collections import namedtuple
 from urllib.error import URLError
@@ -76,7 +75,6 @@ async def request_inference_ensemble_a(model: namedtuple, previous_result: "dict
             inf_result = response.read()
             inf_result_json = json.loads(inf_result.decode("utf8"))
             inf_results.append(inf_result_json)
-            time.sleep(1)
 
         print(json.dumps(inf_results, indent=4))  # TODO Transform into logging
 
