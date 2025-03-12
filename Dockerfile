@@ -7,7 +7,7 @@ ENV QUART_ENV=development
 ENV PYTHONUNBUFFERED True
 ENV PYTHONPATH=/app
 
-COPY ./requirements.txt .
+COPY ./requirements2025031201.txt .
 
 RUN pip install --no-cache-dir -r requirements2025031201.txt
 
