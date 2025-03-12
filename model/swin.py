@@ -64,7 +64,11 @@ async def request_inference_from_swin(model: namedtuple, previous_result: 'list[
 
         print(json.dumps(results, indent=4)) #TODO Transform into logging
 
-        return process_swin_result(previous_result.get("result_json"), results)
+        img_box = process_swin_result(previous_result.get("result_json"), results)
+        print(json.dumps(img_box, indent=4)) 
+
+        return img_box
+
     except (TypeError, IndexError, AttributeError, URLError, json.JSONDecodeError)  as error:
         print(error)
         raise SwinModelAPIError(f"An error occurred while processing the request:\n {str(error)}") from error
