@@ -23,7 +23,7 @@ def process_swin_result(img_box:dict, results: dict) -> list:
         list: The updated image box with modified labels and scores.
     """
     for i, result in enumerate(results):
-        img_box[0]['boxes'][i]['label'] = result[0].get("label")
+        img_box[0]['boxes'][i]['label'] = " ".join(result[0].get("label").split(" ")[1:])
         img_box[0]['boxes'][i]['score'] = result[0].get("score")
         img_box[0]['boxes'][i]["topN"] = [d for d in result]
     
