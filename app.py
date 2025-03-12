@@ -685,7 +685,7 @@ async def inference_request():
         cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
-        print(f"Mounting containerr {container_name}")  # TODO: Transform into logging
+        print(f"Mounting containerrr {container_name}")  # TODO: Transform into logging
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
