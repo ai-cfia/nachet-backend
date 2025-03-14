@@ -90,8 +90,8 @@ PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 NACHET_DATA = os.getenv("NACHET_DATA")
 ENVIRONMENT = os.getenv("NACHET_ENV")
 NACHET_FRONTEND_DEV_URL = os.getenv("NACHET_FRONTEND_DEV_URL")
-NACHET_FRONTEND_PUBLIC_URL = os.getenv("NACHET_FRONTEND_PUBLIC_URL")
-ALLOWED_URL = NACHET_FRONTEND_DEV_URL if ENVIRONMENT == "local" else NACHET_FRONTEND_PUBLIC_URL
+NACHET_FRONTEND_PUBLIC_URL = os.getenv("NACHET_FRONTEND_PUBLIC_URL", "").split(",")
+ALLOWED_URL = [NACHET_FRONTEND_DEV_URL] if ENVIRONMENT == "local" else NACHET_FRONTEND_PUBLIC_URL
 
 try:
     VALID_EXTENSION = json.loads(os.getenv("NACHET_VALID_EXTENSION"))
@@ -134,7 +134,7 @@ Model = namedtuple(
 CACHE = {"seeds": None, "endpoints": None, "pipelines": {}, "validators": []}
 
 cors_settings = {
-    "allow_origin": [ALLOWED_URL],
+    "allow_origin": ALLOWED_URL,
     "allow_methods": ["GET", "POST", "OPTIONS"],
     "allow_credentials": True,
     "max_age": 86400
