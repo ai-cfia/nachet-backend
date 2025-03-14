@@ -23,9 +23,15 @@ def process_swin_result(img_box:dict, results: dict) -> list:
         list: The updated image box with modified labels and scores.
     """
     for i, result in enumerate(results):
-        img_box[0]['boxes'][i]['label'] = result[0].get("label")
+        img_box[0]['boxes'][i]['label'] = " ".join(result[0].get("label").split(" ")[1:])
         img_box[0]['boxes'][i]['score'] = result[0].get("score")
-        img_box[0]['boxes'][i]["topN"] = [d for d in result]
+        img_box[0]['boxes'][i]["topN"] = [
+            {
+                "label": " ".join(d.get("label").split(" ")[1:]),
+                "score": d.get("score")
+            }
+            for d in result
+        ]
     
     # Adding the "filename" field (mandatory)
     img_box[0]['filename'] = "default_filename"
@@ -64,7 +70,11 @@ async def request_inference_from_swin(model: namedtuple, previous_result: 'list[
 
         print(json.dumps(results, indent=4)) #TODO Transform into logging
 
-        return process_swin_result(previous_result.get("result_json"), results)
+        img_box = process_swin_result(previous_result.get("result_json"), results)
+        # print(json.dumps(img_box, indent=4)) 
+
+        return img_box
+
     except (TypeError, IndexError, AttributeError, URLError, json.JSONDecodeError)  as error:
         print(error)
         raise SwinModelAPIError(f"An error occurred while processing the request:\n {str(error)}") from error

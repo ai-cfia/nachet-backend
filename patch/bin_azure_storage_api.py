@@ -105,12 +105,18 @@ async def mount_container(
     """
     try:
         container_name = "user-{}".format(container_uuid)
+        # print(f"Container name: {container_name}")
         container_client = blob_service_client.get_container_client(container_name)
+        # print(f"Got container client for: {container_name}")
         if container_client.exists():
+            # print(f"Container {container_name} exists, returning container client")
             return container_client
         elif create_container and not container_client.exists():
+            # print(f"Container {container_name} does not exist, creating it")
             container_client = blob_service_client.create_container(container_name)
+            # print(f"Created container: {container_name}")
             # create general directory for new user container
+            # print("Creating General folder in the container")
             response = await create_folder(container_client, "General")
             if response:
                 return container_client

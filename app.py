@@ -83,7 +83,7 @@ pipeline_version_regex = r"\d.\d.\d"
 
 CONNECTION_STRING = os.getenv("NACHET_AZURE_STORAGE_CONNECTION_STRING")
 
-FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
+# FERNET_KEY = os.getenv("NACHET_BLOB_PIPELINE_DECRYPTION_KEY")
 PIPELINE_VERSION = os.getenv("NACHET_BLOB_PIPELINE_VERSION")
 PIPELINE_BLOB_NAME = os.getenv("NACHET_BLOB_PIPELINE_NAME")
 
@@ -157,8 +157,8 @@ async def before_serving():
         if NACHET_DATA is None:
             raise ServerError("Missing environment variable: NACHET_DATA")
 
-        if FERNET_KEY is None:
-            raise ServerError("Missing environment variable: FERNET_KEY")
+        # if FERNET_KEY is None:
+        #     raise ServerError("Missing environment variable: FERNET_KEY")
 
         if PIPELINE_VERSION is None:
             raise ServerError("Missing environment variable: PIPELINE_VERSION")
@@ -685,19 +685,24 @@ async def inference_request():
         cache_json_result = [encoded_data]
         image_bytes = base64.b64decode(encoded_data)
 
-        print(f"Mounting container {container_name}")  # TODO: Transform into logging
+        print(f"Mounting containerb {container_name}")  # TODO: Transform into logging
+        mount_container_time = time.perf_counter()
         container_client = await azure_storage.mount_container(
             CONNECTION_STRING, container_name, create_container=True
         )
+        print(f"Time mount_container: {time.perf_counter() - mount_container_time} seconds")
 
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
 
         print("Get picture id")  # TODO: Transform into logging
+        get_picture_id_time = time.perf_counter()
         picture_id = await datastore.get_picture_id(
             cursor, user_id, image_bytes, container_client
         )
+        print(f"Time get_picture_id: {time.perf_counter() - get_picture_id_time} seconds")
+        
         # Close connection
         datastore.end_query(connection, cursor)
 
@@ -705,13 +710,14 @@ async def inference_request():
 
         
         for idx, model in enumerate(pipeline):
+            model_time = time.perf_counter()
             print(
                 f"Entering {model.name.upper()} model"
             )  
             print(f"Request function: {model.request_function}")  # TODO: Transform into logging
             result_json = await model.request_function(model, cache_json_result[idx])
             cache_json_result.append(result_json)
-
+            print(f"Time {model.name}: {time.perf_counter() - model_time} seconds")
         print("End of inference request")  # TODO: Transform into logging
         
         print("Process results")  # TODO: Transform into logging
@@ -720,17 +726,20 @@ async def inference_request():
         )
 
         print("Record model")  # TODO: Transform into logging
-
+        record_model_time = time.perf_counter()
         await record_model(pipeline, processed_result_json)
+        print(f"Time record_model: {time.perf_counter() - record_model_time} seconds")
 
         # Open db connection
         connection = datastore.get_connection()
         cursor = datastore.get_cursor(connection)
 
         print("Save inference result")  # TODO: Transform into logging
+        save_inference_time = time.perf_counter()
         saved_result_json = await datastore.save_inference_result(
             cursor, user_id, processed_result_json[0], picture_id, pipeline_name, 1
         )
+        print(f"Time save_inference_result: {time.perf_counter() - save_inference_time} seconds")
 
         # Close connection
         datastore.end_query(connection, cursor)
@@ -1090,7 +1099,8 @@ async def fetch_json(repo_URL, key, file_path):
         return result_json
 
 
-async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
+# async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
+async def get_pipelines():
     """
     Retrieves the pipelines from the Azure storage API.
 
@@ -1109,8 +1119,10 @@ async def get_pipelines(cipher_suite=Fernet(FERNET_KEY)):
             # it's pushed into the blob storage. Once we retrieve the data here in the
             # backend, we need to decrypt the byte format to recover the original
             # data.
-            cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
-            cipher_suite.decrypt(model.get("api_key").encode()).decode(),
+            # cipher_suite.decrypt(model.get("endpoint").encode()).decode(),
+            # cipher_suite.decrypt(model.get("api_key").encode()).decode(),
+            model.get("endpoint"),
+            model.get("api_key"),
             model.get("content_type"),
             model.get("deployment_platform"),
         )
