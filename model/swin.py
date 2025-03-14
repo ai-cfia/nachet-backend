@@ -71,7 +71,7 @@ async def request_inference_from_swin(model: namedtuple, previous_result: 'list[
         print(json.dumps(results, indent=4)) #TODO Transform into logging
 
         img_box = process_swin_result(previous_result.get("result_json"), results)
-        print(json.dumps(img_box, indent=4)) 
+        # print(json.dumps(img_box, indent=4)) 
 
         return img_box
 
