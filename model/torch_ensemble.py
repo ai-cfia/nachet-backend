@@ -60,7 +60,7 @@ async def request_inference_ensemble_a(model: namedtuple, previous_result: "dict
         print(f"Endpoint: {model.endpoint}")
 
         inf_results = []
-        img_count = len(previous_result.get("images"))
+        # img_count = len(previous_result.get("images"))
         for idx, img in enumerate(previous_result.get("images")):
             headers = {
                 "Content-Type": model.content_type,
@@ -69,7 +69,7 @@ async def request_inference_ensemble_a(model: namedtuple, previous_result: "dict
             }
             body = img
 
-            print(f"Processing image {idx + 1} of {img_count}")
+            print(f"Processing image {idx + 1}")
             req = Request(model.endpoint, body, headers, method="POST")
             response = urlopen(req)
             inf_result = response.read()

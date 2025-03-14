@@ -9,8 +9,8 @@ ENV PYTHONPATH=/app
 
 COPY ./requirements.txt .
 
-RUN mv requirements.txt requirements2025031208.txt && \
-    pip install --no-cache-dir -r requirements2025031208.txt
+RUN mv requirements.txt requirements2025031401.txt && \
+    pip install --no-cache-dir -r requirements2025031401.txt
 
 COPY . ./
 

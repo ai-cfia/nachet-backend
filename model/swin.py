@@ -25,7 +25,13 @@ def process_swin_result(img_box:dict, results: dict) -> list:
     for i, result in enumerate(results):
         img_box[0]['boxes'][i]['label'] = " ".join(result[0].get("label").split(" ")[1:])
         img_box[0]['boxes'][i]['score'] = result[0].get("score")
-        img_box[0]['boxes'][i]["topN"] = [d for d in result]
+        img_box[0]['boxes'][i]["topN"] = [
+            {
+                "label": " ".join(d.get("label").split(" ")[1:]),
+                "score": d.get("score")
+            }
+            for d in result
+        ]
     
     # Adding the "filename" field (mandatory)
     img_box[0]['filename'] = "default_filename"
