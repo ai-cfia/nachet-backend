@@ -1,5 +1,5 @@
 nachet-datastore @git+https://github.com/ai-cfia/ailab-datastore.git@231-split-nachet-config-secrets
-numpy==1.26.4
+numpy==2.3.2
 azure-storage-blob
 azure-identity
 flask==3.0.3
