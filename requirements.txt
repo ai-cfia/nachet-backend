@@ -11,6 +11,6 @@ Pillow==10.3.0
 cryptography
 pyyaml
 pydantic==2.7.1
-pydantic-core==2.18.2
+pydantic-core==2.39.0
 python-magic
 PyJWT
