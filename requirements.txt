@@ -10,7 +10,7 @@ hypercorn
 Pillow==10.3.0
 cryptography
 pyyaml
-pydantic==2.7.1
+pydantic==2.11.7
 pydantic-core==2.18.2
 python-magic
 PyJWT
